@@ -1,0 +1,25 @@
+strict digraph SPARK {
+
+i -> g -> h -> i;
+a -> c [label="only actually\nperceived objects", fontsize=10];
+c -> d -> e;
+f -> e;
+
+
+e -> g [label="(if available)", fontsize=10];
+
+a [label="Raw perceived model", shape=box];
+c [label="Detect\ninconsistencies"];
+d [label="Resolve\ninconsistencies"];
+e [label="Stabilize\nmodel"];
+
+f [label="Symbolic state", shape=box];
+i [label="Move physics simulation forward", color=blue, style=filled];
+
+g [label="Merge models", shape=box, color=green, style=filled ];
+h [label="Situation assessment"];
+
+subgraph cluster_inconsistencies{
+c d e
+};
+}
