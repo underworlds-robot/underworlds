@@ -110,6 +110,7 @@ class GLRenderer():
 
         self.init_gl()
 
+        glPolygonMode(GL_FRONT_AND_BACK, GL_POINT) # no need to fill the faces
         start_time = glutGet(GLUT_ELAPSED_TIME)
 
         for cam in self.scene.cameras:
@@ -183,7 +184,7 @@ class GLRenderer():
             glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, ambient)
             glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, emissive)
             glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, shininess)
-            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE if wireframe else GL_FILL)
+            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE if wireframe else GL_FILL) # no need to fill the faces
             glDisable(GL_CULL_FACE) if twosided else glEnable(GL_CULL_FACE)
     
             glEndList()
@@ -223,7 +224,7 @@ class GLRenderer():
             glBeginQuery(GL_SAMPLES_PASSED, node.occlusion_query)
 
             for mesh in node.meshes:
-                #self.apply_material(mesh.material)
+                self.apply_material(mesh.material)
 
                 glBindBuffer(GL_ARRAY_BUFFER, mesh.gl["vertices"])
                 glEnableClientState(GL_VERTEX_ARRAY)
@@ -322,6 +323,6 @@ if __name__ == '__main__':
         sys.exit(0)
 
     glrender = GLRenderer(sys.argv[1], postprocess = aiProcessPreset_TargetRealtime_MaxQuality)
-    glrender.get_visibilities()
-    #glrender.render()
+    #glrender.get_visibilities()
+    glrender.render()
 
