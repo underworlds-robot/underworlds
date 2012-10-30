@@ -4,21 +4,22 @@ import zmq
 import time
 import json
 
-from threading import Lock
-
-context = zmq.Context()
-print "Connecting to underworlds server..."
-socket = context.socket(zmq.REQ)
-socket.connect ("tcp://localhost:5555")
+from threading import *
 
 
 
-class NodesProxy(object):
+class NodesProxy(Thread):
 
     def __init__(self):
+        Thread.__init__(self)
 
-        socket.send("get_nodes_len")
-        self._len = int(socket.recv())
+        self.context = zmq.Context()
+        print "Connecting to underworlds server..."
+        self.rpc = self.context.socket(zmq.REQ)
+        self.rpc.connect ("tcp://localhost:5555")
+
+        self.rpc.send("get_nodes_len")
+        self._len = int(self.rpc.recv())
 
         self._nodes = {} # node store
 
@@ -28,16 +29,15 @@ class NodesProxy(object):
 
         # list of invalid ids (ie, nodes that have remotely changed).
         # This list is updated asynchronously from a server publisher
-        socket.send("get_nodes_ids")
-        self._invalid_ids = json.loads(socket.recv())
+        self.rpc.send("get_nodes_ids")
+        self._invalid_ids = json.loads(self.rpc.recv())
 
         self.invalidate_lock = Lock()
 
-        self._invalid_len = True
+        self.start()
 
 
-
-    def _on_new_node(self):
+    def _on_new_node(self, id):
         # implement here listening for new or removed nodes
         # should update _len and _invalid_ids with the new one
         self.invalidate_lock.acquire()
@@ -65,18 +65,18 @@ class NodesProxy(object):
         node = self._invalid_ids.pop()
         self.invalidate_lock.release()
 
-        socket.send("get_node " + str(node))
+        self.rpc.send("get_node " + str(node))
         
         self._ids.append(node)
-        data = json.loads(socket.recv())
-        self._nodes[node] = Node(**data)
+        data = self.rpc.recv()
+        self._nodes[node] = Node.deserialize(data)
 
 
-    def _update__node(self, id):
+    def _update_node(self, id):
 
-        socket.send("get_node " + str(id))
+        self.rpc.send("get_node " + str(id))
 
-        data = json.loads(socket.recv())
+        data = json.loads(self.rpc.recv())
         updated_node = Node(**data)
         self._nodes[id] = updated_node
 
@@ -109,6 +109,18 @@ class NodesProxy(object):
      
     def run(self):
         #implement here the listener for model updates
+        invalidation_pub = self.context.socket(zmq.SUB)
+        invalidation_pub.connect ("tcp://localhost:5556")
+        invalidation_pub.setsockopt(zmq.SUBSCRIBE, "") # no filter
+
+        while self.running:
+            action, id = invalidation_pub.recv().split()
+            if action == "invalidate":
+                self._on_changed_node(id)
+            elif action == "new":
+                self._on_new_node(id)
+
+
 
 class Scene(object):
 
