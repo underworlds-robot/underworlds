@@ -49,10 +49,10 @@ class Node():
         n = Node()
         data = json.loads(serialized)
 
-        #for key, value in data.items():
-        #    if hasattr(n, key):
-        #        setattr(n, key, value)
-        n.__dict__ = data
+        for key, value in data.items():
+            if hasattr(n, key):
+                setattr(n, str(key), str(value))
+        #n.__dict__ = data
         return n
 
 
