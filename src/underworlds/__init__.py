@@ -2,8 +2,10 @@
 import zmq
 import time
 import json
+import copy
 
-from threading import *
+import threading
+from collections import deque
 
 import logging
 netlogger = logging.getLogger("underworlds.network")
@@ -13,10 +15,10 @@ from underworlds.types import World, Node
 
 
 #TODO: inherit for a collections.MutableSequence? what is the benefit?
-class NodesProxy(Thread):
+class NodesProxy(threading.Thread):
 
     def __init__(self):
-        Thread.__init__(self)
+        threading.Thread.__init__(self)
 
         self.context = zmq.Context()
         netlogger.debug("Connecting to underworlds server...")
@@ -29,7 +31,7 @@ class NodesProxy(Thread):
         self._nodes = {} # node store
 
         # list of all node IDs that were once obtained.
-        # They may be valid or invalid (if present in _invalid_ids)
+        # They may be valid or invalid (if present in _updated_ids)
         self._ids = []
 
         # When I commit a node update, I get a notification from the
@@ -40,46 +42,52 @@ class NodesProxy(Thread):
         # list of invalid ids (ie, nodes that have remotely changed).
         # This list is updated asynchronously from a server publisher
         self.rpc.send("get_nodes_ids")
-        self._invalid_ids = json.loads(self.rpc.recv())
+        self._updated_ids = deque(json.loads(self.rpc.recv()))
 
-        self.invalidate_lock = Lock()
+        self._deleted_ids = deque()
+
 
         self._running = True
-        import pdb;pdb.set_trace()
+        self.cv = threading.Condition()
+
         self.start()
+
+        # wait for the 'invalidation' thread to notify it is ready
+        self.cv.acquire()
+        self.cv.wait()
+        self.cv.release()
 
 
     def __del__(self):
         self._running = False
-        
+
     def _on_remotely_updated_node(self, id):
-        # implement here listening for changed node
 
-        self.invalidate_lock.acquire()
+        if id not in self._updated_ids:
+            self._updated_ids.append(id)
 
-        if id not in self._invalid_ids:
-            self._invalid_ids.append(id)
 
-        self.invalidate_lock.release()
+    def _on_remotely_deleted_node(self, id):
+
+        self._len -= 1 # not atomic, but still fine since I'm the only one to write it
+        self._deleted_ids.append(id)
 
     def _get_more_node(self):
         
-        if not self._invalid_ids:
+        if not self._updated_ids:
             # release the lock
-            logger.debug("Waiting for new/updated nodes notifications...")
+            logger.warning("Slow propagation? Waiting for new/updated nodes notifications...")
             time.sleep(0.01) #leave some time for propagation
 
             # still empty? we have a problem!
-            if not self._invalid_ids:
+            if not self._updated_ids:
                 logger.error("Inconsistency detected! The server has not"\
                              " notified all the nodes updates. Or the "\
                              "IPC transport is really slow.")
                 raise Exception()
 
-        self.invalidate_lock.acquire()
-        # here, _invalid_ids is not empty. It should not raise an exception
-        id = self._invalid_ids.pop()
-        self.invalidate_lock.release()
+        # here, _updated_ids is not empty. It should not raise an exception
+        id = self._updated_ids.pop()
 
         self.rpc.send("get_node " + str(id))
         
@@ -96,17 +104,28 @@ class NodesProxy(Thread):
         updated_node = Node.deserialize(data)
         self._nodes[id] = updated_node
 
-        self.invalidate_lock.acquire()
         try:
-            self._invalid_ids.remove(id)
+            self._updated_ids.remove(id)
         except ValueError as ve:
             raise ve
-        finally:
-            self.invalidate_lock.release()
 
     def __getitem__(self, key):
 
         if type(key) is int:
+
+            # First, are we over the lenght of our node list?
+            if key >= self._len:
+                raise IndexError
+
+            # Then, do we have pending nodes to delete?
+            if self._deleted_ids:
+                tmp = copy.copy(self._deleted_ids)
+                for id in tmp:
+                    try:
+                        self._ids.remove(id)
+                        del(self._nodes[id])
+                    except ValueError:
+                        logger.warning("The node %s is already removed. Feels like a synchro issue..." % id)
 
             # not downloaded enough nodes yet?
             while key >= len(self._ids):
@@ -115,7 +134,7 @@ class NodesProxy(Thread):
             id = self._ids[key]
 
             # did the node changed since the last time we obtained it?
-            if id in self._invalid_ids:
+            if id in self._updated_ids:
                 self._update_node_from_remote(id)
 
             return self._nodes[id]
@@ -134,12 +153,45 @@ class NodesProxy(Thread):
         remote. IT DOES NOT DIRECTLY modify the local
         copy of nodes: the roundtrip is slower, but data
         consistency is easier to ensure.
+
+        This means that if you create or update a node, the
+        node won't be created/updated immediately. It will 
+        take some time (a couple of milliseconds) to propagate
+        the change.
+
+        Also, you have no guarantee regarding the ordering:
+
+        for instance,
+
+        >>> nodes.update(n1)
+        >>> nodes.update(n2)
+        
+        does not mean that nodes[0] = n1 and nodes[1] = n2.
+        This is due to the lazy access process.
+
+        However, once accessed once, nodes keep their index (until a
+        node which a smaller index is removed).
+
         """
-        id = node.id
-        self.rpc.send("update_node " + id)
-        self.rpc.recv() # server send a "get_node"
-        self.rpc.send(node.serialize())
+        self.rpc.send("update_node " + node.serialize())
         self.rpc.recv() # server send a "ack"
+
+    def remove(self, node):
+        """ Deletes a node from the node set.
+
+        THIS METHOD DOES NOT DIRECTLY delete the local
+        copy of the node: it tells instead the server to
+        delete this node for all clients.
+        the roundtrip is slower, but data consistency is easier to ensure.
+
+        This means that if you delete a node, the
+        node won't be actually deleted immediately. It will 
+        take some time (a couple of milliseconds) to propagate
+        the change.
+        """
+        self.rpc.send("delete_node " + node.id)
+        self.rpc.recv() # server send a "ack"
+
 
 
     def run(self):
@@ -147,6 +199,14 @@ class NodesProxy(Thread):
         invalidation_pub = self.context.socket(zmq.SUB)
         invalidation_pub.connect ("tcp://localhost:5556")
         invalidation_pub.setsockopt(zmq.SUBSCRIBE, "") # no filter
+
+        # wait until we receive something on the 'invalidation'
+        # channel. This makes sure we wont miss any following
+        # message
+        self.cv.acquire()
+        invalidation_pub.recv()
+        self.cv.notify_all()
+        self.cv.release()
 
         poller = zmq.Poller()
         poller.register(invalidation_pub, zmq.POLLIN)
@@ -157,24 +217,39 @@ class NodesProxy(Thread):
             if socks.get(invalidation_pub) == zmq.POLLIN:
                 action, id = invalidation_pub.recv().split()
                 if action == "update":
-                    netlogger.debug("Updated node: " + id)
+                    netlogger.debug("Request to update node: " + id)
                     self._on_remotely_updated_node(id)
                 elif action == "new":
-                    netlogger.debug("New node: " + id)
+                    netlogger.debug("Request to add node: " + id)
                     self._len += 1 # not atomic, but still fine since I'm the only one to write it
                     self._on_remotely_updated_node(id)
+                elif action == "delete":
+                    netlogger.debug("Request to delete node: " + id)
+                    self._on_remotely_deleted_node(id)
+                elif action == "nop":
+                    pass
 
 
 
 class WorldsProxy:
 
+    def __init__(self):
+        self._worlds = []
+
     def __getitem__(self, key):
         world = World(key)
+        self._worlds.append(world)
         world.scene.nodes = NodesProxy()
         return world
 
     def __setitem__(self, key, world):
         pass
+
+    def finalize(self):
+        for w in self._worlds:
+            logger.info("Closing world " + w.name)
+            w.scene.nodes._running = False
+            w.scene.nodes.join()
 
 class Context(object):
 
@@ -183,6 +258,15 @@ class Context(object):
         self.name = name
 
         self.worlds = WorldsProxy()
+
+    def __del__(self):
+        self.worlds.finalize()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self):
+        pass
 
     def __repr__(self):
         return "Underworlds context for " + self.name
