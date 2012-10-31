@@ -13,6 +13,9 @@ class Server(Thread):
         Thread.__init__(self)
         self._running = True
 
+    def delete_node(self, scene, id):
+        scene.nodes.remove(scene.node(id))
+
     def update_node(self, scene, node):
 
         if scene.node(node.id): # the node already exist
@@ -50,40 +53,45 @@ class Server(Thread):
             socks = dict(poller.poll(200))
             
             if socks.get(rpc) == zmq.POLLIN:
-                req = rpc.recv().split()
+                req = rpc.recv().split(" ",1)
+                cmd = req[0]
+                arg = ""
+                if len(req) == 2:
+                    arg = req[1]
 
-                logger.info("Received request: " + str(req))
+                logger.info("Received request: " + cmd + " " + arg)
 
-                name = req[0]
-
-                if name == "get_nodes_len":
+                if cmd == "get_nodes_len":
                     rpc.send(str(len(scene.nodes)))
 
-                elif name == "get_nodes_ids":
+                elif cmd == "get_nodes_ids":
                     rpc.send(json.dumps([n.id for n in scene.nodes]))
 
-                elif name == "get_node":
-                    id = req[1]
-                    rpc.send(scene.node(id).serialize())
+                elif cmd == "get_node":
+                    rpc.send(scene.node(arg).serialize())
 
-                elif name == "update_node":
-                    id = req[1]
-                    rpc.send("get_node " + id)
-                    data = rpc.recv()
+                elif cmd == "update_node":
+                    node = Node.deserialize(arg)
                     rpc.send("ack")
-                    node = Node.deserialize(data)
                     action = self.update_node(scene, node)
                     # tells everyone about the change
                     logger.debug("Sent invalidation action [" + action + "]")
                     invalidation.send(action)
+
+                elif cmd == "delete_node":
+                    rpc.send("ack")
+                    action = self.delete_node(scene, arg)
+                    # tells everyone about the change
+                    logger.debug("Sent invalidation action [delete]")
+                    invalidation.send(str("delete " + arg))
+
 
 
                 else:
                     logger.warning("Unknown request")
                     socket.send(json.dumps("unknown request"))
             else:
-                time.sleep(0.01)
-
+                invalidation.send("nop 0")
 
         logger.info("Closing the server.")
 
