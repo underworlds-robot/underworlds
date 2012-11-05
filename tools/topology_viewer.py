@@ -18,6 +18,7 @@ logging.basicConfig(level=logging.INFO)
 import time
 
 import underworlds
+from underworlds.types import *
 
 #colors
 COL_WORLDS = "FF9700"
@@ -85,7 +86,14 @@ class UnderworldsDotWindow(xdot.DotWindow):
                 
                 label += " ago)"
 
-                dotcode += '"%s" -> "%s" [label="%s", color="#%s", fontsize=8];\n' % (c, w, label, COL_EDGES)
+                # orient the arrow in the right direction
+                if type == READER:
+                    edge = '"%s" -> "%s"' % (w, c)
+                elif type == MONITOR:
+                    edge = '"%s" <-> "%s"' % (w, c)
+                else:
+                    edge = '"%s" -> "%s"' % (c, w)
+                dotcode += edge + ' [label="%s", color="#%s", fontsize=8];\n' % (label, COL_EDGES)
 
         dotcode += "}\n"
 
