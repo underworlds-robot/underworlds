@@ -8,13 +8,15 @@ import underworlds
 from underworlds.server import Server
 from underworlds.types import Node
 
+PROPAGATION_TIME=0.001 # time to wait for node update notification propagation (in sec)
+
 class TestSingleUser(unittest.TestCase):
 
     def setUp(self):
         print("\n\n-> test\n")
         self.server = Server()
         self.server.start()
-        time.sleep(0.5) # leave some time to the server to start
+        time.sleep(0.1) # leave some time to the server to start
 
         self.ctx = underworlds.Context("unittest - single user")
 
@@ -41,8 +43,7 @@ class TestSingleUser(unittest.TestCase):
         n.name = "test"
         nodes.update(n)
 
-        print("TATA")
-        time.sleep(0.1) # wait for propagation
+        time.sleep(PROPAGATION_TIME) # wait for propagation
         self.assertEquals(len(nodes), 2)
 
         # Get another reference to the 'base' world, and check
@@ -63,32 +64,26 @@ class TestSingleUser(unittest.TestCase):
         n2.name = "test2"
         nodes.update(n2)
 
-        time.sleep(0.1) # wait for propagation
-        print("TOTO")
+        time.sleep(PROPAGATION_TIME) # wait for propagation
         self.assertEquals(len(nodes2), 3)
 
         names2 = [n.name for n in nodes2]
         self.assertSetEqual(set(names2), {"root", "test", "test2"})
         # ensure the ordering is maintained
-        self.assertListEqual(names, names[:2])
+        self.assertListEqual(names, names2[:2])
 
         # Now alter 'world2' and make sure 'world' is updated accordingly
         n3 = Node()
         n3.name = "test3"
         nodes2.update(n3)
 
-        time.sleep(0.1) # wait for propagation
+        time.sleep(PROPAGATION_TIME) # wait for propagation
         self.assertEquals(len(nodes), 4)
         names3 = [n.name for n in nodes]
         self.assertSetEqual(set(names3), {"root", "test", "test2", "test3"})
 
-        # check the order as well
-        self.assertEquals(nodes[0].name, "root")
-        self.assertEquals(nodes[1].name, "test")
-        self.assertEquals(nodes[2].name, "test2")
-        self.assertEquals(nodes[3].name, "test3")
+    def test_removing_nodes(self):
 
-    def _test_removing_nodes(self):
         world = self.ctx.worlds["base"]
         nodes = world.scene.nodes
         
@@ -102,6 +97,7 @@ class TestSingleUser(unittest.TestCase):
         n3.name = "test3"
         nodes.update(n3)
 
+        time.sleep(PROPAGATION_TIME) # wait for propagation
         self.assertEquals(len(nodes), 4)
 
         # Get another reference to the 'base' world, and check
@@ -110,29 +106,37 @@ class TestSingleUser(unittest.TestCase):
         nodes2 = world.scene.nodes
         self.assertEquals(len(nodes2), 4)
 
+        names = [n.name for n in nodes2] # store the order
+
         # Now, remove a node at the end
         nodes.remove(n3)
+        time.sleep(PROPAGATION_TIME) # wait for propagation
 
         self.assertEquals(len(nodes2), 3)
-        self.assertEquals(nodes2[0].name, "root")
-        self.assertEquals(nodes2[1].name, "test")
-        self.assertEquals(nodes2[2].name, "test2")
+        names2 = [n.name for n in nodes2]
+        names.remove(n3.name)
+        self.assertListEqual(names, names2)
 
         # Now, remove a node in the middle
         nodes.remove(n)
+        time.sleep(PROPAGATION_TIME) # wait for propagation
 
         self.assertEquals(len(nodes2), 2)
-        self.assertEquals(nodes2[0].name, "root")
-        self.assertEquals(nodes2[1].name, "test2")
+        names2 = [n.name for n in nodes2]
+        names.remove(n.name)
+        self.assertListEqual(names, names2)
+
 
         # Check the order is still ok if I append a node again
         nodes.update(n)
+        time.sleep(PROPAGATION_TIME) # wait for propagation
+
         self.assertEquals(len(nodes2), 3)
-        self.assertEquals(nodes2[0].name, "root")
-        self.assertEquals(nodes2[1].name, "test2")
-        self.assertEquals(nodes2[2].name, "test")
+        names2 = [n.name for n in nodes2]
+        self.assertListEqual(names, names2[:2])
 
     def tearDown(self):
+        self.ctx.close()
         self.server.stop()
         self.server.join()
 

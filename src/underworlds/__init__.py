@@ -262,7 +262,7 @@ class WorldsProxy:
 
     def finalize(self):
         for w in self._worlds:
-            logger.info("Closing world " + w.name)
+            logger.debug("Context [%s]: Closing world <%s>" % (self._ctx.name, w.name))
             w.scene.nodes._running = False
             w.scene.nodes.join()
 
@@ -302,7 +302,13 @@ class Context(object):
 
         return json.loads(self.rpc.recv())
 
-    def __del__(self):
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.close()
+
+    def close(self):
         logger.info("Closing context [%s]..." % self.name)
         self.worlds.finalize()
         logger.info("The context [%s] is now closed." % self.name)
