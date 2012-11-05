@@ -17,16 +17,15 @@ from underworlds.types import World, Node
 #TODO: inherit for a collections.MutableSequence? what is the benefit?
 class NodesProxy(threading.Thread):
 
-    def __init__(self):
+    def __init__(self, context, world):
         threading.Thread.__init__(self)
 
-        self.context = zmq.Context()
-        netlogger.debug("Connecting to underworlds server...")
-        self.rpc = self.context.socket(zmq.REQ)
-        self.rpc.connect ("tcp://localhost:5555")
+        self._ctx = context # current underworlds context (useful to know the client name)
+        self._world = world
 
-        self.rpc.send("get_nodes_len")
-        self._len = int(self.rpc.recv())
+
+        self.send("get_nodes_len")
+        self._len = int(self._ctx.rpc.recv())
 
         self._nodes = {} # node store
 
@@ -41,8 +40,8 @@ class NodesProxy(threading.Thread):
 
         # list of invalid ids (ie, nodes that have remotely changed).
         # This list is updated asynchronously from a server publisher
-        self.rpc.send("get_nodes_ids")
-        self._updated_ids = deque(json.loads(self.rpc.recv()))
+        self.send("get_nodes_ids")
+        self._updated_ids = deque(json.loads(self._ctx.rpc.recv()))
 
         self._deleted_ids = deque()
 
@@ -57,9 +56,17 @@ class NodesProxy(threading.Thread):
         self.cv.wait()
         self.cv.release()
 
-
     def __del__(self):
         self._running = False
+
+    def send(self, msg):
+
+        req = {"client":self._ctx.name,
+               "world": self._world.name,
+               "req": msg}
+
+        self._ctx.rpc.send(json.dumps(req))
+
 
     def _on_remotely_updated_node(self, id):
 
@@ -89,18 +96,18 @@ class NodesProxy(threading.Thread):
         # here, _updated_ids is not empty. It should not raise an exception
         id = self._updated_ids.pop()
 
-        self.rpc.send("get_node " + str(id))
+        self.send("get_node " + str(id))
         
         self._ids.append(id)
-        data = self.rpc.recv()
+        data = self._ctx.rpc.recv()
         self._nodes[id] = Node.deserialize(data)
 
 
     def _update_node_from_remote(self, id):
 
-        self.rpc.send("get_node " + id)
+        self.send("get_node " + id)
 
-        data = self.rpc.recv()
+        data = self._ctx.rpc.recv()
         updated_node = Node.deserialize(data)
         self._nodes[id] = updated_node
 
@@ -173,8 +180,8 @@ class NodesProxy(threading.Thread):
         node which a smaller index is removed).
 
         """
-        self.rpc.send("update_node " + node.serialize())
-        self.rpc.recv() # server send a "ack"
+        self.send("update_node " + node.serialize())
+        self._ctx.rpc.recv() # server send a "ack"
 
     def remove(self, node):
         """ Deletes a node from the node set.
@@ -189,14 +196,14 @@ class NodesProxy(threading.Thread):
         take some time (a couple of milliseconds) to propagate
         the change.
         """
-        self.rpc.send("delete_node " + node.id)
-        self.rpc.recv() # server send a "ack"
+        self.send("delete_node " + node.id)
+        self._ctx.rpc.recv() # server send a "ack"
 
 
 
     def run(self):
         #implement here the listener for model updates
-        invalidation_pub = self.context.socket(zmq.SUB)
+        invalidation_pub = self._ctx.zmq_context.socket(zmq.SUB)
         invalidation_pub.connect ("tcp://localhost:5556")
         invalidation_pub.setsockopt(zmq.SUBSCRIBE, "") # no filter
 
@@ -233,13 +240,16 @@ class NodesProxy(threading.Thread):
 
 class WorldsProxy:
 
-    def __init__(self):
+    def __init__(self, ctx):
+
+        self._ctx = ctx # context
+
         self._worlds = []
 
     def __getitem__(self, key):
         world = World(key)
         self._worlds.append(world)
-        world.scene.nodes = NodesProxy()
+        world.scene.nodes = NodesProxy(self._ctx, world)
         return world
 
     def __setitem__(self, key, world):
@@ -257,16 +267,40 @@ class Context(object):
 
         self.name = name
 
-        self.worlds = WorldsProxy()
+        self.zmq_context = zmq.Context()
+        self.rpc = self.zmq_context.socket(zmq.REQ)
+        self.rpc.connect ("tcp://localhost:5555")
+
+        logger.info("Connecting to the underworlds server...")
+        self.send(b"helo %s" % name)
+        self.rpc.recv()
+        logger.info("...done.")
+
+        self.worlds = WorldsProxy(self)
+
+    def send(self, msg):
+
+        req = {"client":self.name,
+               "req": msg}
+
+        self.rpc.send(json.dumps(req))
+
+    def topology(self):
+        """Returns the current topology to the underworlds environment.
+
+        It returns a dictionary with two members:
+        - 'clients': a dictionary with clients' names known to the system
+        as keys, and a dictionary of {world name: link type} as values.
+        - 'worlds': a list of all worlds known to the system
+        """
+        self.send("get_topology")
+
+        return json.loads(self.rpc.recv())
 
     def __del__(self):
+        logger.info("Closing context [%s]..." % self.name)
         self.worlds.finalize()
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self):
-        pass
+        logger.info("The context [%s] is now closed." % self.name)
 
     def __repr__(self):
         return "Underworlds context for " + self.name

@@ -1,6 +1,12 @@
 import uuid
 import copy, json
 
+# Clients types
+READER = "READER"
+PROVIDER = "PROVIDER"
+MONITOR = "MONITOR"
+FILTER = "FILTER"
+
 
 # Node types
 UNDEFINED = 0
@@ -16,7 +22,7 @@ class Node():
         ################################################################
         self.id = str(uuid.uuid4())
         self.name = name
-        self.type = type #one of the constant defined in Node.py
+        self.type = type #one of the node constant defined in types.py
         self.parent = None
         self.children = []
         self.entity = None #if the node belongs to a group  (like a complex object), the node that represent this entity.
@@ -51,7 +57,7 @@ class Node():
 
         for key, value in data.items():
             if hasattr(n, key):
-                setattr(n, str(key), str(value))
+                setattr(n, str(key), value)
         #n.__dict__ = data
         return n
 
