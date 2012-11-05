@@ -87,9 +87,9 @@ class TestSingleUser(unittest.TestCase):
         world = self.ctx.worlds["base"]
         nodes = world.scene.nodes
         
-        n = Node()
-        n.name = "test"
-        nodes.update(n)
+        n1 = Node()
+        n1.name = "test"
+        nodes.update(n1)
         n2 = Node()
         n2.name = "test2"
         nodes.update(n2)
@@ -103,10 +103,10 @@ class TestSingleUser(unittest.TestCase):
         # Get another reference to the 'base' world, and check
         # our nodes are here.
         world2 = self.ctx.worlds["base"]
-        nodes2 = world.scene.nodes
+        nodes2 = world2.scene.nodes
         self.assertEquals(len(nodes2), 4)
 
-        names = [n.name for n in nodes2] # store the order
+        names = [n.name for n in nodes2] # store the order.
 
         # Now, remove a node at the end
         nodes.remove(n3)
@@ -118,17 +118,18 @@ class TestSingleUser(unittest.TestCase):
         self.assertListEqual(names, names2)
 
         # Now, remove a node in the middle
-        nodes.remove(n)
+        nodes.remove(n1)
         time.sleep(PROPAGATION_TIME) # wait for propagation
 
         self.assertEquals(len(nodes2), 2)
         names2 = [n.name for n in nodes2]
-        names.remove(n.name)
+        names.remove(n1.name)
+        print("After two removals: %s" % names2)
         self.assertListEqual(names, names2)
 
 
         # Check the order is still ok if I append a node again
-        nodes.update(n)
+        nodes.update(n1)
         time.sleep(PROPAGATION_TIME) # wait for propagation
 
         self.assertEquals(len(nodes2), 3)

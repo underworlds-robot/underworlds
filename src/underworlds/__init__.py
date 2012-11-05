@@ -131,6 +131,7 @@ class NodesProxy(threading.Thread):
                     try:
                         self._ids.remove(id)
                         del(self._nodes[id])
+                        self._deleted_ids.remove(id)
                     except ValueError:
                         logger.warning("The node %s is already removed. Feels like a synchro issue..." % id)
 
