@@ -121,7 +121,7 @@ class Server(Thread):
                     action = self.update_node(scene, node)
                     # tells everyone about the change
                     logger.debug("Sent invalidation action [" + action + "]")
-                    invalidation.send(action)
+                    invalidation.send(str("%s### %s" % (world, action)))
 
                 elif cmd == "delete_node":
                     self.update_current_links(client, world, PROVIDER)
@@ -129,7 +129,7 @@ class Server(Thread):
                     action = self.delete_node(scene, arg)
                     # tells everyone about the change
                     logger.debug("Sent invalidation action [delete]")
-                    invalidation.send(str("delete " + arg))
+                    invalidation.send(str("%s### delete %s" % (world, arg)))
 
                 elif cmd == "get_topology":
                     rpc.send(json.dumps(self.get_current_topology()))
@@ -139,7 +139,7 @@ class Server(Thread):
                     logger.warning("Unknown request <%s>" % cmd)
                     rpc.send(str("unknown request"))
             else:
-                invalidation.send("nop 0")
+                invalidation.send(str("nop"))
 
         logger.info("Closing the server.")
 

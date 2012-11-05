@@ -214,6 +214,10 @@ class NodesProxy(threading.Thread):
         invalidation_pub.recv()
         self.cv.notify_all()
         self.cv.release()
+    
+        # receive only invalidation requests for my current world
+        invalidation_pub.setsockopt(zmq.UNSUBSCRIBE, "")
+        invalidation_pub.setsockopt(zmq.SUBSCRIBE, self._world.name)
 
         poller = zmq.Poller()
         poller.register(invalidation_pub, zmq.POLLIN)
@@ -222,7 +226,8 @@ class NodesProxy(threading.Thread):
             socks = dict(poller.poll(200))
             
             if socks.get(invalidation_pub) == zmq.POLLIN:
-                action, id = invalidation_pub.recv().split()
+                world, req = invalidation_pub.recv().split("###")
+                action, id = req.strip().split()
                 if action == "update":
                     netlogger.debug("Request to update node: " + id)
                     self._on_remotely_updated_node(id)
