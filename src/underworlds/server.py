@@ -24,11 +24,11 @@ class Server(Thread):
 
     def update_current_links(self, client, world, type):
         if world in self._clients[client]:
-            current_type = self._clients[client][world]
+            current_type = self._clients[client][world][0]
             # update only if the current link is 'READER' (we do not 
             # want a 'READER' to overwrite a 'PROVIDER' for instance)
             type = type if current_type == READER else current_type
-        self._clients[client][world] = type
+        self._clients[client][world] = (type, time.time())
 
     def new_world(self, name):
         self._worlds[name] = World(name)

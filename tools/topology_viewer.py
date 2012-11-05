@@ -15,11 +15,13 @@ except ImportError:
 import logging; logger = logging.getLogger("underworlds")
 logging.basicConfig(level=logging.INFO)
 
+import time
 
 import underworlds
 
 #colors
 COL_WORLDS = "FF9700"
+COL_WORLDS_BORDER = "A66200"
 COL_CLIENTS = "00AB6F"
 COL_EDGES = "0E0874"
 
@@ -68,8 +70,22 @@ class UnderworldsDotWindow(xdot.DotWindow):
             dotcode += '"%s" [color="#%s", style=filled];\n' % (c, COL_CLIENTS)
 
         for c, links in topo["clients"].items():
-            for w, type in links.items():
-                dotcode += '"%s" -> "%s" [label="%s", color="#%s", fontsize=10];\n' % (c, w, type.lower(), COL_EDGES)
+            for w, details in links.items():
+                type, timestamp = details
+
+                last_activity = time.time() - timestamp
+                
+                label = "%s\\n(last activity: " % type.lower()
+                if last_activity < 2:
+                    label += "%d ms" % (last_activity * 1000)
+                elif last_activity > 60:
+                    label += "%d min" % (last_activity / 60)
+                else:
+                    label += "%.2f sec" % last_activity
+                
+                label += " ago)"
+
+                dotcode += '"%s" -> "%s" [label="%s", color="#%s", fontsize=8];\n' % (c, w, label, COL_EDGES)
 
         dotcode += "}\n"
 

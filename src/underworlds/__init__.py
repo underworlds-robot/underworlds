@@ -296,7 +296,8 @@ class Context(object):
 
         It returns a dictionary with two members:
         - 'clients': a dictionary with clients' names known to the system
-        as keys, and a dictionary of {world name: link type} as values.
+        as keys, and a dictionary of {world name: (link type, timestamp of
+        last activity)} as values.
         - 'worlds': a list of all worlds known to the system
         """
         self.send("get_topology")
