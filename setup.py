@@ -10,7 +10,8 @@ setup(name='underworlds',
       author_email='slemaign@laas.fr',
       url='http://www.openrobots.org/underworlds',
       package_dir = {'': 'src'},
-      packages=['underworlds'],
+      scripts=['scripts/underworlds'],
+      packages=['underworlds', 'underworlds.helpers'],
       data_files=[('share/doc/underworlds', ['LICENSE'])],
       requires=["pyassimp"]
       )

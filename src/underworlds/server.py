@@ -97,7 +97,7 @@ class Server(Thread):
                 if len(req) == 2:
                     arg = req[1]
 
-                logger.info("Received request: <%s(%s)> from %s on world %s" % (cmd, arg, client, world))
+                logger.debug("Received request: <%s(%s)> from %s on world %s" % (cmd, arg, client, world))
 
                 if cmd == "helo":
                     self.new_client(client)

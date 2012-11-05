@@ -1,0 +1,55 @@
+#!/usr/bin/env python
+
+import sys, time
+
+LOGFILE = '/tmp/underworlds_server.log'
+
+import logging
+import logging.handlers
+
+logger = logging.getLogger("underworlds")
+
+logger.setLevel(logging.DEBUG)
+#syslog = logging.handlers.SysLogHandler(address='/dev/log')
+#logger.addHandler(syslog)
+filelog = logging.FileHandler(LOGFILE)
+formatter = logging.Formatter("[%(asctime)s - %(levelname)s] %(message)s")
+filelog.setFormatter(formatter)
+logger.addHandler(filelog)
+
+from underworlds.helpers.daemon import Daemon
+from underworlds.server import Server
+
+
+class UnderworldsServer(Daemon):
+        def run(self):
+            server = Server()
+            server.start()
+
+if __name__ == "__main__":
+        daemon = UnderworldsServer('/tmp/underworlds-server.pid')
+        if len(sys.argv) == 2:
+                if 'start' == sys.argv[1]:
+                        print("underworlds server started. Logs go to %s" % LOGFILE)
+                        daemon.start()
+                elif 'stop' == sys.argv[1]:
+                        ret = daemon.stop()
+                        if ret:
+                            print("underworlds server stopped.")
+                            sys.exit(0)
+                        else:
+                            sys.exit(1)
+                elif 'restart' == sys.argv[1]:
+                        print("underworlds server restarted. Logs go to %s" % LOGFILE)
+                        daemon.restart()
+                else:
+                        print "Unknown command"
+                        sys.exit(2)
+                sys.exit(0)
+        else:
+                print "usage: %s start|stop|restart" % sys.argv[0]
+                sys.exit(2)
+
+
+
+
