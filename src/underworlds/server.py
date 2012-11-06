@@ -56,9 +56,14 @@ class Server(Thread):
     def stop(self):
         self._running = False
 
+    def uptime(self):
+        return time.time() - self.starttime
+
     def run(self):
 
         logger.info("Starting the server.")
+
+        self.starttime = time.time()
 
         context = zmq.Context()
         rpc = context.socket(zmq.REP)
@@ -103,6 +108,8 @@ class Server(Thread):
                     self.new_client(client)
                     rpc.send(str("helo " + client))
 
+                elif cmd == "uptime":
+                    rpc.send(str(self.uptime()))
 
                 elif cmd == "get_nodes_len":
                     rpc.send(str(len(scene.nodes)))

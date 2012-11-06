@@ -304,6 +304,13 @@ class Context(object):
 
         return json.loads(self.rpc.recv())
 
+    def uptime(self):
+        """Returns the server uptime in seconds.
+        """
+        self.send("uptime")
+        return float(self.rpc.recv())
+
+
     def __enter__(self):
         return self
 

@@ -17,6 +17,7 @@ import logging; logger = logging.getLogger("underworlds")
 logging.basicConfig(level=logging.INFO)
 
 import time
+import dateutil.relativedelta
 
 import underworlds
 from underworlds.types import *
@@ -195,7 +196,9 @@ class UnderworldsDotWindow(xdot.DotWindow):
 
     def on_reload(self, action):
         self.set_dotcode(self.get_topology())
-        self.set_title('Underworlds Topology Viewer')
+
+        uptime = dateutil.relativedelta.relativedelta(seconds = self._ctx.uptime())
+        self.set_title("Underworlds Topology Viewer - uptime: %dh%d'%d''" % (uptime.hours + (uptime.days * 24), uptime.minutes, uptime.seconds))
 
     def on_node_clicked(self, widget, url, event):
         dialog = gtk.MessageDialog(
