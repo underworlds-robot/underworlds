@@ -15,6 +15,14 @@ class Server(Thread):
         self._worlds = {}
         self._clients = {} # for each client, stored the links (cf clients' types) with the various worlds.
 
+        # meshes are stored as a dictionary:
+        # - the key is a unique ID
+        # - the value is a ditionary with these keys:
+        #   - vertices: [(x,y,z), ...]
+        #   - faces: [(i1, i2, i3), ...] with i an index in the vertices list
+        #   - normals
+        self.meshes = {}
+
     def new_client(self, name):
         if name not in self._clients:
             self._clients[name] = {}
@@ -139,6 +147,16 @@ class Server(Thread):
                     # tells everyone about the change
                     logger.debug("Sent invalidation action [delete]")
                     invalidation.send(str("%s### delete %s" % (world, arg)))
+
+                elif cmd == "push_mesh":
+                    mesh_id = arg
+                    rpc.send("ack")
+                    self.meshes[mesh_id] = json.loads(rpc.recv())
+                    rpc.send("ack")
+
+                elif cmd == "get_mesh":
+                    rpc.send(json.dumps(self.meshes[mesh_id]))
+
 
                 elif cmd == "get_topology":
                     rpc.send(json.dumps(self.get_current_topology()))

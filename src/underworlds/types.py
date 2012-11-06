@@ -28,7 +28,7 @@ class Node():
         self.parent = None
         self.children = []
         self.entity = None #if the node belongs to a group  (like a complex object), the node that represent this entity.
-        self.transformation = None # 4x4 transformation matrix, relative to parent. Stored as a list, row major.
+        self.transformation = None # 4x4 transformation matrix, relative to parent. Stored as a list of lists.
         self.properties = {}
         self.last_update = time.time()
         ################################################################

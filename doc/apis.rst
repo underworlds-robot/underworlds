@@ -29,11 +29,10 @@ Type specific properties:
  * MESH
    * <vec3f, vec3f> aabb: axis-aligned bounding box
    * <vec3f, vec3f, vec3f, vec3f> bb: bounding box
-   * <id> cad: if available, the mesh ID of a CAD model associated to the node
-   * <id> highres: a high resolution mesh representing the node
-   * <id> lowres: a low resolution mesh representing the node
+   * <id*> cad: if available, the set of mesh ID of the CAD model associated to the node
+   * <id*> hires: a high resolution model representing the node
+   * <id*> lowres: a low resolution model representing the node
    * <id> collision: a mesh suited for collision detection
-   * [?] <id*> meshes: a list of mesh IDs
    * <float> mass
    * <vec3f> centerofmass: if defined, in the node frame. By default, the node origin.
    * <vec3f> lookat: if defined, the direction vector of the object. Meaningful only for objects that have a well identified face.
