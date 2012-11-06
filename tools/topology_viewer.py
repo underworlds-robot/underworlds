@@ -262,12 +262,12 @@ class UnderworldsWorldWindow(UnderworldsWindow):
             
             label += " ago)"
 
-            dotcode += '"%s" [label="%s", color="#%s", %s];\n' % (n, label, color, shape)
+            dotcode += '"%s" [label="%s", color="#%s", %s];\n' % (n.id, label, color, shape)
 
         for n in self.nodes:
             for c in n.children:
 
-                dotcode += '"%s" -> "%s" [color="#%s"];\n' % (n, self.nodes[c], COL_EDGES)
+                dotcode += '"%s" -> "%s" [color="#%s"];\n' % (n.id, self.nodes[c].id, COL_EDGES)
 
         dotcode += "}\n"
 
