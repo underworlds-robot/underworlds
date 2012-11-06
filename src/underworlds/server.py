@@ -42,6 +42,8 @@ class Server(Thread):
 
     def update_node(self, scene, node):
 
+        node.last_update = time.time()
+
         if scene.node(node.id): # the node already exist
             # replace the node
             scene.nodes = [node if old == node else old for old in scene.nodes]

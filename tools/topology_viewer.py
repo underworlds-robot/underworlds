@@ -248,25 +248,24 @@ class UnderworldsWorldWindow(UnderworldsWindow):
             elif n.type == ENTITY:
                 color = COL_NODE_ENTITY
 
-            dotcode += '"%s" [color="#%s", %s];\n' % (n, color, shape)
+            last_activity = time.time() - n.last_update
+            
+            heat = max(0.0, 1.0 - (last_activity / 30))
+            
+            label = "%s\\n(last update: " % n
+            if last_activity < 2:
+                label += "%d ms" % (last_activity * 1000)
+            elif last_activity > 60:
+                label += "%d min" % (last_activity / 60)
+            else:
+                label += "%.2f sec" % last_activity
+            
+            label += " ago)"
+
+            dotcode += '"%s" [label="%s", color="#%s", %s];\n' % (n, label, color, shape)
 
         for n in self.nodes:
             for c in n.children:
-            #type, timestamp = details
-
-            #last_activity = time.time() - timestamp
-            #
-            #heat = max(0.0, 1.0 - (last_activity / 30))
-            #
-            #label = "%s\\n(last activity: " % type.lower()
-            #if last_activity < 2:
-            #    label += "%d ms" % (last_activity * 1000)
-            #elif last_activity > 60:
-            #    label += "%d min" % (last_activity / 60)
-            #else:
-            #    label += "%.2f sec" % last_activity
-            #
-            #label += " ago)"
 
                 dotcode += '"%s" -> "%s" [color="#%s"];\n' % (n, self.nodes[c], COL_EDGES)
 

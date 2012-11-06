@@ -1,5 +1,7 @@
 import uuid
-import copy, json
+import copy
+import json
+import time
 
 # Clients types
 READER = "READER"
@@ -28,6 +30,7 @@ class Node():
         self.entity = None #if the node belongs to a group  (like a complex object), the node that represent this entity.
         self.transformation = None # 4x4 transformation matrix, relative to parent. Stored as a list, row major.
         self.properties = {}
+        self.last_update = time.time()
         ################################################################
         ##                     END OF THE API                         ##
         ################################################################
@@ -56,8 +59,7 @@ class Node():
         data = json.loads(serialized)
 
         for key, value in data.items():
-            if hasattr(n, key):
-                setattr(n, str(key), value)
+            setattr(n, str(key), value)
         #n.__dict__ = data
         return n
 
