@@ -4,6 +4,7 @@ import sys
 sys.path.append("/usr/share/xdot") # Debian bug in xdot packaging. cf http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=679532
 import gtk
 import gtk.gdk
+import gobject
 
 try:
     import xdot
@@ -33,6 +34,8 @@ class UnderworldsDotWindow(xdot.DotWindow):
         <toolbar name="ToolBar">
             <toolitem action="Reload"/>
             <separator/>
+            <toolitem action="Autorefresh"/>
+            <separator/>
             <toolitem action="ZoomIn"/>
             <toolitem action="ZoomOut"/>
             <toolitem action="ZoomFit"/>
@@ -45,10 +48,15 @@ class UnderworldsDotWindow(xdot.DotWindow):
         xdot.DotWindow.__init__(self)
 
 
+        self.autorefresh = False
+
         # Create actions
         actiongroup = gtk.ActionGroup('ReloadAction')
         actiongroup.add_actions((
-            ('Reload', gtk.STOCK_REFRESH, None, None, None, self.on_reload),
+            ('Reload', gtk.STOCK_REFRESH, None, None, "Reload the topology", self.on_reload),
+        ))
+        actiongroup.add_toggle_actions((
+            ('Autorefresh', gtk.STOCK_MEDIA_PLAY, None, None, "Autorefresh", self.toggle_autorefresh, False),
         ))
 
         # Add the actiongroup to the uimanager
@@ -98,6 +106,17 @@ class UnderworldsDotWindow(xdot.DotWindow):
         dotcode += "}\n"
 
         return dotcode
+
+    def toggle_autorefresh(self, action):
+        if self.autorefresh:
+            self.autorefresh = False
+        else:
+            self.autorefresh = True
+            gobject.timeout_add(200, self.autoupdate)
+
+    def autoupdate(self):
+        self.on_reload(None)
+        return self.autorefresh
 
     def on_reload(self, action):
         self.set_dotcode(self.get_topology())
