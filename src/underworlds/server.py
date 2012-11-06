@@ -149,9 +149,8 @@ class Server(Thread):
                     invalidation.send(str("%s### delete %s" % (world, arg)))
 
                 elif cmd == "push_mesh":
-                    mesh_id = arg
-                    rpc.send("ack")
-                    self.meshes[mesh_id] = json.loads(rpc.recv())
+                    mesh_id, data = arg.split(" ",1)
+                    self.meshes[mesh_id] = json.loads(data)
                     rpc.send("ack")
 
                 elif cmd == "get_mesh":

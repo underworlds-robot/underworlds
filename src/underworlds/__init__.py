@@ -327,12 +327,12 @@ class Context(object):
         return float(self.rpc.recv())
 
     def push_mesh(self, id, vertices, faces, normals):
-        self.send("push_mesh %s" % id)
-        self.rpc.recv()
-        self.rpc.send(json.dumps(
+        data = json.dumps(
             {"vertices": vertices,
              "faces": faces,
-             "normals": normals}))
+             "normals": normals})
+
+        self.send("push_mesh %s %s" % (id, data))
         self.rpc.recv()
 
     def mesh(self, id):
