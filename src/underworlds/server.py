@@ -129,7 +129,12 @@ class Server(Thread):
 
                 elif cmd == "get_node":
                     self.update_current_links(client, world, READER)
-                    rpc.send(scene.node(arg).serialize())
+                    node = scene.node(arg)
+                    if not node:
+                        logger.warning("Client %s has required a inexistant node %s" % (client, arg))
+                        rpc.send("")
+                    else:
+                        rpc.send(scene.node(arg).serialize())
 
                 elif cmd == "update_node":
                     self.update_current_links(client, world, PROVIDER)
