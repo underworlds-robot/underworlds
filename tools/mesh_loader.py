@@ -4,6 +4,7 @@
 import sys
 import uuid
 from pyassimp import core as pyassimp
+from pyassimp.postprocess import *
 
 import logging; logger = logging.getLogger("underworlds.mesh_loader")
 logging.basicConfig(level=logging.INFO)
@@ -62,7 +63,7 @@ def load(filename):
     """
 
     with underworlds.Context("mesh loader") as ctx:
-        model = pyassimp.load(filename)
+        model = pyassimp.load(filename, aiProcessPreset_TargetRealtime_MaxQuality)
         world = ctx.worlds[DEST_WORLD]
         nodes = world.scene.nodes
         logger.info("Nodes found:")
