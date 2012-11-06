@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import os
 import sys
 sys.path.append("/usr/share/xdot") # Debian bug in xdot packaging. cf http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=679532
 import gtk
@@ -27,6 +28,11 @@ COL_WORLDS = "FF9700"
 COL_WORLDS_BORDER = "A66200"
 COL_CLIENTS = "00AB6F"
 COL_EDGES = "0E0874"
+
+COL_NODE_MESH = "8805A8"
+COL_NODE_CAMERA = "569700"
+COL_NODE_ENTITY = "FFDE00"
+COL_NODE_UNDEFINED = "DEDEDE"
 
 def heat_to_rgb(v, maxvalue = 1.0, minvalue = 0.0):
     min_visible_wavelength = 450.0
@@ -100,7 +106,7 @@ def wavelength_to_rgb(wl):
 
     return (r,g,b)
 
-class UnderworldsDotWindow(xdot.DotWindow):
+class UnderworldsWindow(xdot.DotWindow):
 
     ui = '''
     <ui>
@@ -116,6 +122,8 @@ class UnderworldsDotWindow(xdot.DotWindow):
         </toolbar>
     </ui>
     '''
+
+    base_name = "Underworlds Viewer"
 
     def __init__(self):
         xdot.DotWindow.__init__(self)
@@ -135,18 +143,44 @@ class UnderworldsDotWindow(xdot.DotWindow):
         # Add the actiongroup to the uimanager
         self.uimanager.insert_action_group(actiongroup)
 
-
         self.widget.connect('clicked', self.on_node_clicked)
 
         self._ctx = underworlds.Context("topology observer")
 
-    def get_topology(self):
+    def toggle_autorefresh(self, action):
+        if self.autorefresh:
+            self.autorefresh = False
+        else:
+            self.autorefresh = True
+            gobject.timeout_add(200, self.autoupdate)
+
+    def get_dot_content(self):
+        pass
+
+    def autoupdate(self):
+        self.on_reload(None)
+        return self.autorefresh
+
+    def on_reload(self, action):
+        self.set_dotcode(self.get_dot_content())
+
+        uptime = dateutil.relativedelta.relativedelta(seconds = self._ctx.uptime())
+        self.set_title(self.base_name + " - uptime: %dh%02d'%02d''" % (uptime.hours + (uptime.days * 24), uptime.minutes, uptime.seconds))
+
+    def on_node_clicked(self, widget, url, event):
+        pass
+
+class UnderworldsTopologyWindow(UnderworldsWindow):
+    
+    base_name = "Underworlds Topology Viewer"
+
+    def get_dot_content(self):
         topo = self._ctx.topology()
 
         dotcode = "digraph G {\n"
 
         for w in topo["worlds"]:
-            dotcode += '"%s" [color="#%s", shape=box, style=filled];\n' % (w, COL_WORLDS)
+            dotcode += '"%s" [color="#%s", shape=box, style=filled, URL="%s"];\n' % (w, COL_WORLDS, w)
 
         for c in topo["clients"].keys():
             dotcode += '"%s" [color="#%s", style=filled];\n' % (c, COL_CLIENTS)
@@ -177,40 +211,77 @@ class UnderworldsDotWindow(xdot.DotWindow):
                 else:
                     edge = '"%s" -> "%s"' % (c, w)
                 dotcode += edge + ' [label="%s", color="#%s", fontsize=8];\n' % (label, heat_to_rgb(heat))
-                #dotcode += edge + ' [label="%s", color="#%s", fontsize=8];\n' % (label, COL_EDGES)
 
         dotcode += "}\n"
 
         return dotcode
 
-    def toggle_autorefresh(self, action):
-        if self.autorefresh:
-            self.autorefresh = False
-        else:
-            self.autorefresh = True
-            gobject.timeout_add(200, self.autoupdate)
+    def on_node_clicked(self, widget, world, event):
+        window = UnderworldsWorldWindow(world)
+        window.on_reload(None)
 
-    def autoupdate(self):
-        self.on_reload(None)
-        return self.autorefresh
 
-    def on_reload(self, action):
-        self.set_dotcode(self.get_topology())
+class UnderworldsWorldWindow(UnderworldsWindow):
 
-        uptime = dateutil.relativedelta.relativedelta(seconds = self._ctx.uptime())
-        self.set_title("Underworlds Topology Viewer - uptime: %dh%d'%d''" % (uptime.hours + (uptime.days * 24), uptime.minutes, uptime.seconds))
+
+    def __init__(self, world):
+        UnderworldsWindow.__init__(self)
+
+        self.base_name = "Underworlds World Explorer: <%s>" % world
+        self.world = self._ctx.worlds[world]
+        self.nodes = self.world.scene.nodes
+
+    def get_dot_content(self):
+
+
+
+        dotcode = "digraph G {\n"
+
+        for n in self.nodes:
+            shape = "shape=box, style=filled"
+            color = COL_NODE_UNDEFINED
+            if n.type == MESH:
+                shape = "shape=box3d"
+                color = COL_NODE_MESH
+            elif n.type == CAMERA:
+                color = COL_NODE_CAMERA
+            elif n.type == ENTITY:
+                color = COL_NODE_ENTITY
+
+            dotcode += '"%s" [color="#%s", %s];\n' % (n, color, shape)
+
+        for n in self.nodes:
+            for c in n.children:
+            #type, timestamp = details
+
+            #last_activity = time.time() - timestamp
+            #
+            #heat = max(0.0, 1.0 - (last_activity / 30))
+            #
+            #label = "%s\\n(last activity: " % type.lower()
+            #if last_activity < 2:
+            #    label += "%d ms" % (last_activity * 1000)
+            #elif last_activity > 60:
+            #    label += "%d min" % (last_activity / 60)
+            #else:
+            #    label += "%.2f sec" % last_activity
+            #
+            #label += " ago)"
+
+                dotcode += '"%s" -> "%s" [color="#%s"];\n' % (n, self.nodes[c], COL_EDGES)
+
+        dotcode += "}\n"
+
+        return dotcode
 
     def on_node_clicked(self, widget, url, event):
-        dialog = gtk.MessageDialog(
-                parent = self, 
-                buttons = gtk.BUTTONS_OK,
-                message_format="%s clicked" % url)
-        dialog.connect('response', lambda dialog, response: dialog.destroy())
-        dialog.run()
-        return True
+        window = UnderworldsWorldWindow()
+        window.set_destroy_with_parent(True)
+        window.on_reload(None)
+
 
 def main():
-    window = UnderworldsDotWindow()
+    window = UnderworldsTopologyWindow()
     window.on_reload(None)
     window.connect('destroy', gtk.main_quit)
     gtk.main()
