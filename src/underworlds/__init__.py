@@ -82,7 +82,6 @@ class NodesProxy(threading.Thread):
     def _get_more_node(self):
         
         if not self._updated_ids:
-            # release the lock
             logger.warning("Slow propagation? Waiting for new/updated nodes notifications...")
             time.sleep(0.01) #leave some time for propagation
 
@@ -95,6 +94,10 @@ class NodesProxy(threading.Thread):
 
         # here, _updated_ids is not empty. It should not raise an exception
         id = self._updated_ids.pop()
+
+        self._get_node_from_remote(id)
+
+    def _get_node_from_remote(self, id):
 
         self.send("get_node " + str(id))
         
@@ -118,22 +121,24 @@ class NodesProxy(threading.Thread):
 
     def __getitem__(self, key):
 
+        # First, a bit of house keeping
+        # do we have pending nodes to delete?
+        if self._deleted_ids:
+            tmp = copy.copy(self._deleted_ids)
+            for id in tmp:
+                try:
+                    self._ids.remove(id)
+                    del(self._nodes[id])
+                    self._deleted_ids.remove(id)
+                except ValueError:
+                    logger.warning("The node %s is already removed. Feels like a synchro issue..." % id)
+
+        # Then, let see what the user want:
         if type(key) is int:
 
             # First, are we over the lenght of our node list?
             if key >= self._len:
                 raise IndexError
-
-            # Then, do we have pending nodes to delete?
-            if self._deleted_ids:
-                tmp = copy.copy(self._deleted_ids)
-                for id in tmp:
-                    try:
-                        self._ids.remove(id)
-                        del(self._nodes[id])
-                        self._deleted_ids.remove(id)
-                    except ValueError:
-                        logger.warning("The node %s is already removed. Feels like a synchro issue..." % id)
 
             # not downloaded enough nodes yet?
             while key >= len(self._ids):
@@ -146,6 +151,17 @@ class NodesProxy(threading.Thread):
                 self._update_node_from_remote(id)
 
             return self._nodes[id]
+
+        elif isinstance(key, basestring): #assume it's a node ID
+
+            if key in self._ids:
+                # did the node changed since the last time we obtained it?
+                if key in self._updated_ids:
+                    self._update_node_from_remote(key)
+                return self._nodes[key]
+
+            else: # we do not have this node locally. Let's try to fetch it
+                self._get_node_from_remote(key)
 
         else:
             raise TypeError()
