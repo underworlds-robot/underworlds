@@ -339,6 +339,10 @@ class Context(object):
         self.send("get_mesh %s" % id)
         return json.loads(self.rpc.recv())
 
+    def has_mesh(self, id):
+        self.send("has_mesh %s" % id)
+        return json.loads(self.rpc.recv())
+
     def __enter__(self):
         return self
 

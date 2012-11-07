@@ -161,6 +161,9 @@ class Server(Thread):
                 elif cmd == "get_mesh":
                     rpc.send(json.dumps(self.meshes[mesh_id]))
 
+                elif cmd == "has_mesh":
+                    rpc.send(json.dumps(arg in self.meshes))
+
 
                 elif cmd == "get_topology":
                     rpc.send(json.dumps(self.get_current_topology()))

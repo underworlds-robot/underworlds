@@ -6,7 +6,7 @@ import uuid
 from pyassimp import core as pyassimp
 from pyassimp.postprocess import *
 
-import logging; logger = logging.getLogger("underworlds.mesh_loader")
+import logging; logger = logging.getLogger("underworlds.model_loader")
 logging.basicConfig(level=logging.INFO)
 
 import underworlds
@@ -16,6 +16,29 @@ DEST_WORLD = "base"
 
 meshes = {}
 node_map = {}
+
+def mesh_hash(mesh):
+    m = (mesh.vertices, \
+         mesh.faces, \
+         mesh.normals)
+    return hash(str(m))
+
+def node_boundingbox(node):
+    """ Returns the AABB bounding box of an ASSIMP node.
+    Be careful: this is the *untransformed* bounding box,
+    ie, the bounding box of the mesh in the node frame.
+    """
+    bb_min = [1e10, 1e10, 1e10] # x,y,z
+    bb_max = [-1e10, -1e10, -1e10] # x,y,z
+    for mesh in node.meshes:
+        for v in mesh.vertices:
+            bb_min[0] = round(min(bb_min[0], v[0]), 5)
+            bb_min[1] = round(min(bb_min[1], v[1]), 5)
+            bb_min[2] = round(min(bb_min[2], v[2]), 5)
+            bb_max[0] = round(max(bb_max[0], v[0]), 5)
+            bb_max[1] = round(max(bb_max[1], v[1]), 5)
+            bb_max[2] = round(max(bb_max[2], v[2]), 5)
+    return (bb_min, bb_max)
 
 def fill_node_details(assimp_node, underworlds_node):
 
@@ -33,11 +56,13 @@ def fill_node_details(assimp_node, underworlds_node):
         underworlds_node.hires = []
 
         for m in assimp_node.meshes:
-            id = str(uuid.uuid4())
+            id = mesh_hash(m)
             logger.info("\tAdding mesh %s" % id)
             meshes[id] = m
             underworlds_node.cad.append(id)
             underworlds_node.hires.append(id)
+
+        underworlds_node.aabb = node_boundingbox(assimp_node)
 
     else:
         underworlds_node.type = UNDEFINED
@@ -62,7 +87,7 @@ def load(filename):
 
     """
 
-    with underworlds.Context("mesh loader") as ctx:
+    with underworlds.Context("model loader") as ctx:
         model = pyassimp.load(filename, aiProcessPreset_TargetRealtime_MaxQuality)
         world = ctx.worlds[DEST_WORLD]
         nodes = world.scene.nodes
@@ -71,14 +96,21 @@ def load(filename):
         for n, pair in node_map.items():
             fill_node_details(*pair)
 
-        for pair in node_map.values():
+        for name, pair in node_map.items():
+            if pair[0] == model.rootnode:
+                logger.info("Merging the root nodes")
+                pair[1].id = world.scene.rootnode.id
+
             nodes.update(pair[1])
 
         for id, mesh in meshes.items():
-            ctx.push_mesh(id, 
-                          mesh.vertices.tolist(), 
-                          mesh.faces.tolist(), 
-                          mesh.normals.tolist())
+            if ctx.has_mesh(id):
+                logger.info("Not resending mesh %s: already available on the server" % id)
+            else:
+                ctx.push_mesh(id, 
+                            mesh.vertices.tolist(), 
+                            mesh.faces.tolist(), 
+                            mesh.normals.tolist())
 
         pyassimp.release(model)
 
