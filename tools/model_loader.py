@@ -40,7 +40,7 @@ def node_boundingbox(node):
             bb_max[2] = round(max(bb_max[2], v[2]), 5)
     return (bb_min, bb_max)
 
-def fill_node_details(assimp_node, underworlds_node):
+def fill_node_details(assimp_node, underworlds_node, assimp_model):
 
     logger.info("Parsing node " + str(assimp_node))
     underworlds_node.name = assimp_node.name
@@ -64,6 +64,16 @@ def fill_node_details(assimp_node, underworlds_node):
 
         underworlds_node.aabb = node_boundingbox(assimp_node)
 
+    elif assimp_node.name in [c.name for c in assimp_model.cameras]:
+        logger.info("\tAdding camera <%s>" % assimp_node.name)
+
+        [cam] = [c for c in assimp_model.cameras if c.name == assimp_node.name]
+        underworlds_node.type = CAMERA
+        underworlds_node.clipplanenear = cam.clipplanenear
+        underworlds_node.clipplanefar = cam.clipplanefar
+        underworlds_node.aspect = cam.aspect
+        underworlds_node.horizontalfov = cam.horizontalfov
+        underworlds_node.lookat = [round(a, 5) for a in cam.lookat]
     else:
         underworlds_node.type = UNDEFINED
 
@@ -94,7 +104,7 @@ def load(filename):
         logger.info("Nodes found:")
         recur_node(model.rootnode)
         for n, pair in node_map.items():
-            fill_node_details(*pair)
+            fill_node_details(*pair, assimp_model = model)
 
         for name, pair in node_map.items():
             if pair[0] == model.rootnode:
