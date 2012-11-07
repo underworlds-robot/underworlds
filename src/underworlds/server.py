@@ -162,7 +162,7 @@ class Server(Thread):
                     rpc.send("ack")
 
                 elif cmd == "get_mesh":
-                    rpc.send(json.dumps(self.meshes[mesh_id]))
+                    rpc.send(json.dumps(self.meshes[arg]))
 
                 elif cmd == "has_mesh":
                     rpc.send(json.dumps(arg in self.meshes))
