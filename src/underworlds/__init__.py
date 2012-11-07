@@ -171,6 +171,7 @@ class NodesProxy(threading.Thread):
                 except ValueError:
                     #The node does not exist!!
                     raise KeyError("The node %s does not exist" % key)
+                return self._nodes[key]
 
         else:
             raise TypeError()
