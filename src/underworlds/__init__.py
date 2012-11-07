@@ -45,7 +45,12 @@ class NodesProxy(threading.Thread):
 
         self._deleted_ids = deque()
 
-
+        # Get the root node
+        self.send("get_root_node")
+        self.rootnode = self._ctx.rpc.recv()
+        self._update_node_from_remote(self.rootnode)
+        self._ids.append(self.rootnode)
+ 
         self._running = True
         self.cv = threading.Condition()
 
@@ -157,11 +162,15 @@ class NodesProxy(threading.Thread):
             if key in self._ids:
                 # did the node changed since the last time we obtained it?
                 if key in self._updated_ids:
-                    self._update_node_from_remote(key)
+                        self._update_node_from_remote(key)
                 return self._nodes[key]
 
             else: # we do not have this node locally. Let's try to fetch it
-                self._get_node_from_remote(key)
+                try:
+                    self._get_node_from_remote(key)
+                except ValueError:
+                    #The node does not exist!!
+                    raise KeyError("The node %s does not exist" % key)
 
         else:
             raise TypeError()
@@ -260,6 +269,25 @@ class NodesProxy(threading.Thread):
 
 
 
+class SceneProxy(object):
+
+    def __init__(self, ctx, world):
+
+        self._ctx = ctx # context
+
+        self.nodes = NodesProxy(self._ctx, world)
+
+    @property
+    def rootnode(self):
+        return self.nodes[self.nodes.rootnode]
+
+
+    def finalize(self):
+        self.nodes._running = False
+        self.nodes.join()
+
+
+
 class WorldsProxy:
 
     def __init__(self, ctx):
@@ -271,7 +299,7 @@ class WorldsProxy:
     def __getitem__(self, key):
         world = World(key)
         self._worlds.append(world)
-        world.scene.nodes = NodesProxy(self._ctx, world)
+        world.scene = SceneProxy(self._ctx, world)
         return world
 
     def __setitem__(self, key, world):
@@ -280,8 +308,7 @@ class WorldsProxy:
     def finalize(self):
         for w in self._worlds:
             logger.debug("Context [%s]: Closing world <%s>" % (self._ctx.name, w.name))
-            w.scene.nodes._running = False
-            w.scene.nodes.join()
+            w.scene.finalize()
 
 class Context(object):
 

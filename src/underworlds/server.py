@@ -127,6 +127,9 @@ class Server(Thread):
                 elif cmd == "get_nodes_ids":
                     rpc.send(json.dumps([n.id for n in scene.nodes]))
 
+                elif cmd == "get_root_node":
+                    rpc.send(scene.rootnode.id)
+
                 elif cmd == "get_node":
                     self.update_current_links(client, world, READER)
                     node = scene.node(arg)

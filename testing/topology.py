@@ -41,7 +41,7 @@ class TestTopology(unittest.TestCase):
         self.assertEquals(len(topo['clients']), 2)
         self.assertIn("provider", topo['clients'])
         self.assertIn("base", topo['clients']['provider'])
-        self.assertEquals(PROVIDER, topo['clients']['provider']['base'])
+        self.assertEquals(PROVIDER, topo['clients']['provider']['base'][0])
 
         # Add a READER client
         with underworlds.Context("reader") as reader_ctx:
@@ -53,7 +53,7 @@ class TestTopology(unittest.TestCase):
         self.assertEquals(len(topo['clients']), 3)
         self.assertIn("reader", topo['clients'])
         self.assertIn("base", topo['clients']['reader'])
-        self.assertEquals(READER, topo['clients']['reader']['base'])
+        self.assertEquals(READER, topo['clients']['reader']['base'][0])
 
     def tearDown(self):
         self.observer_ctx.close()
