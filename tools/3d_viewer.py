@@ -27,6 +27,8 @@ logging.basicConfig(level=logging.INFO)
 import underworlds
 from underworlds.types import *
 
+from fontmanager import FontManager
+
 def transform(vector3, matrix4x4):
     """ Apply a transformation matrix on a 3D vector.
 
@@ -60,6 +62,22 @@ def get_bounding_box_for_node(nodes, node, bb_min, bb_max, transformation):
 
     return bb_min, bb_max
 
+class DefaultCamera:
+    def __init__(self, w, h, fov):
+        self.clipplanenear = 0.001
+        self.clipplanefar = 100000.0
+        self.aspect = w/h
+        self.horizontalfov = fov * math.pi/180
+        self.transformation = [[ 0.68, -0.32, 0.65, 7.48],
+                               [ 0.73,  0.31, -0.61, -6.51],
+                               [-0.01,  0.89,  0.44,  5.34],
+                               [ 0.,    0.,    0.,    1.  ]]
+        self.lookat = [0.0,0.0,-1.0]
+
+    def __str__(self):
+        return "Default camera"
+
+
 class Underworlds3DViewer:
 
     base_name = "Underworlds 3D viewer"
@@ -71,12 +89,14 @@ class Underworlds3DViewer:
         pygame.display.set_caption(self.base_name)
         pygame.display.set_mode((w,h), pygame.OPENGL | pygame.DOUBLEBUF)
 
+        self.fontmanager = FontManager("aller.ttf", w, h, 18)
+
         self.ctx = ctx
         self.world = ctx.worlds[world]
 
         self.scene = None
         self.meshes = {} # stores the OpenGL vertex/faces/normals buffers pointers
-        self.cameras = []
+        self.cameras = [DefaultCamera(w,h,fov)]
         self.current_cam_index = 0
 
         self.load_world()
@@ -85,11 +105,13 @@ class Underworlds3DViewer:
         self.frames = 0
         self.last_fps_time = glutGet(GLUT_ELAPSED_TIME)
 
-
-        glMatrixMode(GL_PROJECTION)
-        aspect = w/h
-        gluPerspective(fov, aspect, 0.001, 100000.0);
-        glMatrixMode(GL_MODELVIEW)
+        self.w = w
+        self.h = h
+        #glMatrixMode(GL_PROJECTION)
+        #aspect = w/h
+        #gluPerspective(fov, aspect, 0.001, 100000.0);
+        #glMatrixMode(GL_MODELVIEW)
+        self.cycle_cameras()
 
     def prepare_gl_buffers(self, id):
 
@@ -137,6 +159,8 @@ class Underworlds3DViewer:
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,0)
 
     def glize(self, node):
+
+        logger.info("Loading node <%s>" % node)
 
         node.transformation = numpy.array(node.transformation)
 
@@ -195,11 +219,22 @@ class Underworlds3DViewer:
             logger.info("No camera in the scene")
             return None
         self.current_cam_index = (self.current_cam_index + 1) % len(self.cameras)
-        cam = self.cameras[self.current_cam_index]
-        self.set_camera(cam)
-        logger.info("Switched to camera <%s>" % cam)
+        self.current_cam = self.cameras[self.current_cam_index]
+        self.set_camera(self.current_cam)
+        logger.info("Switched to camera <%s>" % self.current_cam)
 
-    def set_camera(self, camera):
+    def set_overlay_projection(self):
+        glViewport(0,0,self.w,self.h)
+        glMatrixMode(GL_PROJECTION)
+        glLoadIdentity()
+        glOrtho(0.0, self.w - 1.0, 0.0, self.h - 1.0, -1.0, 1.0)
+        glMatrixMode(GL_MODELVIEW)
+        glLoadIdentity()
+
+    def set_camera_projection(self, camera = None):
+
+        if not camera:
+            camera = self.cameras[self.current_cam_index]
 
         znear = camera.clipplanenear
         zfar = camera.clipplanefar
@@ -218,6 +253,13 @@ class Underworlds3DViewer:
         glFrustum(-w, w, -h, h, znear, zfar)
         # equivalent to:
         #gluPerspective(fov * 180/math.pi, aspect, znear, zfar)
+        glMatrixMode(GL_MODELVIEW)
+        glLoadIdentity()
+
+
+    def set_camera(self, camera):
+
+        self.set_camera_projection(camera)
 
         glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
@@ -227,12 +269,6 @@ class Underworlds3DViewer:
         gluLookAt(cam[0], cam[2], -cam[1],
                    at[0],  at[2],  -at[1],
                        0,      1,       0)
-
-    def simple_camera_pose(self):
-        """ Pre-position the camera (optional) """
-        glMatrixMode(GL_MODELVIEW)
-        glLoadMatrixf(numpy.array([0.741,-0.365,0.563,0,0,0.839,0.544,
-            0,-0.671,-0.403,0.622,0,-0.649,1.72,-4.05,1]))
 
     def apply_material(self, mat):
         """ Apply an OpenGL, using one OpenGL list per material to cache 
@@ -280,7 +316,6 @@ class Underworlds3DViewer:
             m = node.transformation.transpose() # OpenGL row major
         glMultMatrixf(m)
 
-
         if node.type == MESH:
             for id in node.glmeshes:
                 self.apply_material(self.meshes[id]["material"])
@@ -307,6 +342,17 @@ class Underworlds3DViewer:
 
         glPopMatrix()
 
+    def switch_to_overlay(self):
+        glPushMatrix()
+        self.set_overlay_projection()
+
+    def switch_from_overlay(self):
+        self.set_camera_projection()
+        glPopMatrix()
+
+
+    def display(self, text, x, y):
+        self.fontmanager.display(text,x,y)
 
     def loop(self):
         pygame.display.flip()
@@ -380,10 +426,12 @@ if __name__ == '__main__':
     with underworlds.Context("3D viewer") as ctx:
         app = Underworlds3DViewer(ctx, world = sys.argv[1])
         app.simple_lights()
-        app.simple_camera_pose()
 
         while app.loop():
             app.recursive_render(app.scene.rootnode)
+            app.switch_to_overlay()
+            app.display("world <%s>"% app.world, 10,10)
+            app.switch_from_overlay()
             app.controls_3d(0)
             if pygame.K_f in app.keys: pygame.display.toggle_fullscreen()
             if pygame.K_TAB in app.keys: app.cycle_cameras()
