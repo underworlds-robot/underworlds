@@ -100,6 +100,11 @@ class Underworlds3DViewer:
             return
 
         meshes[id] = {}
+
+        # leave some time for new nodes to push their meshes
+        while not self.ctx.has_mesh(id):
+            time.sleep(0.01)
+
         mesh = self.ctx.mesh(id) # retrieve the mesh from the server
 
         # Fill the buffer for vertex positions
@@ -130,14 +135,35 @@ class Underworlds3DViewer:
         glBindBuffer(GL_ARRAY_BUFFER,0)
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,0)
 
-    
+    def glize(self, node):
+
+        node.transformation = numpy.array(node.transformation)
+
+        if node.type == MESH:
+
+            if hasattr(node, "cad"):
+                node.glmeshes = node.cad
+            elif hasattr(node, "lowres"):
+                node.glmeshes = node.lowres
+            elif hasattr(node, "hires"):
+                node.glmeshes = node.hires
+            else:
+                raise StandardError("The node %s has no mesh available!" % node.name)
+            for mesh in node.glmeshes:
+                self.prepare_gl_buffers(mesh)
+
+        elif node.type == CAMERA:
+            logger.info("Added camera <%s>" % node.name)
+            self.cameras.append(node)
+
+
     def load_world(self):
         logger.info("Preparing world <%s> for 3D rendering..." % self.world)
 
         scene = self.scene = self.world.scene
         nodes = scene.nodes
         for node in nodes:
-            node.transformation = numpy.array(node.transformation)
+            self.glize(node)
 
         #log some statistics
         logger.info("  -> %d nodes" % len(nodes))
@@ -146,24 +172,6 @@ class Underworlds3DViewer:
 
         self.scene_center = [(a + b) / 2. for a, b in zip(self.bb_min, self.bb_max)]
 
-        for node in nodes:
-            if node.type == MESH:
-
-                if hasattr(node, "cad"):
-                    node.glmeshes = node.cad
-                elif hasattr(node, "lowres"):
-                    node.glmeshes = node.lowres
-                elif hasattr(node, "hires"):
-                    node.glmeshes = node.hires
-                else:
-                    raise StandardError("The node %s has no mesh available!" % node.name)
-
-                for mesh in node.glmeshes:
-                    self.prepare_gl_buffers(mesh)
-
-            elif node.type == CAMERA:
-                logger.info("Added camera <%s>" % node.name)
-                self.cameras.append(node)
         logger.info("World <%s> ready for 3D rendering." % self.world)
 
     def simple_lights(self):
@@ -188,7 +196,7 @@ class Underworlds3DViewer:
         self.current_cam_index = (self.current_cam_index + 1) % len(self.cameras)
         cam = self.cameras[self.current_cam_index]
         self.set_camera(cam)
-        logger.info("Switched to camera " + str(cam))
+        logger.info("Switched to camera <%s>" % cam)
 
     def set_camera(self, camera):
 
@@ -263,7 +271,12 @@ class Underworlds3DViewer:
 
         # save model matrix and apply node transformation
         glPushMatrix()
-        m = node.transformation.transpose() # OpenGL row major
+        try:
+            m = node.transformation.transpose() # OpenGL row major
+        except AttributeError:
+            #probably a new incoming node, that has not yet been converted to numpy
+            self.glize(node)
+            m = node.transformation.transpose() # OpenGL row major
         glMultMatrixf(m)
 
 
