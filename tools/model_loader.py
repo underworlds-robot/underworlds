@@ -7,7 +7,6 @@ from pyassimp import core as pyassimp
 from pyassimp.postprocess import *
 
 import logging; logger = logging.getLogger("underworlds.model_loader")
-logging.basicConfig(level=logging.INFO)
 
 import underworlds
 from underworlds.types import *
@@ -21,7 +20,7 @@ def mesh_hash(mesh):
     m = (mesh.vertices, \
          mesh.faces, \
          mesh.normals, \
-         mesh.material)
+         mesh.material.properties)
     return hash(str(m))
 
 def node_boundingbox(node):
@@ -43,7 +42,7 @@ def node_boundingbox(node):
 
 def fill_node_details(assimp_node, underworlds_node, assimp_model):
 
-    logger.info("Parsing node " + str(assimp_node))
+    logger.debug("Parsing node " + str(assimp_node))
     underworlds_node.name = assimp_node.name
     #underworlds_node.parent = node_map[assimp_node.parent.name][1].id
     for c in assimp_node.children:
@@ -58,7 +57,7 @@ def fill_node_details(assimp_node, underworlds_node, assimp_model):
 
         for m in assimp_node.meshes:
             id = mesh_hash(m)
-            logger.info("\tAdding mesh %s" % id)
+            logger.debug("\tLoading mesh %s" % id)
             meshes[id] = m
             underworlds_node.cad.append(id)
             underworlds_node.hires.append(id)
@@ -66,7 +65,7 @@ def fill_node_details(assimp_node, underworlds_node, assimp_model):
         underworlds_node.aabb = node_boundingbox(assimp_node)
 
     elif assimp_node.name in [c.name for c in assimp_model.cameras]:
-        logger.info("\tAdding camera <%s>" % assimp_node.name)
+        logger.debug("\tAdding camera <%s>" % assimp_node.name)
 
         [cam] = [c for c in assimp_model.cameras if c.name == assimp_node.name]
         underworlds_node.type = CAMERA
@@ -99,13 +98,19 @@ def load(filename):
     """
 
     with underworlds.Context("model loader") as ctx:
+        logger.info("Loading model <%s> with ASSIMP..." % filename)
         model = pyassimp.load(filename, aiProcessPreset_TargetRealtime_MaxQuality)
+        logger.info("...done")
+
         world = ctx.worlds[DEST_WORLD]
         nodes = world.scene.nodes
         logger.info("Nodes found:")
         recur_node(model.rootnode)
+        logger.info("%d nodes in the model" % len(node_map))
+        logger.info("Loading the nodes...")
         for n, pair in node_map.items():
             fill_node_details(*pair, assimp_model = model)
+        logger.info("...done")
 
         for name, pair in node_map.items():
             if pair[0] == model.rootnode:
@@ -114,20 +119,28 @@ def load(filename):
 
             nodes.update(pair[1])
 
+        logger.info("Sending meshes to the server...")
+        count_sent = 0
+        count_notsent = 0
         for id, mesh in meshes.items():
             if ctx.has_mesh(id):
-                logger.info("Not resending mesh %s: already available on the server" % id)
+                logger.debug("Not resending mesh <%s>: already available on the server" % id)
+                count_notsent += 1
             else:
+                logger.debug("Sending mesh <%s>" % id)
                 ctx.push_mesh(id, 
                             mesh.vertices.tolist(), 
                             mesh.faces.tolist(), 
                             mesh.normals.tolist(),
                             mesh.material.properties)
+                count_sent += 1
 
+        logger.info("Sent %d meshes (%d were already available on the server)" % (count_sent, count_notsent))
         pyassimp.release(model)
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
     if len(sys.argv) == 1:
         print("usage: %s path/to/model" % sys.argv[0])
         sys.exit(2)
