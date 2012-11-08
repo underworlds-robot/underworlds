@@ -130,6 +130,7 @@ class Underworlds3DViewer:
                     GL_STATIC_DRAW)
 
         meshes[id]["nbfaces"] = len(mesh["faces"])
+        meshes[id]["material"] = mesh["material"]
 
         # Unbind buffers
         glBindBuffer(GL_ARRAY_BUFFER,0)
@@ -238,20 +239,20 @@ class Underworlds3DViewer:
         the operation.
         """
 
-        if not hasattr(mat, "gl_mat"): # evaluate once the mat properties, and cache the values in a glDisplayList.
+        if not "gl_list" in mat: # evaluate once the mat properties, and cache the values in a glDisplayList.
     
-            diffuse = mat.properties.get("$clr.diffuse", numpy.array([0.8, 0.8, 0.8, 1.0]))
-            specular = mat.properties.get("$clr.specular", numpy.array([0., 0., 0., 1.0]))
-            ambient = mat.properties.get("$clr.ambient", numpy.array([0.2, 0.2, 0.2, 1.0]))
-            emissive = mat.properties.get("$clr.emissive", numpy.array([0., 0., 0., 1.0]))
-            shininess = min(mat.properties.get("$mat.shininess", 1.0), 128)
-            wireframe = mat.properties.get("$mat.wireframe", 0)
-            twosided = mat.properties.get("$mat.twosided", 1)
+            diffuse = numpy.array(mat.get("diffuse", [0.8, 0.8, 0.8, 1.0]))
+            specular = numpy.array(mat.get("specular", [0., 0., 0., 1.0]))
+            ambient = numpy.array(mat.get("ambient", [0.2, 0.2, 0.2, 1.0]))
+            emissive = numpy.array(mat.get("emissive", [0., 0., 0., 1.0]))
+            shininess = min(mat.get("shininess", 1.0), 128)
+            wireframe = mat.get("wireframe", 0)
+            twosided = mat.get("twosided", 1)
     
             from OpenGL.raw import GL
-            setattr(mat, "gl_mat", GL.GLuint(0))
-            mat.gl_mat = glGenLists(1)
-            glNewList(mat.gl_mat, GL_COMPILE)
+            mat["gl_list"] = GL.GLuint(0)
+            mat["gl_list"] = glGenLists(1)
+            glNewList(mat["gl_list"], GL_COMPILE)
     
             glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, diffuse)
             glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specular)
@@ -263,7 +264,7 @@ class Underworlds3DViewer:
     
             glEndList()
     
-        glCallList(mat.gl_mat)
+        glCallList(mat["gl_list"])
 
     def recursive_render(self, node):
         """ Main recursive rendering method.
@@ -282,7 +283,7 @@ class Underworlds3DViewer:
 
         if node.type == MESH:
             for id in node.glmeshes:
-                #self.apply_material(mesh.material)
+                self.apply_material(self.meshes[id]["material"])
 
                 glBindBuffer(GL_ARRAY_BUFFER, self.meshes[id]["vertices"])
                 glEnableClientState(GL_VERTEX_ARRAY)

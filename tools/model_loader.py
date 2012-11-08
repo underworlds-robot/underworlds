@@ -20,7 +20,8 @@ node_map = {}
 def mesh_hash(mesh):
     m = (mesh.vertices, \
          mesh.faces, \
-         mesh.normals)
+         mesh.normals, \
+         mesh.material)
     return hash(str(m))
 
 def node_boundingbox(node):
@@ -120,7 +121,8 @@ def load(filename):
                 ctx.push_mesh(id, 
                             mesh.vertices.tolist(), 
                             mesh.faces.tolist(), 
-                            mesh.normals.tolist())
+                            mesh.normals.tolist(),
+                            mesh.material.properties)
 
         pyassimp.release(model)
 
