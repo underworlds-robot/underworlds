@@ -4,22 +4,18 @@
 """ This program loads a underworlds world, and display its
 3D scene.
 
-Materials are supported but textures are currently ignored.
-
-Half-working keyboard + mouse navigation is supported.
-
-This sample is based on several sources, including:
+Based on:
+- pygame + mouselook code from http://3dengine.org/Spectator_%28PyOpenGL%29
  - http://www.lighthouse3d.com/tutorials
  - http://www.songho.ca/opengl/gl_transform.html
  - http://code.activestate.com/recipes/325391/
  - ASSIMP's C++ SimpleOpenGL viewer
 """
-
-import os, sys
-from OpenGL.GLUT import *
-from OpenGL.GLU import *
+import sys
+import pygame
 from OpenGL.GL import *
-from OpenGL.arrays import ArrayDatatype
+from OpenGL.GLU import *
+from OpenGL.GLUT import *
 
 import math
 import numpy
@@ -30,10 +26,6 @@ logging.basicConfig(level=logging.INFO)
 
 import underworlds
 from underworlds.types import *
-
-name = 'Underworlds OpenGL viewer'
-height = 600
-width = 900
 
 def transform(vector3, matrix4x4):
     """ Apply a transformation matrix on a 3D vector.
@@ -68,12 +60,12 @@ def get_bounding_box_for_node(nodes, node, bb_min, bb_max, transformation):
 
     return bb_min, bb_max
 
+class Underworlds3DViewer:
+    def __init__(self, ctx, world, w=1024, h=768, fov=75):
 
-
-
-
-class GLRenderer():
-    def __init__(self, ctx, world):
+        pygame.init()
+        pygame.display.set_mode((w,h), pygame.OPENGL)
+        #pygame.display.set_mode((w,h), pygame.OPENGL | pygame.DOUBLEBUF)
 
         self.ctx = ctx
         self.world = ctx.worlds[world]
@@ -81,25 +73,19 @@ class GLRenderer():
         self.scene = None
         self.meshes = {} # stores the OpenGL vertex/faces/normals buffers pointers
         self.cameras = []
-
-        self.drot = 0.0
-        self.dp = 0.0
-
-        self.angle = 0.0
-        self.x = 1.0
-        self.z = 3.0
-        self.lx = 0.0
-        self.lz = 0.0
-        self.using_fixed_cam = False
         self.current_cam_index = 0
 
-        self.x_origin = -1 # x position of the mouse when pressing left btn
+        self.load_world()
 
-        # for FPS calculation
-        self.prev_time = 0
-        self.prev_fps_time = 0
+        # for FPS computation
         self.frames = 0
+        self.last_fps_time = glutGet(GLUT_ELAPSED_TIME)
 
+
+        glMatrixMode(GL_PROJECTION)
+        aspect = w/h
+        gluPerspective(fov, aspect, 0.001, 100000.0);
+        glMatrixMode(GL_MODELVIEW)
 
     def prepare_gl_buffers(self, id):
 
@@ -176,6 +162,20 @@ class GLRenderer():
                 self.cameras.append(node)
         logger.info("World <%s> ready for 3D rendering." % self.world)
 
+    def simple_lights(self):
+        glEnable(GL_LIGHTING)
+        #glShadeModel(GL_SMOOTH)
+        #glEnable(GL_LIGHT0)
+        #glLightfv(GL_LIGHT0, GL_DIFFUSE, (0.9, 0.45, 0.0, 1.0))
+        #glLightfv(GL_LIGHT0, GL_POSITION, (0.0, 10.0, 10.0, 10.0))
+        glEnable(GL_DEPTH_TEST)
+        glDepthFunc(GL_LEQUAL)
+
+        glEnable(GL_CULL_FACE)
+
+        glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE)
+        glEnable(GL_NORMALIZE)
+        glEnable(GL_LIGHT0)
 
     def cycle_cameras(self):
         if not self.cameras:
@@ -183,24 +183,10 @@ class GLRenderer():
             return None
         self.current_cam_index = (self.current_cam_index + 1) % len(self.cameras)
         cam = self.cameras[self.current_cam_index]
+        self.set_camera(cam)
         logger.info("Switched to camera " + str(cam))
-        return cam
-
-    def set_default_camera(self):
-
-        if not self.using_fixed_cam:
-            glLoadIdentity()
-            gluLookAt(self.x ,1., self.z, # pos
-                    self.x + self.lx - 1.0, 1., self.z + self.lz - 3.0, # look at
-                    0.,1.,0.) # up vector
-
 
     def set_camera(self, camera):
-
-        if not camera:
-            return
-
-        self.using_fixed_cam = True
 
         znear = camera.clipplanenear
         zfar = camera.clipplanefar
@@ -229,31 +215,12 @@ class GLRenderer():
                    at[0],  at[2],  -at[1],
                        0,      1,       0)
 
-    def fit_scene(self, restore = False):
-        """ Compute a scale factor and a translation to fit and center 
-        the whole geometry on the screen.
-        """
+    def simple_camera_pose(self):
+        """ Pre-position the camera (optional) """
+        glMatrixMode(GL_MODELVIEW)
+        glLoadMatrixf(numpy.array([0.741,-0.365,0.563,0,0,0.839,0.544,
+            0,-0.671,-0.403,0.622,0,-0.649,1.72,-4.05,1]))
 
-        x_max = self.bb_max[0] - self.bb_min[0]
-        y_max = self.bb_max[1] - self.bb_min[1]
-        tmp = max(x_max, y_max)
-        z_max = self.bb_max[2] - self.bb_min[2]
-        tmp = max(z_max, tmp)
-        
-        if not restore:
-            tmp = 1. / tmp
-
-        logger.info("Scaling the scene by %.03f" % tmp)
-        glScalef(tmp, tmp, tmp)
-    
-        # center the model
-        direction = -1 if not restore else 1
-        glTranslatef( direction * self.scene_center[0], 
-                      direction * self.scene_center[1], 
-                      direction * self.scene_center[2] )
-
-        return x_max, y_max, z_max
- 
     def apply_material(self, mat):
         """ Apply an OpenGL, using one OpenGL list per material to cache 
         the operation.
@@ -285,32 +252,6 @@ class GLRenderer():
             glEndList()
     
         glCallList(mat.gl_mat)
-
-    
-   
-    def do_motion(self):
-
-        gl_time = glutGet(GLUT_ELAPSED_TIME)
-
-        # Compute the new position of the camera and set it
-        self.x += self.dp * self.lx * 0.01 * (gl_time-self.prev_time)
-        self.z += self.dp * self.lz * 0.01 * (gl_time-self.prev_time)
-        self.angle += self.drot * 0.1 *  (gl_time-self.prev_time)
-        self.lx = math.sin(self.angle)
-        self.lz = -math.cos(self.angle)
-        self.set_default_camera()
-
-        self.prev_time = gl_time
-
-        # Compute FPS
-        self.frames += 1
-        if gl_time - self.prev_fps_time >= 1000:
-            current_fps = self.frames * 1000 / (gl_time - self.prev_fps_time)
-            logger.info('%.0f fps' % current_fps)
-            self.frames = 0
-            self.prev_fps_time = gl_time
-
-        glutPostRedisplay()
 
     def recursive_render(self, node):
         """ Main recursive rendering method.
@@ -349,143 +290,83 @@ class GLRenderer():
         glPopMatrix()
 
 
-    def display(self):
-        """ GLUT callback to redraw OpenGL surface
-        """
-        glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
+    def loop(self):
+        pygame.display.flip()
+        pygame.event.pump()
+        self.keys = [k for k, pressed in enumerate(pygame.key.get_pressed()) if pressed]
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
-        #glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
-        #glEnable(GL_CULL_FACE)
+        # Compute FPS
+        gl_time = glutGet(GLUT_ELAPSED_TIME)
+        self.frames += 1
+        if gl_time - self.last_fps_time >= 1000:
+            current_fps = self.frames * 1000 / (gl_time - self.last_fps_time)
+            print('%.0f fps' % current_fps)
+            self.frames = 0
+            self.last_fps_time = gl_time
 
-        self.recursive_render(self.scene.rootnode)
-    
-        glutSwapBuffers()
-        self.do_motion()
-        return
 
-    ####################################################################
-    ##               GLUT keyboard and mouse callbacks                ##
-    ####################################################################
-    def onkeypress(self, key, x, y):
-        if key == 'c':
-            self.fit_scene(restore = True)
-            self.set_camera(self.cycle_cameras())
-        if key == 'q':
-            glutLeaveMainLoop()
+        return True
 
-    def onspecialkeypress(self, key, x, y):
+    def controls_3d(self,
+                    mouse_button=1, \
+                    up_key=pygame.K_UP, \
+                    down_key=pygame.K_DOWN, \
+                    left_key=pygame.K_LEFT, \
+                    right_key=pygame.K_RIGHT):
+        """ The actual camera setting cycle """
+        mouse_dx,mouse_dy = pygame.mouse.get_rel()
+        if pygame.mouse.get_pressed()[mouse_button]:
+            look_speed = .2
+            buffer = glGetDoublev(GL_MODELVIEW_MATRIX)
+            c = (-1 * numpy.mat(buffer[:3,:3]) * \
+                numpy.mat(buffer[3,:3]).T).reshape(3,1)
+            # c is camera center in absolute coordinates, 
+            # we need to move it back to (0,0,0) 
+            # before rotating the camera
+            glTranslate(c[0],c[1],c[2])
+            m = buffer.flatten()
+            glRotate(mouse_dx * look_speed, m[1],m[5],m[9])
+            glRotate(mouse_dy * look_speed, m[0],m[4],m[8])
+            
+            # compensate roll
+            glRotated(-math.atan2(-m[4],m[5]) * \
+                57.295779513082320876798154814105 ,m[2],m[6],m[10])
+            glTranslate(-c[0],-c[1],-c[2])
 
-        fraction = 0.05
-
-        if key == GLUT_KEY_UP:
-            self.dp = 0.5
-        if key == GLUT_KEY_DOWN:
-            self.dp = -0.5
-        if key == GLUT_KEY_LEFT:
-            self.drot = -0.01
-        if key == GLUT_KEY_RIGHT:
-            self.drot = 0.01
-
-    def onspecialkeyrelease(self, key, x, y):
-
-        if key == GLUT_KEY_UP:
-            self.dp = 0.
-        if key == GLUT_KEY_DOWN:
-            self.dp = 0.
-        if key == GLUT_KEY_LEFT:
-            self.drot = 0.0
-        if key == GLUT_KEY_RIGHT:
-            self.drot = 0.0
-
-    def onclick(self, button, state, x, y):
-        if button == GLUT_LEFT_BUTTON:
-            if state == GLUT_UP:
-                self.drot = 0
-                self.x_origin = -1
-            else: # GLUT_DOWN
-                self.x_origin = x
-
-    def onmousemove(self, x, y):
-        if self.x_origin >= 0:
-            self.drot = (x - self.x_origin) * 0.001
-
-    def render(self, fullscreen = False, autofit = True, postprocess = None):
-        """
-
-        :param autofit: if true, scale the scene to fit the whole geometry
-        in the viewport.
-        """
-    
-        # First initialize the openGL context
-        glutInit(sys.argv)
-        glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH)
-        if not fullscreen:
-            glutInitWindowSize(width, height)
-            glutCreateWindow(name)
+        # move forward-back or right-left
+        if up_key in self.keys:
+            fwd = .1
+        elif down_key in self.keys:
+            fwd = -.1
         else:
-            glutGameModeString("1024x768")
-            if glutGameModeGet(GLUT_GAME_MODE_POSSIBLE):
-                glutEnterGameMode()
-            else:
-                print("Fullscreen mode not available!")
-                sys.exit(1)
+            fwd = 0
 
+        if left_key in self.keys:
+            strafe = .1
+        elif right_key in self.keys:
+            strafe = -.1
+        else:
+            strafe = 0
 
-        self.load_world()
-
-        glClearColor(0.1,0.1,0.1,1.)
-        #glShadeModel(GL_SMOOTH)
-
-        glEnable(GL_LIGHTING)
-
-        glEnable(GL_CULL_FACE)
-        glEnable(GL_DEPTH_TEST)
-
-        #lightZeroPosition = [10.,4.,10.,1.]
-        #lightZeroColor = [0.8,1.0,0.8,1.0] #green tinged
-        #glLightfv(GL_LIGHT0, GL_POSITION, lightZeroPosition)
-        #glLightfv(GL_LIGHT0, GL_DIFFUSE, lightZeroColor)
-        #glLightf(GL_LIGHT0, GL_CONSTANT_ATTENUATION, 0.1)
-        #glLightf(GL_LIGHT0, GL_LINEAR_ATTENUATION, 0.05)
-        glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE)
-        glEnable(GL_NORMALIZE)
-        glEnable(GL_LIGHT0)
-    
-        glutDisplayFunc(self.display)
-
-
-        glMatrixMode(GL_PROJECTION)
-        glLoadIdentity()
-        gluPerspective(35.0, width/float(height) , 0.10, 100.0)
-        glMatrixMode(GL_MODELVIEW)
-        self.set_default_camera()
-
-        if autofit:
-            # scale the whole asset to fit into our view frustum·
-            self.fit_scene()
-
-        glPushMatrix()
-
-        # Register GLUT callbacks for keyboard and mouse
-        glutKeyboardFunc(self.onkeypress)
-        glutSpecialFunc(self.onspecialkeypress)
-        glutIgnoreKeyRepeat(1)
-        glutSpecialUpFunc(self.onspecialkeyrelease)
-
-        glutMouseFunc(self.onclick)
-        glutMotionFunc(self.onmousemove)
-
-        glutMainLoop()
-
+        if abs(fwd) or abs(strafe):
+            m = glGetDoublev(GL_MODELVIEW_MATRIX).flatten()
+            glTranslate(fwd*m[2],fwd*m[6],fwd*m[10])
+            glTranslate(strafe*m[0],strafe*m[4],strafe*m[8])
 
 if __name__ == '__main__':
     if not len(sys.argv) > 1:
         print("Usage: " + __file__ + " <world name>")
         sys.exit(2)
 
-    world = sys.argv[1]
-
     with underworlds.Context("3D viewer") as ctx:
-        glrender = GLRenderer(ctx, world)
-        glrender.render(fullscreen = False)
+        app = Underworlds3DViewer(ctx, world = sys.argv[1])
+        app.simple_lights()
+        app.simple_camera_pose()
 
+        while app.loop():
+            app.recursive_render(app.scene.rootnode)
+            app.controls_3d(0)
+            if pygame.K_f in app.keys: pygame.display.toggle_fullscreen()
+            if pygame.K_TAB in app.keys: app.cycle_cameras()
+            if pygame.K_ESCAPE in app.keys: break
