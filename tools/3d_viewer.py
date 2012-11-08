@@ -61,11 +61,15 @@ def get_bounding_box_for_node(nodes, node, bb_min, bb_max, transformation):
     return bb_min, bb_max
 
 class Underworlds3DViewer:
+
+    base_name = "Underworlds 3D viewer"
+
     def __init__(self, ctx, world, w=1024, h=768, fov=75):
 
         pygame.init()
-        pygame.display.set_mode((w,h), pygame.OPENGL)
-        #pygame.display.set_mode((w,h), pygame.OPENGL | pygame.DOUBLEBUF)
+        self.base_name = self.base_name + " <%s>" % world
+        pygame.display.set_caption(self.base_name)
+        pygame.display.set_mode((w,h), pygame.OPENGL | pygame.DOUBLEBUF)
 
         self.ctx = ctx
         self.world = ctx.worlds[world]
@@ -301,7 +305,7 @@ class Underworlds3DViewer:
         self.frames += 1
         if gl_time - self.last_fps_time >= 1000:
             current_fps = self.frames * 1000 / (gl_time - self.last_fps_time)
-            print('%.0f fps' % current_fps)
+            pygame.display.set_caption(self.base_name + " - %.0f fps" % current_fps)
             self.frames = 0
             self.last_fps_time = gl_time
 
