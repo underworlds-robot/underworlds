@@ -30,11 +30,10 @@ from OpenGL.GLU import *
 from OpenGL.GLUT import *
 from OpenGL.arrays import vbo
 from OpenGL.GL import shaders
-from OpenGL.GL.framebufferobjects import *
 
 import pygame
 
-import math
+import math, random
 import numpy
 from numpy import linalg
 
@@ -43,6 +42,11 @@ import underworlds
 from underworlds.types import *
 
 from fontmanager import FontManager
+
+
+#rendering mode
+BASE = "BASE"
+COLORS = "COLORS"
 
 def transform(vector3, matrix4x4):
     """ Apply a transformation matrix on a 3D vector.
@@ -116,6 +120,12 @@ class Underworlds3DViewer:
 
         self.scene = None
         self.meshes = {} # stores the OpenGL vertex/faces/normals buffers pointers
+
+        self.node2colorid = {} # stores a color ID for each node. Useful for mouse picking and visibility checking
+        self.colorid2node = {} # reverse dict of node2colorid
+
+        self.currently_selected = None
+
         self.cameras = [DefaultCamera(w,h,fov)]
         self.current_cam_index = 0
 
@@ -263,13 +273,32 @@ class Underworlds3DViewer:
         glBindBuffer(GL_ARRAY_BUFFER,0)
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,0)
 
+    def get_rgb_from_colorid(self, colorid):
+        r = (colorid >> 0) & 0xff
+        g = (colorid >> 8) & 0xff
+        b = (colorid >> 16) & 0xff
+
+        return (r,g,b)
+
+    def get_color_id(self):
+        id = random.randint(0, 256*256*256)
+        if id not in self.colorid2node:
+            return id
+        else:
+            return self.get_color_id()
+
     def glize(self, node):
 
         logger.info("Loading node <%s>" % node)
 
+        node.selected = False
         node.transformation = numpy.array(node.transformation)
 
         if node.type == MESH:
+            colorid = self.get_color_id()
+            print("Color ID: %d %s" % (colorid, self.get_rgb_from_colorid(colorid)))
+            self.colorid2node[colorid] = node
+            self.node2colorid[node] = colorid
 
             if hasattr(node, "cad"):
                 node.glmeshes = node.cad
@@ -371,9 +400,81 @@ class Underworlds3DViewer:
 
         glUseProgram(self.flatshader)
 
-        self.recursive_render(self.scene.rootnode, self.flatshader, normals = False, ambient = False)
+        self.recursive_render(self.scene.rootnode, self.flatshader, mode=COLORS)
 
         glUseProgram( 0 )
+
+    def get_hovered_node(self, mousex, mousey):
+        """
+        Attention: The performances of this method relies heavily on the size of the display!
+        """
+
+        self.render_colors()
+        # Capture image from the OpenGL buffer
+        buf = ( GLubyte * (3 * self.w * self.h) )(0)
+        glReadPixels(0, 0, self.w, self.h, GL_RGB, GL_UNSIGNED_BYTE, buf)
+
+        #Reinterpret the RGB pixel buffer as a 1-D array of 24bits colors
+        a = numpy.ndarray(len(buf), numpy.dtype('>u1'), buf)
+        colors = numpy.zeros(len(buf) / 3, numpy.dtype('<u4'))
+        for i in range(3):
+            colors.view(dtype='>u1')[i::4] = a.view(dtype='>u1')[i::3]
+
+        colorid = colors[mousex + mousey * self.w]
+
+        if colorid:
+            try:
+                return self.colorid2node[colorid]
+            except KeyError:
+                logger.warning("Unknown colorID %d" % colorid)
+
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+
+    def check_visibility(self):
+        """
+        Attention: The performances of this method relies heavily on the size of the display!
+        """
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+        self.render_colors()
+        # Capture image from the OpenGL buffer
+        buf = ( GLubyte * (3 * self.w * self.h) )(0)
+        glReadPixels(0, 0, self.w, self.h, GL_RGB, GL_UNSIGNED_BYTE, buf)
+
+        #Reinterpret the RGB pixel buffer as a 1-D array of 24bits colors
+        a = numpy.ndarray(len(buf), numpy.dtype('>u1'), buf)
+        colors = numpy.zeros(len(buf) / 3, numpy.dtype('<u4'))
+        for i in range(3):
+            colors.view(dtype='>u1')[i::4] = a.view(dtype='>u1')[i::3]
+
+        colors = colors[numpy.nonzero(colors)] #discard black background
+        
+        if colors.any():
+            bins = numpy.bincount(colors)
+            ii = numpy.nonzero(bins)[0]
+
+            for i in ii:
+                print ("Node %s is visible (%d pix)" % (self.colorid2node[i], bins[i]))
+        else:
+            print("Nothing visible!")
+
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+
+    def screenshot(self, filename = "screenshot.png"):
+
+        logger.info("Taking a screenshot...")
+        import Image
+        # Capture image from the OpenGL buffer
+        buffer = ( GLubyte * (3 * self.w * self.h) )(0)
+        glReadPixels(0, 0, self.w, self.h, GL_RGB, GL_UNSIGNED_BYTE, buffer)
+
+        # Use PIL to convert raw RGB buffer and flip the right way up
+        image = Image.fromstring(mode="RGB", size=(self.w, self.h), data=buffer)
+        image = image.transpose(Image.FLIP_TOP_BOTTOM)
+
+        # Save image to disk
+        image.save(filename)
+        logger.info("...done. Image saved as <%s>." % filename)
+
 
     def render(self, wireframe = False, twosided = False):
 
@@ -394,11 +495,18 @@ class Underworlds3DViewer:
 
         self.recursive_render(self.scene.rootnode, shader)
 
+
         glUseProgram( 0 )
 
-    def recursive_render(self, node, shader, normals = True, ambient = True):
+    def recursive_render(self, node, shader, mode = BASE):
         """ Main recursive rendering method.
         """
+
+        normals = True
+        ambient = True
+        if mode == COLORS:
+            normals = False
+            ambient = False
 
         # save model matrix and apply node transformation
         glPushMatrix()
@@ -417,10 +525,18 @@ class Underworlds3DViewer:
 
                 stride = 24 # 6 * 4 bytes
 
-                mat = self.meshes[id]["material"]
-                glUniform4f( shader.Material_diffuse, *mat["diffuse"] )
-                if ambient:
-                    glUniform4f( shader.Material_ambient, *mat["ambient"] )
+                if node.selected:
+                    glUniform4f( shader.Material_diffuse, 1.0, 0.0, 0.0, 1.0 )
+                else:
+                    if mode == COLORS:
+                            colorid = self.node2colorid[node]
+                            r,g,b= self.get_rgb_from_colorid(colorid)
+                            glUniform4f( shader.Material_diffuse, r/255.0,g/255.0,b/255.0,1.0 )
+                    else:
+                        mat = self.meshes[id]["material"]
+                        glUniform4f( shader.Material_diffuse, *mat["diffuse"] )
+                        if ambient:
+                            glUniform4f( shader.Material_ambient, *mat["ambient"] )
 
 
                 vbo = self.meshes[id]["vbo"]
@@ -455,7 +571,7 @@ class Underworlds3DViewer:
                 glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0)
 
         for child in node.children:
-            self.recursive_render(self.scene.nodes[child], shader, normals, ambient)
+            self.recursive_render(self.scene.nodes[child], shader, mode)
 
         glPopMatrix()
 
@@ -471,10 +587,33 @@ class Underworlds3DViewer:
     def display(self, text, x, y):
         self.fontmanager.display(text,x,y)
 
+    def select_node(self, node):
+        self.currently_selected = node
+        for n in self.scene.nodes:
+            if n is node:
+                n.selected = True
+            else:
+                n.selected = False
+
     def loop(self):
+
         pygame.display.flip()
-        pygame.event.pump()
+        event = pygame.event.poll()
         self.keys = [k for k, pressed in enumerate(pygame.key.get_pressed()) if pressed]
+
+        if event.type == pygame.MOUSEBUTTONDOWN:
+
+            if pygame.mouse.get_pressed()[0]: # left button pressed
+                mousex, mousey = pygame.mouse.get_pos()
+                hovered = self.get_hovered_node(mousex, self.h - mousey)
+                if hovered:
+                    print("Node %s selected" % hovered)
+                    self.select_node(hovered)
+                else:
+                    self.select_node(None)
+            if pygame.mouse.get_pressed()[2]: # right button pressed
+                self.select_node(None)
+
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
         # Compute FPS
@@ -531,25 +670,40 @@ class Underworlds3DViewer:
             strafe = 0
 
         if abs(fwd) or abs(strafe):
-            m = glGetDoublev(GL_MODELVIEW_MATRIX).flatten()
-            glTranslate(fwd*m[2],fwd*m[6],fwd*m[10])
-            glTranslate(strafe*m[0],strafe*m[4],strafe*m[8])
+            if not self.currently_selected:
+                m = glGetDoublev(GL_MODELVIEW_MATRIX).flatten()
+                glTranslate(fwd*m[2],fwd*m[6],fwd*m[10])
+                glTranslate(strafe*m[0],strafe*m[4],strafe*m[8])
+            else:
+                self.move_selected_node(fwd, strafe)
+
+    def move_selected_node(self, fwd, strafe):
+        self.currently_selected.transformation[0][3] += strafe
+        self.currently_selected.transformation[2][3] += fwd
+
+def main():
+    with underworlds.Context("3D viewer") as ctx:
+        app = Underworlds3DViewer(ctx, world = sys.argv[1])
+
+        while app.loop():
+            app.render()
+            app.switch_to_overlay()
+            app.display("world <%s>"% app.world, 10,10)
+            if app.currently_selected: app.display("node <%s>"% app.currently_selected, 10,30)
+            app.switch_from_overlay()
+            app.controls_3d(0)
+            if pygame.K_f in app.keys: pygame.display.toggle_fullscreen()
+            if pygame.K_s in app.keys: app.screenshot()
+            if pygame.K_v in app.keys: app.check_visibility()
+            if pygame.K_TAB in app.keys: app.cycle_cameras()
+            if pygame.K_ESCAPE in app.keys:
+                break
 
 if __name__ == '__main__':
     if not len(sys.argv) > 1:
         print("Usage: " + __file__ + " <world name>")
         sys.exit(2)
 
-    with underworlds.Context("3D viewer") as ctx:
-        app = Underworlds3DViewer(ctx, world = sys.argv[1])
+    main()
 
-        while app.loop():
-            #app.render()
-            app.render_colors()
-            app.switch_to_overlay()
-            app.display("world <%s>"% app.world, 10,10)
-            app.switch_from_overlay()
-            app.controls_3d(0)
-            if pygame.K_f in app.keys: pygame.display.toggle_fullscreen()
-            if pygame.K_TAB in app.keys: app.cycle_cameras()
-            if pygame.K_ESCAPE in app.keys: break
+
