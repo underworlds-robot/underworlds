@@ -12,17 +12,31 @@ Based on:
  - ASSIMP's C++ SimpleOpenGL viewer
 """
 import sys
-import pygame
+
+import logging
+logger = logging.getLogger("underworlds.3d_viewer")
+gllogger = logging.getLogger("OpenGL")
+gllogger.setLevel(logging.WARNING)
+logging.basicConfig(level=logging.INFO)
+
+import OpenGL
+#OpenGL.ERROR_CHECKING=False
+#OpenGL.ERROR_LOGGING = False
+#OpenGL.ERROR_ON_COPY = True
+#OpenGL.FULL_LOGGING = True
 from OpenGL.GL import *
 from OpenGL.GLU import *
 from OpenGL.GLUT import *
+from OpenGL.arrays import vbo
+from OpenGL.GL import shaders
+
+
+import pygame
 
 import math
 import numpy
 from numpy import linalg
 
-import logging; logger = logging.getLogger("underworlds.scene_viewer")
-logging.basicConfig(level=logging.INFO)
 
 import underworlds
 from underworlds.types import *
@@ -84,10 +98,15 @@ class Underworlds3DViewer:
 
     def __init__(self, ctx, world, w=1024, h=768, fov=75):
 
+        self.w = w
+        self.h = h
+
         pygame.init()
         self.base_name = self.base_name + " <%s>" % world
         pygame.display.set_caption(self.base_name)
         pygame.display.set_mode((w,h), pygame.OPENGL | pygame.DOUBLEBUF)
+
+        self.prepare_shaders()
 
         self.fontmanager = FontManager("aller.ttf", w, h, 18)
 
@@ -105,13 +124,91 @@ class Underworlds3DViewer:
         self.frames = 0
         self.last_fps_time = glutGet(GLUT_ELAPSED_TIME)
 
-        self.w = w
-        self.h = h
-        #glMatrixMode(GL_PROJECTION)
-        #aspect = w/h
-        #gluPerspective(fov, aspect, 0.001, 100000.0);
-        #glMatrixMode(GL_MODELVIEW)
+
         self.cycle_cameras()
+
+    def prepare_shaders(self):
+
+        phong_weightCalc = """
+        float phong_weightCalc(
+            in vec3 light_pos, // light position
+            in vec3 frag_normal // geometry normal
+        ) {
+            // returns vec2( ambientMult, diffuseMult )
+            float n_dot_pos = max( 0.0, dot(
+                frag_normal, light_pos
+            ));
+            return n_dot_pos;
+        }
+        """
+
+        vertex = shaders.compileShader( phong_weightCalc +
+        """
+        //if true, discard completely the lighting computation. Useful for color-picking
+        uniform bool flat_shading;
+        uniform vec4 Global_ambient;
+        uniform vec4 Light_ambient;
+        uniform vec4 Light_diffuse;
+        uniform vec3 Light_location;
+        uniform vec4 Material_ambient;
+        uniform vec4 Material_diffuse;
+        attribute vec3 Vertex_position;
+        attribute vec3 Vertex_normal;
+        varying vec4 baseColor;
+        void main() {
+            gl_Position = gl_ModelViewProjectionMatrix * vec4(
+                Vertex_position, 1.0
+            );
+            if(!flat_shading){
+                vec3 EC_Light_location = gl_NormalMatrix * Light_location;
+                float diffuse_weight = phong_weightCalc(
+                    normalize(EC_Light_location),
+                    normalize(gl_NormalMatrix * Vertex_normal)
+                );
+                baseColor = clamp(
+                (
+                    // global component
+                    (Global_ambient * Material_ambient)
+                    // material's interaction with light's contribution
+                    // to the ambient lighting...
+                    + (Light_ambient * Material_ambient)
+                    // material's interaction with the direct light from
+                    // the light.
+                    + (Light_diffuse * Material_diffuse * diffuse_weight)
+                ), 0.0, 1.0);
+            }
+            else {
+                baseColor = Material_diffuse;
+            }
+        }""", GL_VERTEX_SHADER)
+
+        fragment = shaders.compileShader("""
+        varying vec4 baseColor;
+        void main() {
+            gl_FragColor = baseColor;
+        }
+        """, GL_FRAGMENT_SHADER)
+
+        self.shader = shaders.compileProgram(vertex,fragment)
+
+        # add accessors to the shaders uniforms and attributes
+        for uniform in (
+            'flat_shading',
+            'Global_ambient',
+            'Light_ambient','Light_diffuse','Light_location',
+            'Material_ambient','Material_diffuse',
+        ):
+            location = glGetUniformLocation( self.shader,  uniform )
+            if location in (None,-1):
+                print 'Warning, no uniform: %s'%( uniform )
+            setattr( self, uniform+ '_loc', location )
+        for attribute in (
+            'Vertex_position','Vertex_normal',
+        ):
+            location = glGetAttribLocation( self.shader, attribute )
+            if location in (None,-1):
+                print 'Warning, no attribute: %s'%( uniform )
+            setattr( self, attribute+ '_loc', location )
 
     def prepare_gl_buffers(self, id):
 
@@ -129,20 +226,17 @@ class Underworlds3DViewer:
 
         mesh = self.ctx.mesh(id) # retrieve the mesh from the server
 
-        # Fill the buffer for vertex positions
-        meshes[id]["vertices"] = glGenBuffers(1)
-        glBindBuffer(GL_ARRAY_BUFFER, meshes[id]["vertices"])
-        glBufferData(GL_ARRAY_BUFFER, 
-                    numpy.array(mesh["vertices"], dtype=numpy.float32),
-                    GL_STATIC_DRAW)
+        # Fill the buffer for vertex and normals positions
+        v = numpy.array(mesh["vertices"], 'f')
+        n = numpy.array(mesh["normals"], 'f')
 
-        # Fill the buffer for normals
-        meshes[id]["normals"] = glGenBuffers(1)
-        glBindBuffer(GL_ARRAY_BUFFER, meshes[id]["normals"])
-        glBufferData(GL_ARRAY_BUFFER, 
-                    numpy.array(mesh["normals"], dtype=numpy.float32),
-                    GL_STATIC_DRAW)
+        #meshes[id]["vbo"] = glGenBuffers(1)
+        #glBindBuffer(GL_ARRAY_BUFFER, meshes[id]["vbo"])
+        #glBufferData(GL_ARRAY_BUFFER, 
+        #            numpy.hstack((v,n)), # concatenate vertices and normals in one array
+        #            GL_STATIC_DRAW)
 
+        meshes[id]["vbo"] = vbo.VBO(numpy.hstack((v,n)))
 
         # Fill the buffer for vertex positions
         meshes[id]["faces"] = glGenBuffers(1)
@@ -198,21 +292,6 @@ class Underworlds3DViewer:
         self.scene_center = [(a + b) / 2. for a, b in zip(self.bb_min, self.bb_max)]
 
         logger.info("World <%s> ready for 3D rendering." % self.world)
-
-    def simple_lights(self):
-        glEnable(GL_LIGHTING)
-        #glShadeModel(GL_SMOOTH)
-        #glEnable(GL_LIGHT0)
-        #glLightfv(GL_LIGHT0, GL_DIFFUSE, (0.9, 0.45, 0.0, 1.0))
-        #glLightfv(GL_LIGHT0, GL_POSITION, (0.0, 10.0, 10.0, 10.0))
-        glEnable(GL_DEPTH_TEST)
-        glDepthFunc(GL_LEQUAL)
-
-        glEnable(GL_CULL_FACE)
-
-        glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE)
-        glEnable(GL_NORMALIZE)
-        glEnable(GL_LIGHT0)
 
     def cycle_cameras(self):
         if not self.cameras:
@@ -270,37 +349,25 @@ class Underworlds3DViewer:
                    at[0],  at[2],  -at[1],
                        0,      1,       0)
 
-    def apply_material(self, mat):
-        """ Apply an OpenGL, using one OpenGL list per material to cache 
-        the operation.
-        """
+    def render(self, wireframe = False, twosided = False):
 
-        if not "gl_list" in mat: # evaluate once the mat properties, and cache the values in a glDisplayList.
-    
-            diffuse = numpy.array(mat.get("diffuse", [0.8, 0.8, 0.8, 1.0]))
-            specular = numpy.array(mat.get("specular", [0., 0., 0., 1.0]))
-            ambient = numpy.array(mat.get("ambient", [0.2, 0.2, 0.2, 1.0]))
-            emissive = numpy.array(mat.get("emissive", [0., 0., 0., 1.0]))
-            shininess = min(mat.get("shininess", 1.0), 128)
-            wireframe = mat.get("wireframe", 0)
-            twosided = mat.get("twosided", 1)
-    
-            from OpenGL.raw import GL
-            mat["gl_list"] = GL.GLuint(0)
-            mat["gl_list"] = glGenLists(1)
-            glNewList(mat["gl_list"], GL_COMPILE)
-    
-            glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, diffuse)
-            glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specular)
-            glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, ambient)
-            glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, emissive)
-            glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, shininess)
-            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE if wireframe else GL_FILL)
-            glDisable(GL_CULL_FACE) if twosided else glEnable(GL_CULL_FACE)
-    
-            glEndList()
-    
-        glCallList(mat["gl_list"])
+        glEnable(GL_DEPTH_TEST)
+        glDepthFunc(GL_LEQUAL)
+
+
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE if wireframe else GL_FILL)
+        glDisable(GL_CULL_FACE) if twosided else glEnable(GL_CULL_FACE)
+
+        glUseProgram(self.shader)
+        glUniform1i( self.flat_shading_loc, False )
+        glUniform4f( self.Global_ambient_loc, .4,.2,.2,.1 )
+        glUniform4f( self.Light_ambient_loc, .4,.4,.4, 1.0 )
+        glUniform4f( self.Light_diffuse_loc, 1,1,1,1 )
+        glUniform3f( self.Light_location_loc, 2,2,10 )
+
+        self.recursive_render(self.scene.rootnode)
+
+        glUseProgram( 0 )
 
     def recursive_render(self, node):
         """ Main recursive rendering method.
@@ -317,24 +384,41 @@ class Underworlds3DViewer:
         glMultMatrixf(m)
 
         if node.type == MESH:
+
+
             for id in node.glmeshes:
-                self.apply_material(self.meshes[id]["material"])
 
-                glBindBuffer(GL_ARRAY_BUFFER, self.meshes[id]["vertices"])
-                glEnableClientState(GL_VERTEX_ARRAY)
-                glVertexPointer(3, GL_FLOAT, 0, None)
+                stride = 24 # 6 * 4 bytes
 
-                glBindBuffer(GL_ARRAY_BUFFER, self.meshes[id]["normals"])
-                glEnableClientState(GL_NORMAL_ARRAY)
-                glNormalPointer(GL_FLOAT, 0, None)
+                mat = self.meshes[id]["material"]
+                glUniform4f( self.Material_ambient_loc, *mat["ambient"] )
+                glUniform4f( self.Material_diffuse_loc, *mat["diffuse"] )
+
+
+                vbo = self.meshes[id]["vbo"]
+                vbo.bind()
+
+                glEnableVertexAttribArray( self.Vertex_position_loc )
+                glEnableVertexAttribArray( self.Vertex_normal_loc )
+
+                glVertexAttribPointer(
+                    self.Vertex_position_loc,
+                    3, GL_FLOAT,False, stride, vbo
+                )
+                glVertexAttribPointer(
+                    self.Vertex_normal_loc,
+                    3, GL_FLOAT,False, stride, vbo+12
+                )
 
                 glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self.meshes[id]["faces"])
                 glDrawElements(GL_TRIANGLES, self.meshes[id]["nbfaces"] * 3, GL_UNSIGNED_INT, None)
 
-                glDisableClientState(GL_VERTEX_ARRAY)
-                glDisableClientState(GL_NORMAL_ARRAY)
 
-                glBindBuffer(GL_ARRAY_BUFFER, 0)
+                vbo.unbind()
+                glDisableVertexAttribArray( self.Vertex_position_loc )
+                glDisableVertexAttribArray( self.Vertex_normal_loc )
+
+
                 glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0)
 
         for child in node.children:
@@ -425,10 +509,9 @@ if __name__ == '__main__':
 
     with underworlds.Context("3D viewer") as ctx:
         app = Underworlds3DViewer(ctx, world = sys.argv[1])
-        app.simple_lights()
 
         while app.loop():
-            app.recursive_render(app.scene.rootnode)
+            app.render()
             app.switch_to_overlay()
             app.display("world <%s>"% app.world, 10,10)
             app.switch_from_overlay()
