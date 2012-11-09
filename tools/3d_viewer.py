@@ -25,11 +25,12 @@ import OpenGL
 #OpenGL.ERROR_ON_COPY = True
 #OpenGL.FULL_LOGGING = True
 from OpenGL.GL import *
+from OpenGL.error import GLError
 from OpenGL.GLU import *
 from OpenGL.GLUT import *
 from OpenGL.arrays import vbo
 from OpenGL.GL import shaders
-
+from OpenGL.GL.framebufferobjects import *
 
 import pygame
 
@@ -142,10 +143,20 @@ class Underworlds3DViewer:
         }
         """
 
+        flatvertex = shaders.compileShader(
+        """
+        uniform vec4 Material_diffuse;
+        attribute vec3 Vertex_position;
+        varying vec4 baseColor;
+        void main() {
+            gl_Position = gl_ModelViewProjectionMatrix * vec4(
+                Vertex_position, 1.0
+            );
+            baseColor = Material_diffuse;
+        }""", GL_VERTEX_SHADER)
+
         vertex = shaders.compileShader( phong_weightCalc +
         """
-        //if true, discard completely the lighting computation. Useful for color-picking
-        uniform bool flat_shading;
         uniform vec4 Global_ambient;
         uniform vec4 Light_ambient;
         uniform vec4 Light_diffuse;
@@ -159,27 +170,22 @@ class Underworlds3DViewer:
             gl_Position = gl_ModelViewProjectionMatrix * vec4(
                 Vertex_position, 1.0
             );
-            if(!flat_shading){
-                vec3 EC_Light_location = gl_NormalMatrix * Light_location;
-                float diffuse_weight = phong_weightCalc(
-                    normalize(EC_Light_location),
-                    normalize(gl_NormalMatrix * Vertex_normal)
-                );
-                baseColor = clamp(
-                (
-                    // global component
-                    (Global_ambient * Material_ambient)
-                    // material's interaction with light's contribution
-                    // to the ambient lighting...
-                    + (Light_ambient * Material_ambient)
-                    // material's interaction with the direct light from
-                    // the light.
-                    + (Light_diffuse * Material_diffuse * diffuse_weight)
-                ), 0.0, 1.0);
-            }
-            else {
-                baseColor = Material_diffuse;
-            }
+            vec3 EC_Light_location = gl_NormalMatrix * Light_location;
+            float diffuse_weight = phong_weightCalc(
+                normalize(EC_Light_location),
+                normalize(gl_NormalMatrix * Vertex_normal)
+            );
+            baseColor = clamp(
+            (
+                // global component
+                (Global_ambient * Material_ambient)
+                // material's interaction with light's contribution
+                // to the ambient lighting...
+                + (Light_ambient * Material_ambient)
+                // material's interaction with the direct light from
+                // the light.
+                + (Light_diffuse * Material_diffuse * diffuse_weight)
+            ), 0.0, 1.0);
         }""", GL_VERTEX_SHADER)
 
         fragment = shaders.compileShader("""
@@ -189,26 +195,31 @@ class Underworlds3DViewer:
         }
         """, GL_FRAGMENT_SHADER)
 
-        self.shader = shaders.compileProgram(vertex,fragment)
+        self.flatshader = shaders.compileProgram(flatvertex,fragment)
+        self.set_shader_accessors( ('Material_diffuse',), ('Vertex_position',), self.flatshader)
 
-        # add accessors to the shaders uniforms and attributes
-        for uniform in (
-            'flat_shading',
+        self.shader = shaders.compileProgram(vertex,fragment)
+        self.set_shader_accessors( (
             'Global_ambient',
             'Light_ambient','Light_diffuse','Light_location',
             'Material_ambient','Material_diffuse',
-        ):
-            location = glGetUniformLocation( self.shader,  uniform )
-            if location in (None,-1):
-                print 'Warning, no uniform: %s'%( uniform )
-            setattr( self, uniform+ '_loc', location )
-        for attribute in (
+        ), (
             'Vertex_position','Vertex_normal',
-        ):
-            location = glGetAttribLocation( self.shader, attribute )
+        ), self.shader)
+
+    def set_shader_accessors(self, uniforms, attributes, shader):
+        # add accessors to the shaders uniforms and attributes
+        for uniform in uniforms:
+            location = glGetUniformLocation( shader,  uniform )
             if location in (None,-1):
-                print 'Warning, no attribute: %s'%( uniform )
-            setattr( self, attribute+ '_loc', location )
+                logger.warning('No uniform: %s'%( uniform ))
+            setattr( shader, uniform, location )
+
+        for attribute in attributes:
+            location = glGetAttribLocation( shader, attribute )
+            if location in (None,-1):
+                logger.warning('No attribute: %s'%( attribute ))
+            setattr( shader, attribute, location )
 
     def prepare_gl_buffers(self, id):
 
@@ -349,6 +360,21 @@ class Underworlds3DViewer:
                    at[0],  at[2],  -at[1],
                        0,      1,       0)
 
+    def render_colors(self):
+
+        glEnable(GL_DEPTH_TEST)
+        glDepthFunc(GL_LEQUAL)
+
+
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
+        glEnable(GL_CULL_FACE)
+
+        glUseProgram(self.flatshader)
+
+        self.recursive_render(self.scene.rootnode, self.flatshader, normals = False, ambient = False)
+
+        glUseProgram( 0 )
+
     def render(self, wireframe = False, twosided = False):
 
         glEnable(GL_DEPTH_TEST)
@@ -358,18 +384,19 @@ class Underworlds3DViewer:
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE if wireframe else GL_FILL)
         glDisable(GL_CULL_FACE) if twosided else glEnable(GL_CULL_FACE)
 
-        glUseProgram(self.shader)
-        glUniform1i( self.flat_shading_loc, False )
-        glUniform4f( self.Global_ambient_loc, .4,.2,.2,.1 )
-        glUniform4f( self.Light_ambient_loc, .4,.4,.4, 1.0 )
-        glUniform4f( self.Light_diffuse_loc, 1,1,1,1 )
-        glUniform3f( self.Light_location_loc, 2,2,10 )
+        shader = self.shader
 
-        self.recursive_render(self.scene.rootnode)
+        glUseProgram(shader)
+        glUniform4f( shader.Global_ambient, .4,.2,.2,.1 )
+        glUniform4f( shader.Light_ambient, .4,.4,.4, 1.0 )
+        glUniform4f( shader.Light_diffuse, 1,1,1,1 )
+        glUniform3f( shader.Light_location, 2,2,10 )
+
+        self.recursive_render(self.scene.rootnode, shader)
 
         glUseProgram( 0 )
 
-    def recursive_render(self, node):
+    def recursive_render(self, node, shader, normals = True, ambient = True):
         """ Main recursive rendering method.
         """
 
@@ -391,38 +418,44 @@ class Underworlds3DViewer:
                 stride = 24 # 6 * 4 bytes
 
                 mat = self.meshes[id]["material"]
-                glUniform4f( self.Material_ambient_loc, *mat["ambient"] )
-                glUniform4f( self.Material_diffuse_loc, *mat["diffuse"] )
+                glUniform4f( shader.Material_diffuse, *mat["diffuse"] )
+                if ambient:
+                    glUniform4f( shader.Material_ambient, *mat["ambient"] )
 
 
                 vbo = self.meshes[id]["vbo"]
                 vbo.bind()
 
-                glEnableVertexAttribArray( self.Vertex_position_loc )
-                glEnableVertexAttribArray( self.Vertex_normal_loc )
+                glEnableVertexAttribArray( shader.Vertex_position )
+                if normals:
+                    glEnableVertexAttribArray( shader.Vertex_normal )
 
                 glVertexAttribPointer(
-                    self.Vertex_position_loc,
+                    shader.Vertex_position,
                     3, GL_FLOAT,False, stride, vbo
                 )
-                glVertexAttribPointer(
-                    self.Vertex_normal_loc,
-                    3, GL_FLOAT,False, stride, vbo+12
-                )
+
+                if normals:
+                    glVertexAttribPointer(
+                        shader.Vertex_normal,
+                        3, GL_FLOAT,False, stride, vbo+12
+                    )
 
                 glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self.meshes[id]["faces"])
                 glDrawElements(GL_TRIANGLES, self.meshes[id]["nbfaces"] * 3, GL_UNSIGNED_INT, None)
 
 
                 vbo.unbind()
-                glDisableVertexAttribArray( self.Vertex_position_loc )
-                glDisableVertexAttribArray( self.Vertex_normal_loc )
+                glDisableVertexAttribArray( shader.Vertex_position )
+
+                if normals:
+                    glDisableVertexAttribArray( shader.Vertex_normal )
 
 
                 glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0)
 
         for child in node.children:
-            self.recursive_render(self.scene.nodes[child])
+            self.recursive_render(self.scene.nodes[child], shader, normals, ambient)
 
         glPopMatrix()
 
@@ -511,7 +544,8 @@ if __name__ == '__main__':
         app = Underworlds3DViewer(ctx, world = sys.argv[1])
 
         while app.loop():
-            app.render()
+            #app.render()
+            app.render_colors()
             app.switch_to_overlay()
             app.display("world <%s>"% app.world, 10,10)
             app.switch_from_overlay()
