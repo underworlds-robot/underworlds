@@ -296,7 +296,6 @@ class Underworlds3DViewer:
 
         if node.type == MESH:
             colorid = self.get_color_id()
-            print("Color ID: %d %s" % (colorid, self.get_rgb_from_colorid(colorid)))
             self.colorid2node[colorid] = node
             self.node2colorid[node] = colorid
 
@@ -607,7 +606,7 @@ class Underworlds3DViewer:
                 mousex, mousey = pygame.mouse.get_pos()
                 hovered = self.get_hovered_node(mousex, self.h - mousey)
                 if hovered:
-                    print("Node %s selected" % hovered)
+                    logger.debug("Node %s selected" % hovered)
                     self.select_node(hovered)
                 else:
                     self.select_node(None)
@@ -680,6 +679,10 @@ class Underworlds3DViewer:
     def move_selected_node(self, fwd, strafe):
         self.currently_selected.transformation[0][3] += strafe
         self.currently_selected.transformation[2][3] += fwd
+        t = self.currently_selected.transformation
+        self.currently_selected.transformation = self.currently_selected.transformation.tolist()
+        self.scene.nodes.update(self.currently_selected)
+        self.currently_selected.transformation = t
 
 def main():
     with underworlds.Context("3D viewer") as ctx:
