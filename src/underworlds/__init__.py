@@ -3,6 +3,7 @@ import zmq
 import time
 import json
 import copy
+import uuid
 
 import threading
 from collections import deque
@@ -66,7 +67,7 @@ class NodesProxy(threading.Thread):
 
     def send(self, msg):
 
-        req = {"client":self._ctx.name,
+        req = {"client":self._ctx.id,
                "world": self._world.name,
                "req": msg}
 
@@ -315,6 +316,7 @@ class Context(object):
 
     def __init__(self, name):
 
+        self.id = str(uuid.uuid4())
         self.name = name
 
         self.zmq_context = zmq.Context()
@@ -330,7 +332,7 @@ class Context(object):
 
     def send(self, msg):
 
-        req = {"client":self.name,
+        req = {"client":self.id,
                "req": msg}
 
         self.rpc.send(json.dumps(req))

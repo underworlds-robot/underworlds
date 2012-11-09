@@ -14,7 +14,8 @@ class Server(Thread):
         self._running = True
         self._worlds = {}
         self._clients = {} # for each client, stored the links (cf clients' types) with the various worlds.
-
+        self._clientnames = {}
+        
         # meshes are stored as a dictionary:
         # - the key is a unique ID
         # - the value is a ditionary with these keys:
@@ -23,12 +24,10 @@ class Server(Thread):
         #   - normals
         self.meshes = {}
 
-    def new_client(self, name):
-        if name not in self._clients:
-            self._clients[name] = {}
-            logger.info("New client %s has connected." % name)
-        else:
-            logger.info("Client %s has just reconnected." % name)
+    def new_client(self, id, name):
+        self._clients[id] = {}
+        self._clientnames[id] = name
+        logger.info("New client <%s> has connected." % name)
 
     def update_current_links(self, client, world, type):
         if world in self._clients[client]:
@@ -43,7 +42,7 @@ class Server(Thread):
         logger.info("New world %s has been created." % name)
 
     def get_current_topology(self):
-        return {"clients": self._clients, "worlds": self._worlds.keys()}
+        return {"clientnames": self._clientnames, "clients": self._clients, "worlds": self._worlds.keys()}
 
     def delete_node(self, scene, id):
         scene.nodes.remove(scene.node(id))
@@ -115,7 +114,7 @@ class Server(Thread):
                 logger.debug("Received request: <%s(%s)> from %s on world %s" % (cmd, arg, client, world))
 
                 if cmd == "helo":
-                    self.new_client(client)
+                    self.new_client(client, arg)
                     rpc.send(str("helo " + client))
 
                 elif cmd == "uptime":
@@ -182,6 +181,7 @@ class Server(Thread):
 
 if __name__ == "__main__":
 
+    #logging.basicConfig(level=logging.INFO)
     logging.basicConfig(level=logging.DEBUG)
     server = Server()
 

@@ -183,7 +183,8 @@ class UnderworldsTopologyWindow(UnderworldsWindow):
             dotcode += '"%s" [color="#%s", shape=box, style=filled, URL="%s"];\n' % (w, COL_WORLDS, w)
 
         for c in topo["clients"].keys():
-            dotcode += '"%s" [color="#%s", style=filled];\n' % (c, COL_CLIENTS)
+            name = topo["clientnames"][c]
+            dotcode += '"%s" [label="%s", color="#%s", style=filled];\n' % (c, name, COL_CLIENTS)
 
         for c, links in topo["clients"].items():
             for w, details in links.items():
