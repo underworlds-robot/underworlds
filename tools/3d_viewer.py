@@ -600,6 +600,14 @@ class Underworlds3DViewer:
         event = pygame.event.poll()
         self.keys = [k for k, pressed in enumerate(pygame.key.get_pressed()) if pressed]
 
+        if event.type == pygame.KEYDOWN:
+            if pygame.K_f in self.keys: pygame.display.toggle_fullscreen()
+            if pygame.K_s in self.keys: self.screenshot()
+            if pygame.K_v in self.keys: self.check_visibility()
+            if pygame.K_TAB in self.keys: self.cycle_cameras()
+            if pygame.K_ESCAPE in self.keys:
+                return False
+
         if event.type == pygame.MOUSEBUTTONDOWN:
 
             if pygame.mouse.get_pressed()[0]: # left button pressed
@@ -695,12 +703,6 @@ def main():
             if app.currently_selected: app.display("node <%s>"% app.currently_selected, 10,30)
             app.switch_from_overlay()
             app.controls_3d(0)
-            if pygame.K_f in app.keys: pygame.display.toggle_fullscreen()
-            if pygame.K_s in app.keys: app.screenshot()
-            if pygame.K_v in app.keys: app.check_visibility()
-            if pygame.K_TAB in app.keys: app.cycle_cameras()
-            if pygame.K_ESCAPE in app.keys:
-                break
 
 if __name__ == '__main__':
     if not len(sys.argv) > 1:
