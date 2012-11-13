@@ -1,5 +1,6 @@
 
 import zmq
+
 import time
 import json
 import copy
@@ -346,7 +347,14 @@ class Context(object):
 
         logger.info("Connecting to the underworlds server...")
         self.send(b"helo %s" % name)
-        self.rpc.recv()
+        try:
+            self.rpc.recv()
+        except zmq.ZMQError as e:
+            # It's likely we got a EINTR signal.
+            # Not clear what to do here.
+            logger.warning("Got a EINTR in 'helo'. Trying again...")
+            self.rpc.recv()
+            
         logger.info("...done.")
 
         self.worlds = WorldsProxy(self)
