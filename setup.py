@@ -11,7 +11,7 @@ setup(name='underworlds',
       url='http://www.openrobots.org/underworlds',
       package_dir = {'': 'src'},
       scripts=['scripts/underworlded'],
-      packages=['underworlds', 'underworlds.helpers'],
+      packages=['underworlds', 'underworlds.helpers', 'underworlds.tools'],
       data_files=[('share/doc/underworlds', ['LICENSE'])],
       requires=["pyassimp"]
       )
