@@ -52,6 +52,8 @@ class NodesProxy(threading.Thread):
         self._update_node_from_remote(self.rootnode)
         self._ids.append(self.rootnode)
  
+        self.waitforchanges = threading.Condition()
+
         self._running = True
         self.cv = threading.Condition()
 
@@ -79,11 +81,19 @@ class NodesProxy(threading.Thread):
         if id not in self._updated_ids:
             self._updated_ids.append(id)
 
+        self.waitforchanges.acquire()
+        self.waitforchanges.notify_all()
+        self.waitforchanges.release()
 
     def _on_remotely_deleted_node(self, id):
 
         self._len -= 1 # not atomic, but still fine since I'm the only one to write it
         self._deleted_ids.append(id)
+
+        self.waitforchanges.acquire()
+        self.waitforchanges.notify_all()
+        self.waitforchanges.release()
+
 
     def _get_more_node(self):
         
@@ -282,6 +292,17 @@ class SceneProxy(object):
     @property
     def rootnode(self):
         return self.nodes[self.nodes.rootnode]
+
+    def waitforchanges(self, timeout = None):
+        """ This method blocks until either the scene has
+        been updated (a node has been either updated, 
+        added or removed) or the timeout is over.
+
+        :param timeout: timeout in seconds (float value)
+        """
+        self.nodes.waitforchanges.acquire()
+        self.nodes.waitforchanges.wait(timeout)
+        self.nodes.waitforchanges.release()
 
 
     def finalize(self):
