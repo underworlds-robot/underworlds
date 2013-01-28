@@ -41,6 +41,13 @@ class VisibilityMonitor:
     base_name = "Underworlds Visibility Monitor"
 
     def __init__(self, ctx, world, w=80, h=60, stupidmode = False):
+        """
+
+        :param stupidmode: runs continously, as fast as possible. Nice for
+        benchmarking, but not very clever. If set to false (default), computes
+        visibility only when the scene changes.
+
+        """
 
         self.w = w
         self.h = h
@@ -351,7 +358,7 @@ class VisibilityMonitor:
                 update_delay = (delta / self.frames) * len(self.cameras)
 
 
-                print("\x1b[1FUpdate every %.2fms - %.0f fps (per camera)" % (update_delay, fps_per_camera))
+                print("\x1b[1FUpdate every %.2fms - %.0f fps (per camera)                            " % (update_delay, fps_per_camera))
                 self.frames = 0
                 self.last_fps_time = gl_time
 
@@ -380,7 +387,6 @@ if __name__ == '__main__':
     parser.add_argument("world", help="Underworlds world to monitor")
     parser.add_argument("-d", "--debug", help="run in interactive, debug mode", action="store_true")
     args = parser.parse_args()
-        
 
     main(args.world,args.debug)
 
