@@ -1,17 +1,25 @@
 import unittest
+import time
 
-import underworlds.worlds
-import underworlds.services
+import underworlds
+from underworlds.server import Server
 
 class TestVisibility(unittest.TestCase):
 
     def setUp(self):
-        self.bw = underworlds.worlds.get_world("base")
+        self.server = Server()
+        self.server.start()
+        time.sleep(0.1) # leave some time to the server to start
 
-        self.bw.load("res/base_visibility.dae")
-        self.bs = self.bw.get_state()
+        self.ctx = underworlds.Context("unittest - visibility")
 
     def test_visibility(self):
+        world = self.ctx.worlds["base"]
+        world.load("res/base_visibility.dae")
+        self.bs = world.get_state()
+
+
+        self.assertTrue(False, "This test is not expected to run... 'visibility_monitor' should first be turned into some sort of library.")
 
         self.assertTrue(underworlds.services.visibility(self.bs, "Cube1", "Camera1"))
         self.assertFalse(underworlds.services.visibility(self.bs, "Cube2", "Camera1"))
@@ -28,6 +36,10 @@ class TestVisibility(unittest.TestCase):
 
         self.assertFalse(underworlds.services.visibility(self.bs, "Cube1", "Camera6"))
         self.assertTrue(underworlds.services.visibility(self.bs, "Cube2", "Camera6"))
+
+def test_suite():
+     suite = unittest.TestLoader().loadTestsFromTestCase(TestVisibility)
+     return suite
 
 
 if __name__ == '__main__':

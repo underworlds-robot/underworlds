@@ -13,7 +13,6 @@ PROPAGATION_TIME=0.001 # time to wait for node update notification propagation (
 class TestSingleUser(unittest.TestCase):
 
     def setUp(self):
-        print("\n\n-> test\n")
         self.server = Server()
         self.server.start()
         time.sleep(0.1) # leave some time to the server to start
@@ -140,6 +139,11 @@ class TestSingleUser(unittest.TestCase):
         self.ctx.close()
         self.server.stop()
         self.server.join()
+
+def test_suite():
+     suite = unittest.TestLoader().loadTestsFromTestCase(TestSingleUser)
+     return suite
+
 
 if __name__ == '__main__':
     unittest.main()

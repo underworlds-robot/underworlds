@@ -92,5 +92,10 @@ class TestTimeline(unittest.TestCase):
         self.server.stop()
         self.server.join()
 
+def test_suite():
+     suite = unittest.TestLoader().loadTestsFromTestCase(TestTimeline)
+     return suite
+
+
 if __name__ == '__main__':
     unittest.main()

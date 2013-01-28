@@ -51,5 +51,10 @@ class TestNodes(unittest.TestCase):
         self.server.stop()
         self.server.join()
 
+def test_suite():
+     suite = unittest.TestLoader().loadTestsFromTestCase(TestNodes)
+     return suite
+
+
 if __name__ == '__main__':
     unittest.main()
