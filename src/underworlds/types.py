@@ -3,6 +3,8 @@ import copy
 import json
 import time
 
+from underworlds.errors import *
+
 # Clients types
 READER = "READER"
 PROVIDER = "PROVIDER"
@@ -90,7 +92,22 @@ class Scene():
                 return n
 
 class Timeline:
-    pass
+    
+    def wait(self, event, timeout = 0):
+        raise NotImplementedException()
+
+    def on(self, event):
+        return EventMonitor(event)
+
+class EventMonitor:
+
+    def __init__(self, evt):
+        self.evt = evt
+    def call(self, cb):
+        self.cb = cb
+
+    def make_call(self):
+        self.cb(self.evt)
 
 class World:
 
@@ -104,3 +121,32 @@ class World:
         return "world " + self.name
 
 
+class Situation(object):
+
+    # Some situation types
+    GENERIC = "generic"
+
+    # Default owner
+    DEFAULT_OWNER = "SYSTEM"
+
+    def __init__(self, type = GENERIC, owner = DEFAULT_OWNER, pattern = None):
+
+        self.id = str(uuid.uuid4())
+        self.type = type
+        self.owner = owner
+        self.pattern = pattern
+
+        self.starttime = time.time()
+        self.endtime = -1 # convention for situations that are not terminated
+
+class Event(Situation):
+    """ An event is a (immediate) change of the world. It has no
+    duration, contrary to a StaticSituation that has a non-null duration.
+    """
+
+    # Some standard event types
+    MODELLOAD = "modelload"
+
+    def __init__(self, type = Situation.GENERIC, owner = Situation.DEFAULT_OWNER, pattern = None):
+        super(Event, self).__init__(type, owner, pattern)
+        self.endtime = self.starttime
