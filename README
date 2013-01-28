@@ -24,3 +24,24 @@ Installation
 
 > python setup.py install
 
+Testing Underworlds
+===================
+
+1- Start the `underworlds` daemon:
+
+> underworlded start
+
+2- Load some model:
+
+ > uwds-load testing/res/monkey_mat.dae test
+
+This loads 3 monkey heads in the 'test' world.
+
+3- Get a 3D view of this world:
+
+> uwds-view test
+
+Open an OpenGL windows that display the content of the 'test' world. You can
+click on meshes to move them with the keyboard.
+
+
