@@ -1,7 +1,8 @@
 libunderworlds APIs
 ===================
 
-Except otherwise noted, all units follow SI. In particular, length are in meters and angles in radians.
+Except otherwise noted, all units follow SI. In particular, length are in meters 
+and angles in radians.
 
 Node API
 --------
@@ -11,7 +12,8 @@ node
  * <id> node.id
  * <string> node.name
  * <node> node.parent
- * <node> node.entity: if the node belongs to a group  (like a complex object), the node that represent this entity.
+ * <node> node.entity: if the node belongs to a group  (like a complex object), 
+   the node that represent this entity.
  * <matrix4x4f> node.transformation: transformation matrix, relative to parent
  * <dict<string, ?>> node.properties
 
@@ -55,9 +57,11 @@ Low-level API
 
 add(node)
 del(node)
-update(node): node is an updated copy of an existing node. Only non-blank fields are updated.
+update(node): node is an updated copy of an existing node. Only non-blank fields 
+    are updated.
 
-<id> pushmesh(<vec3f*> vertices, <vec3f*> normals, <vec3i*> faces): adds a mesh to the meshes repository. Faces must be triangles.
+<id> pushmesh(<vec3f*> vertices, <vec3f*> normals, <vec3i*> faces): adds a 
+    mesh to the meshes repository. Faces must be triangles.
 delmesh(id): delete a mesh from the meshes repository.
 
 High-level API
@@ -72,7 +76,8 @@ High-level API
 Monitors
 --------
 
-Monitors are processes that are attached to a specific world. They monitor the geometric scene, and produce events added to the world's timeline.
+Monitors are processes that are attached to a specific world. They monitor the 
+geometric scene, and produce events added to the world's timeline.
 
 Examples include:
 * visibility_monitor: signal when a given entity or node is visible from a given camera
