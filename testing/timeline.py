@@ -35,7 +35,7 @@ class TestTimeline(unittest.TestCase):
         def onevt(self, evt):
             ok = True
 
-        self.timeline.on(event).call(onload)
+        self.timeline.on(event).call(onevt)
 
         self.timeline.event(event)
         time.sleep(PROPAGATION_TIME)
@@ -55,7 +55,8 @@ class TestTimeline(unittest.TestCase):
         self.assertEquals(len(t.activesituations), 0)
 
         # can not call .event() with a situation
-        assertRaises(UnderworldsError, t.event(s))
+        with self.assertRaises(TypeError):
+            t.event(s)
 
         e = Event()
 
@@ -73,10 +74,12 @@ class TestTimeline(unittest.TestCase):
 
         event = Event(Event.MODELLOAD)
 
-        self.assertRaises(TimeoutError, self.timeline.wait(event, timeout = 0.1))
+        with self.assertRaises(TimeoutError)
+            self.timeline.on(event).wait(timeout = 0.1)
+
         ModelLoader(self.world).load("res/base.dae")
 
-        self.assertRaises(TimeoutError, self.timeline.wait(event, timeout = 0.1))
+        self.timeline.on(event).wait(timeout = 0.1) # should not throw a timeouterror
 
         ok = False
         def onload(self, evt):

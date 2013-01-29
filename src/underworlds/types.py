@@ -91,22 +91,66 @@ class Scene():
                 return n
 
 class Timeline:
-    
-    def wait(self, event, timeout = 0):
-        raise NotImplementedException()
+
+    def __init__(self):
+
+        self.activesituations = []
 
     def on(self, event):
+        """
+        Creates a new EventMonitor to watch a given event model.
+
+        Typical use is:
+        
+        >>> t = Timeline()
+        >>> e = Event(...)
+        >>>
+        >>> def onevt(evt):
+        >>>    print(evt)
+        >>>
+        >>> t.on(e).call(onevt)
+
+        :returns: a new instance of EventMonitor for this event.
+        """
         return EventMonitor(event)
+
+
+    def start(self, situation):
+        """ Asserts a situation has started to exist.
+
+        Note that in the special case of events, the situation ends
+        immediately.
+        """
+        raise NotImplementedError
+
+    def end(self, situation):
+        """ Asserts the end of a situation.
+
+        Note that in the special case of events, this method a no effect.
+        """
+        raise NotImplementedError
+
+    def event(self, event):
+        """ Asserts a new event occured in this timeline
+        at time 'time.time()'.
+        """
+        self.start(event)
 
 class EventMonitor:
 
     def __init__(self, evt):
         self.evt = evt
+
     def call(self, cb):
         self.cb = cb
 
     def make_call(self):
         self.cb(self.evt)
+
+    def wait(self, timeout = 0):
+        """ Blocks until an event occurs, or the timeout expires.
+        """
+        raise NotImplementedError
 
 class World:
 
@@ -121,6 +165,12 @@ class World:
 
 
 class Situation(object):
+    """ A situation represents a generic temporal object.
+    
+    It has two subclasses:
+     - events, which are instantaneous situations (null duration)
+     - static situations, that have a duration.
+     """
 
     # Some situation types
     GENERIC = "generic"
