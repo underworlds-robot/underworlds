@@ -94,6 +94,9 @@ class Timeline:
 
     def __init__(self):
 
+        self.origin = time.time()
+
+        self.situations = []
         self.activesituations = []
 
     def on(self, event):
@@ -121,14 +124,17 @@ class Timeline:
         Note that in the special case of events, the situation ends
         immediately.
         """
-        raise NotImplementedError
+        self.situations.append(situation)
+        if not situation.isevent():
+            self.activesituations.append(situation)
 
     def end(self, situation):
         """ Asserts the end of a situation.
 
         Note that in the special case of events, this method a no effect.
         """
-        raise NotImplementedError
+        situation.endtime = time.time()
+        self.activesituations.remove(situation)
 
     def event(self, event):
         """ Asserts a new event occured in this timeline
@@ -165,7 +171,8 @@ class World:
 
 
 class Situation(object):
-    """ A situation represents a generic temporal object.
+    """ A situation is an abstract base class that represents a generic
+    temporal object.
     
     It has two subclasses:
      - events, which are instantaneous situations (null duration)
@@ -185,8 +192,12 @@ class Situation(object):
         self.owner = owner
         self.pattern = pattern
 
+        # Start|Endtime are in seconds (float)
         self.starttime = time.time()
         self.endtime = -1 # convention for situations that are not terminated
+
+    def isevent(self):
+        raise NotImplementedError
 
 class Event(Situation):
     """ An event is a (immediate) change of the world. It has no
@@ -199,3 +210,14 @@ class Event(Situation):
     def __init__(self, type = Situation.GENERIC, owner = Situation.DEFAULT_OWNER, pattern = None):
         super(Event, self).__init__(type, owner, pattern)
         self.endtime = self.starttime
+
+    def isevent(self):
+        return True
+
+class StaticSituation(Situation):
+
+    def __init__(self, type = Situation.GENERIC, owner = Situation.DEFAULT_OWNER, pattern = None):
+        super(StaticSituation, self).__init__(type, owner, pattern)
+
+    def isevent(self):
+        return False
