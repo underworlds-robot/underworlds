@@ -15,6 +15,9 @@ FILTER = "FILTER"
 # Node types
 UNDEFINED = 0
 MESH = 1
+# Entities are group of nodes. They are either rigid bodies (ie, no
+# joints, and hence only one node) or complex bodies (ie, with a
+# kinematic chain and hence several nodes, one per joint).
 ENTITY = 2
 CAMERA = 3
 
@@ -79,12 +82,8 @@ class Scene():
 
     def list_entities(self):
         """ Returns the list of entities contained in the scene.
-
-        Entities are group of nodes. They are either rigid bodies (ie, no
-        joints, and hence only one node) or complex bodies (ie, with a
-        kinematic chain and hence several nodes, one per joint).
         """
-        return []
+        raise NotImplementedError
 
     def node(self, id):
         for n in self.nodes:

@@ -10,9 +10,3 @@ class TimeoutError(UnderworldsError):
     def __str__(self):
         return repr(self.value)
 
-class NotImplementedException(UnderworldsError):
-    def __init__(self):
-        self.value = "not implemented"
-    def __str__(self):
-        return repr(self.value)
-
