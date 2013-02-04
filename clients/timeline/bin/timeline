@@ -12,8 +12,11 @@ import gtk.glade
 import gobject
 import cairo
 import math
+import time
 import datetime
 from collections import OrderedDict
+
+import underworlds
 
 class WindowsArea(gtk.DrawingArea):
 
@@ -37,8 +40,6 @@ class WindowsArea(gtk.DrawingArea):
         self.timelinedrawer = TimelineDrawer(timeline)
         self.center_on_time = time.time() * 1000 # time in ms that we center the timeline on
         self.center_on_pos = 50 # abscisse of the time specified above
-
-        self.situations = []
 
     def onscroll(self, widget, evt):
 
@@ -94,7 +95,7 @@ class WindowsArea(gtk.DrawingArea):
     def draw(self, context, width, height):
         self.timelinedrawer.draw(context, width, height, self.center_on_time, self.center_on_pos)
 
-        self.timelinedrawer.draw_situations(context, width, height, self.situations)
+        self.timelinedrawer.draw_situations(context, width, height)
 
 class TimelineDrawer:
 
@@ -230,7 +231,7 @@ class TimelineDrawer:
         context.new_path()
         context.set_source_rgba(0, 0, 0, 0.8)
         context.move_to(x + startoffset, y + interval_height - 4)
-        context.show_text(itrvl.id)
+        context.show_text(itrvl.type)
         context.stroke()
 
     def draw_event(self, context, evt, colour = (1, 0.7, 0.2, 1)):
@@ -246,14 +247,14 @@ class TimelineDrawer:
         context.set_source_rgba(0, 0, 0, 0.8)
         context.rotate(-1)
         context.rel_move_to(10,0)
-        context.show_text(evt.id)
+        context.show_text(evt.type)
         context.stroke()
  
-    def draw_situations(self, context, width, height, situations):
+    def draw_situations(self, context, width, height):
         mid = height/2
 
         lvl = 0
-        for s in situations:
+        for s in self.timeline.situations:
             context.identity_matrix()
             context.move_to(TimelineDrawer.margins, mid)
             if s.isevent():
@@ -304,21 +305,14 @@ class TimelineApp:
 
         self.refresh()
 
-        for e in timeline.situations:
-            self.newsituation(e)
-
-    
-    def newsituation(self, sit):
-        self.windowsarea.situations.append(sit)
-
     def delete(self, source=None, event=None):
         gtk.main_quit()
-    
+
     def refresh(self, source=None, event=None):
         self.windowsarea.redraw()
-        
+
     def select_world(self, source=None, event=None):
-        
+
         res = self.world_dlg.run()
         print(res)
         self.world = self.builder.get_object("world").get_text()
@@ -330,23 +324,27 @@ class TimelineApp:
 if __name__ == '__main__':
 
     ###########################################
-    from underworlds.types import Event, Timeline, StaticSituation
-    import time
-    timeline = Timeline()
-    timeline.event(Event())
-    time.sleep(0.1)
-    timeline.event(Event())
-    s = StaticSituation()
-    timeline.start(s)
-    time.sleep(0.1)
-    s2 = StaticSituation()
-    timeline.start(s2)
-    timeline.event(Event())
-    time.sleep(1)
-    timeline.event(Event())
-    timeline.end(s)
-    timeline.end(s2)
+    #from underworlds.types import Event, Timeline, StaticSituation
+    #import time
+    #timeline = Timeline()
+    #timeline.event(Event())
+    #time.sleep(0.1)
+    #timeline.event(Event())
+    #s = StaticSituation()
+    #timeline.start(s)
+    #time.sleep(0.1)
+    #s2 = StaticSituation()
+    #timeline.start(s2)
+    #timeline.event(Event())
+    #time.sleep(1)
+    #timeline.event(Event())
+    #timeline.end(s)
+    #timeline.end(s2)
     ############################################
 
-    app = TimelineApp(timeline)
-    gtk.main()
+    with underworlds.Context("Timeline viewer") as ctx:
+
+        world = ctx.worlds["base"]
+
+        app = TimelineApp(world.timeline)
+        gtk.main()

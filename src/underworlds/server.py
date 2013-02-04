@@ -62,6 +62,30 @@ class Server(Thread):
         
         return str(action + " " + node.id)
 
+    def new_situation(self, timeline, sit):
+
+        if timeline.situation(sit.id): # the situation already exist. Error!
+            raise StandardError("Attempting to add twice the same situation!")
+
+        else: # new situation
+            timeline.start(sit)
+            action = "start"
+        
+        return str(action + " " + sit.serialize())
+
+    def end_situation(self, timeline, id):
+
+        sit = timeline.situation(id)
+
+        if not sit:
+            raise StandardError("Attempting to end a non-existant situation!")
+
+        timeline.end(sit)
+        action = "end"
+        
+        return str(action + " " + id)
+
+
     def stop(self):
         self._running = False
 
@@ -95,6 +119,7 @@ class Server(Thread):
                 client = req["client"]
                 world = None
                 scene = None
+                timeline = None
 
                 if "world" in req:
 
@@ -104,6 +129,7 @@ class Server(Thread):
                         self.new_world(world)
 
                     scene = self._worlds[world].scene
+                    timeline = self._worlds[world].timeline
 
                 req = req["req"].split(" ",1)
                 cmd = req[0]
@@ -111,14 +137,16 @@ class Server(Thread):
                 if len(req) == 2:
                     arg = req[1]
 
-                logger.debug("Received request: <%s(%s)> from %s on world %s" % (cmd, arg, client, world))
+                logger.debug("Received request: <%s(%s)> from <%s> on world <%s>" % (cmd, arg, self._clientnames.get(client, client), world))
 
                 if cmd == "helo":
                     self.new_client(client, arg)
                     rpc.send(str("helo " + client))
 
-                elif cmd == "uptime":
-                    rpc.send(str(self.uptime()))
+
+                ###########################################################################
+                # NODES
+                ###########################################################################
 
                 elif cmd == "get_nodes_len":
                     rpc.send(str(len(scene.nodes)))
@@ -145,7 +173,7 @@ class Server(Thread):
                     action = self.update_node(scene, node)
                     # tells everyone about the change
                     logger.debug("Sent invalidation action [" + action + "]")
-                    invalidation.send(str("%s### %s" % (world, action)))
+                    invalidation.send(str("%s?nodes### %s" % (world, action)))
 
                 elif cmd == "delete_node":
                     self.update_current_links(client, world, PROVIDER)
@@ -153,8 +181,46 @@ class Server(Thread):
                     action = self.delete_node(scene, arg)
                     # tells everyone about the change
                     logger.debug("Sent invalidation action [delete]")
-                    invalidation.send(str("%s### delete %s" % (world, arg)))
+                    invalidation.send(str("%s?nodes### delete %s" % (world, arg)))
 
+                ###########################################################################
+                # TIMELINES
+                ###########################################################################
+                elif cmd == "timeline_origin":
+                    self.update_current_links(client, world, READER)
+                    rpc.send(json.dumps(timeline.origin))
+
+                elif cmd == "get_situations":
+                    #self.update_current_links(client, world, READER)
+                    #rpc.send(json.dumps(timeline.origin))
+                    #action = self.new_situation(timeline, situation)
+                    ## tells everyone about the change
+                    #logger.debug("Sent invalidation action [" + action + "]")
+                    #invalidation.send(str("%s?timeline### %s" % (world, action)))
+                    pass #TODO
+
+                elif cmd == "new_situation":
+                    self.update_current_links(client, world, PROVIDER)
+                    situation = Situation.deserialize(arg)
+                    rpc.send("ack")
+                    action = self.new_situation(timeline, situation)
+                    # tells everyone about the change
+                    logger.debug("Sent invalidation action [" + action + "]")
+                    invalidation.send(str("%s?timeline### %s" % (world, action)))
+
+                elif cmd == "end_situation":
+                    self.update_current_links(client, world, PROVIDER)
+                    rpc.send("ack")
+                    action = self.end_situation(timeline, arg)
+                    # tells everyone about the change
+                    logger.debug("Sent invalidation action [" + action + "]")
+                    invalidation.send(str("%s?timeline### %s" % (world, action)))
+
+
+
+                ###########################################################################
+                # MESHES
+                ###########################################################################
                 elif cmd == "push_mesh":
                     mesh_id, data = arg.split(" ",1)
                     self.meshes[mesh_id] = json.loads(data)
@@ -166,10 +232,17 @@ class Server(Thread):
                 elif cmd == "has_mesh":
                     rpc.send(json.dumps(arg in self.meshes))
 
+                ###########################################################################
+                # MISC
+                ###########################################################################
+
+                elif cmd == "uptime":
+                    rpc.send(str(self.uptime()))
 
                 elif cmd == "get_topology":
                     rpc.send(json.dumps(self.get_current_topology()))
 
+                ###########################################################################
 
                 else:
                     logger.warning("Unknown request <%s>" % cmd)

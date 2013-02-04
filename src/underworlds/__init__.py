@@ -13,7 +13,7 @@ import logging
 netlogger = logging.getLogger("underworlds.network")
 logger = logging.getLogger("underworlds.client")
 
-from underworlds.types import World, Node
+from underworlds.types import World, Node, Situation
 
 
 #TODO: inherit for a collections.MutableSequence? what is the benefit?
@@ -211,7 +211,7 @@ class NodesProxy(threading.Thread):
 
         >>> nodes.update(n1)
         >>> nodes.update(n2)
-        
+
         does not mean that nodes[0] = n1 and nodes[1] = n2.
         This is due to the lazy access process.
 
@@ -256,7 +256,7 @@ class NodesProxy(threading.Thread):
     
         # receive only invalidation requests for my current world
         invalidation_pub.setsockopt(zmq.UNSUBSCRIBE, "")
-        invalidation_pub.setsockopt(zmq.SUBSCRIBE, self._world.name)
+        invalidation_pub.setsockopt(zmq.SUBSCRIBE, self._world.name + "?nodes")
 
         poller = zmq.Poller()
         poller.register(invalidation_pub, zmq.POLLIN)
@@ -311,6 +311,136 @@ class SceneProxy(object):
         self.nodes.join()
 
 
+class TimelineProxy(threading.Thread):
+
+    def __init__(self, ctx, world):
+
+        threading.Thread.__init__(self)
+
+        self._ctx = ctx # context
+        self._world = world
+
+        self._send("timeline_origin")
+        self.origin = json.loads(self._ctx.rpc.recv())
+        logger.info("The world <%s> has been created %s"%(self._world.name, time.asctime(time.localtime(self.origin))))
+
+        self.situations = []
+        self.activesituations = []
+
+        #### Threading related stuff
+        self.waitforchanges = threading.Condition()
+        self._running = True
+        self.cv = threading.Condition()
+        super(TimelineProxy, self).start()
+
+        # wait for the 'invalidation' thread to notify it is ready
+        self.cv.acquire()
+        self.cv.wait()
+        self.cv.release()
+
+
+    def __del__(self):
+        self._running = False
+
+    def _on_remotely_started_situation(self, sit):
+
+        self.situations.append(sit)
+        if not sit.isevent():
+            self.activesituations.append(sit)
+
+        self.waitforchanges.acquire()
+        self.waitforchanges.notify_all()
+        self.waitforchanges.release()
+
+    def _on_remotely_ended_situation(self, id):
+        #TODO: not thread safe: someone may be iterating on activesituations
+        #while I'm modifying it.
+
+        for sit in self.activesituations:
+            if sit.id == id:
+                sit.endtime = time.time()
+                self.activesituations.remove(sit)
+                break
+
+        self.waitforchanges.acquire()
+        self.waitforchanges.notify_all()
+        self.waitforchanges.release()
+
+
+
+    def start(self, situation):
+        self._send("new_situation " + situation.serialize())
+        self._ctx.rpc.recv() # server send a "ack"
+
+    def event(self, sit):
+        self.start(sit)
+
+    def end(self, situation):
+        self._send("end_situation " + situation.id)
+        self._ctx.rpc.recv() # server send a "ack"
+
+    def _send(self, msg):
+
+        req = {"client":self._ctx.id,
+               "world": self._world.name,
+               "req": msg}
+
+        self._ctx.rpc.send(json.dumps(req))
+
+    def waitforchanges(self, timeout = None):
+        """ This method blocks until either the timeline has
+        been updated (a situation has been either started or
+        ended) or the timeout is over.
+
+        :param timeout: timeout in seconds (float value)
+        """
+        self.waitforchanges.acquire()
+        self.waitforchanges.wait(timeout)
+        self.waitforchanges.release()
+
+    def run(self):
+        #implement here the listener for model updates
+        invalidation_pub = self._ctx.zmq_context.socket(zmq.SUB)
+        invalidation_pub.connect ("tcp://localhost:5556")
+        invalidation_pub.setsockopt(zmq.SUBSCRIBE, "") # no filter
+
+        # wait until we receive something on the 'invalidation'
+        # channel. This makes sure we wont miss any following
+        # message
+        self.cv.acquire()
+        invalidation_pub.recv()
+        self.cv.notify_all()
+        self.cv.release()
+    
+        # receive only invalidation requests for my current world
+        invalidation_pub.setsockopt(zmq.UNSUBSCRIBE, "")
+        invalidation_pub.setsockopt(zmq.SUBSCRIBE, self._world.name + "?timeline")
+
+        poller = zmq.Poller()
+        poller.register(invalidation_pub, zmq.POLLIN)
+
+        while self._running:
+            socks = dict(poller.poll(200))
+            
+            if socks.get(invalidation_pub) == zmq.POLLIN:
+                world, req = invalidation_pub.recv().split("###")
+                action, arg = req.strip().split(" ", 1)
+                if action == "start":
+                    sit = Situation.deserialize(arg)
+                    netlogger.debug("Request to start situation: " + sit.id)
+                    self._on_remotely_started_situation(sit)
+                elif action == "end":
+                    netlogger.debug("Request to end situation: " + arg)
+                    self._on_remotely_ended_situation(arg)
+                elif action == "nop":
+                    pass
+
+
+    def finalize(self):
+        self._running = False
+        self.join()
+
+
 
 class WorldsProxy:
 
@@ -324,6 +454,7 @@ class WorldsProxy:
         world = World(key)
         self._worlds.append(world)
         world.scene = SceneProxy(self._ctx, world)
+        world.timeline = TimelineProxy(self._ctx, world)
         return world
 
     def __setitem__(self, key, world):
@@ -333,6 +464,7 @@ class WorldsProxy:
         for w in self._worlds:
             logger.debug("Context [%s]: Closing world <%s>" % (self._ctx.name, w.name))
             w.scene.finalize()
+            w.timeline.finalize()
 
 class Context(object):
 

@@ -4,6 +4,7 @@ import json
 import time
 
 from underworlds.errors import *
+from underworlds.situations import *
 
 # Clients types
 READER = "READER"
@@ -91,6 +92,15 @@ class Scene():
                 return n
 
 class Timeline:
+    """ Stores 'situations' (ie, either events -- temporal objects
+    without duration -- or static situations -- temporal objects
+    with a non-null duration).
+
+    A timeline also exposes an API to find for temporal patterns.
+
+    TODO: situations are currently stored as a flat array, which
+    is certainly not the most efficient way!
+    """
 
     def __init__(self):
 
@@ -134,13 +144,22 @@ class Timeline:
         Note that in the special case of events, this method a no effect.
         """
         situation.endtime = time.time()
-        self.activesituations.remove(situation)
+        try:
+            self.activesituations.remove(situation)
+        except ValueError: #not there? ignore the 'end'
+            pass
 
     def event(self, event):
         """ Asserts a new event occured in this timeline
         at time 'time.time()'.
         """
         self.start(event)
+
+    def situation(self, id):
+        for sit in self.situations:
+            if sit.id == id:
+                return sit
+
 
 class EventMonitor:
 
@@ -171,16 +190,14 @@ class World:
 
 
 class Situation(object):
-    """ A situation is an abstract base class that represents a generic
-    temporal object.
-    
+    """ A situation represents a generic temporal object.
+
     It has two subclasses:
      - events, which are instantaneous situations (null duration)
      - static situations, that have a duration.
-     """
 
-    # Some situation types
-    GENERIC = "generic"
+    :sees: situations.py for a set of standard situation types
+     """
 
     # Default owner
     DEFAULT_OWNER = "SYSTEM"
@@ -197,27 +214,44 @@ class Situation(object):
         self.endtime = -1 # convention for situations that are not terminated
 
     def isevent(self):
-        raise NotImplementedError
+        return self.endtime == self.starttime
 
-class Event(Situation):
+    def __repr__(self):
+        return self.id + " (" + self.type + ")"
+
+    def __cmp__(self, sit):
+        # TODO: check here other values equality, and raise exception if any differ? may be costly, though...
+         return cmp(self.id, sit.id)
+
+    def __hash__(self):
+        return hash(self.id)
+
+    def serialize(self):
+        return json.dumps(self.__dict__)
+
+    @staticmethod
+    def deserialize(serialized):
+        sit = Situation()
+        data = json.loads(serialized)
+
+        for key, value in data.items():
+            setattr(sit, str(key), value)
+
+        return sit
+
+
+def createevent():
     """ An event is a (immediate) change of the world. It has no
     duration, contrary to a StaticSituation that has a non-null duration.
+
+    This function creates and returns such a instantaneous situation.
+
+    :sees: situations.py for a set of standard events types
     """
 
-    # Some standard event types
-    MODELLOAD = "modelload"
 
-    def __init__(self, type = Situation.GENERIC, owner = Situation.DEFAULT_OWNER, pattern = None):
-        super(Event, self).__init__(type, owner, pattern)
-        self.endtime = self.starttime
+    sit = Situation(type = GENERIC, owner = Situation.DEFAULT_OWNER, pattern = None)
+    sit.endtime = sit.starttime
 
-    def isevent(self):
-        return True
+    return sit
 
-class StaticSituation(Situation):
-
-    def __init__(self, type = Situation.GENERIC, owner = Situation.DEFAULT_OWNER, pattern = None):
-        super(StaticSituation, self).__init__(type, owner, pattern)
-
-    def isevent(self):
-        return False
