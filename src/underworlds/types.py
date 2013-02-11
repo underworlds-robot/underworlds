@@ -188,6 +188,10 @@ class World:
     def __repr__(self):
         return "world " + self.name
 
+    def deepcopy(self, world):
+        self.scene = copy.copy(world.scene)
+        self.timeline = copy.copy(world.timeline)
+
 
 class Situation(object):
     """ A situation represents a generic temporal object.

@@ -145,8 +145,13 @@ class Server(Thread):
 
 
                 ###########################################################################
-                # NODES
+                # SCENES
                 ###########################################################################
+                elif cmd == "deepcopy":
+                    self.update_current_links(client, world, PROVIDER)
+                    logger.info("Running a deep copy of world <%s> into world <%s>" % (arg, world))
+                    self._worlds[world].deepcopy(self._worlds[arg])
+                    rpc.send("ack")
 
                 elif cmd == "get_nodes_len":
                     rpc.send(str(len(scene.nodes)))

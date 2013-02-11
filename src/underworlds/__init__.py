@@ -441,6 +441,32 @@ class TimelineProxy(threading.Thread):
         self.join()
 
 
+class WorldProxy:
+
+    def __init__(self, ctx, name):
+
+        self._ctx = ctx # context
+
+        self._world = World(name)
+
+        self.name = name
+        self.scene = SceneProxy(self._ctx, self._world)
+        self.timeline = TimelineProxy(self._ctx, self._world)
+
+    def copy_from(self, world):
+        req = {"client":self._ctx.id,
+               "world": self._world.name,
+               "req": "deepcopy %s" % (world.name)}
+
+        self._ctx.rpc.send(json.dumps(req))
+        self._ctx.rpc.recv() #ack
+
+    def finalize(self):
+        self.scene.finalize()
+        self.timeline.finalize()
+
+    def __str__(self):
+        return self.name
 
 class WorldsProxy:
 
@@ -451,20 +477,18 @@ class WorldsProxy:
         self._worlds = []
 
     def __getitem__(self, key):
-        world = World(key)
+        world = WorldProxy(self._ctx, key)
         self._worlds.append(world)
-        world.scene = SceneProxy(self._ctx, world)
-        world.timeline = TimelineProxy(self._ctx, world)
         return world
 
     def __setitem__(self, key, world):
+        logger.error("Can not set a world")
         pass
 
     def finalize(self):
         for w in self._worlds:
             logger.debug("Context [%s]: Closing world <%s>" % (self._ctx.name, w.name))
-            w.scene.finalize()
-            w.timeline.finalize()
+            w.finalize()
 
 class Context(object):
 
