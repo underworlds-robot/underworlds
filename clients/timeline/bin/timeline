@@ -20,7 +20,7 @@ import underworlds
 
 class WindowsArea(gtk.DrawingArea):
 
-    def __init__(self, timeline):
+    def __init__(self):
         gtk.DrawingArea.__init__(self)
         self.connect("expose_event", self.expose)
         self.connect("button_press_event", self.onpress)
@@ -37,9 +37,12 @@ class WindowsArea(gtk.DrawingArea):
 
         self._dragging = False
 
-        self.timelinedrawer = TimelineDrawer(timeline)
+        self.timelinedrawer = TimelineDrawer()
         self.center_on_time = time.time() * 1000 # time in ms that we center the timeline on
         self.center_on_pos = 50 # abscisse of the time specified above
+
+    def settimeline(self, timeline):
+        self.timelinedrawer.settimeline(timeline)
 
     def onscroll(self, widget, evt):
 
@@ -83,7 +86,6 @@ class WindowsArea(gtk.DrawingArea):
 
         self.context = widget.window.cairo_create()
 
-        self.timelinedrawer.setclipping(self.context, event)
 
         self.context.select_font_face("Ubuntu", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
         self.context.set_font_size(13)
@@ -95,24 +97,23 @@ class WindowsArea(gtk.DrawingArea):
     def draw(self, context, width, height):
         self.timelinedrawer.draw(context, width, height, self.center_on_time, self.center_on_pos)
 
-        self.timelinedrawer.draw_situations(context, width, height)
 
 class TimelineDrawer:
 
     height = 60
     margins = 10
 
-    def __init__(self, timeline, origin = 0):
+    def __init__(self, origin = 0):
 
-        self.timeline = timeline
+        self.timeline = None
 
         self.ms_per_pixel = 10 # timescale, in milliseconds per pixels
         self.time_of_origin = origin # timestamp, in ms, of the origin of the currently drawn timeline
 
-    def setclipping(self, context, event):
+    def settimeline(self, timeline):
+        self.timeline = timeline
 
-        width = event.area.width
-        height = event.area.height
+    def draw_arrow_tip(self, context, width, height):
 
         mid = height/2
 
@@ -127,12 +128,6 @@ class TimelineDrawer:
         context.set_source_rgba(0, 0, 0, 0)
         context.stroke()
 
-        # set the clip region, with margins
-        context.rectangle(event.area.x + TimelineDrawer.margins, 
-                          event.area.y,
-                          event.area.width - TimelineDrawer.margins - 50,
-                          event.area.height)
-        context.clip()
 
     def draw_timearrow(self, context, width, height):
         mid = height/2
@@ -270,9 +265,26 @@ class TimelineDrawer:
 
         :param center_on: time in ms the timeline will be centered on. If none, show 'now'
         """
+        if not self.timeline:
+            context.move_to(10,10)
+            context.show_text("Click on \"System>Select world\" to connect to a world.")
+            return
+
 
         context.move_to(10,10)
+        context.show_text("World: %s" % self.timeline._world.name)
+        context.move_to(10,30)
         context.show_text("Scale: %d ms/pixel" % self.ms_per_pixel)
+
+        self.draw_arrow_tip(context, width, height)
+        # set the clip region, with margins
+        context.save()
+
+        context.rectangle(TimelineDrawer.margins, 
+                          0,
+                          width - TimelineDrawer.margins - 50,
+                          height)
+        context.clip()
 
         self.draw_timearrow(context, width, height)
 
@@ -285,9 +297,15 @@ class TimelineDrawer:
                 netto_width)
 
 
-class TimelineApp:
-    def __init__(self, timeline):
+        self.draw_situations(context, width, height)
 
+        # restore full window
+        context.restore()
+
+class TimelineApp:
+    def __init__(self, ctx):
+
+        self.ctx = ctx
 
         self.gladefile = "res/timeline.glade"
         self.builder = gtk.Builder()
@@ -298,7 +316,7 @@ class TimelineApp:
         self.world_dlg = self.builder.get_object("world_dialog")
 
 
-        self.windowsarea = WindowsArea(timeline)
+        self.windowsarea = WindowsArea()
         mainvbox = self.builder.get_object("mainvbox")
         mainvbox.pack_start(self.windowsarea)
         self.mainwindow.show_all()
@@ -314,9 +332,10 @@ class TimelineApp:
     def select_world(self, source=None, event=None):
 
         res = self.world_dlg.run()
-        print(res)
-        self.world = self.builder.get_object("world").get_text()
-        print("Connecting to world %s"%self.world)
+        world = self.builder.get_object("world").get_text()
+        print("Connecting to world %s"%world)
+        self.windowsarea.settimeline(self.ctx.worlds[world].timeline)
+
         self.world_dlg.hide()
         self.refresh()
 
@@ -344,7 +363,6 @@ if __name__ == '__main__':
 
     with underworlds.Context("Timeline viewer") as ctx:
 
-        world = ctx.worlds["base"]
 
-        app = TimelineApp(world.timeline)
+        app = TimelineApp(ctx)
         gtk.main()
