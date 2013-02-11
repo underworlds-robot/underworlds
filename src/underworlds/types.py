@@ -33,9 +33,10 @@ class Node():
         self.type = type #one of the node constant defined in types.py
         self.parent = None
         self.children = []
-        self.entity = None #if the node belongs to a group  (like a complex object), the node that represent this entity.
         self.transformation = None # 4x4 transformation matrix, relative to parent. Stored as a list of lists.
-        self.properties = {}
+        self.properties = {
+                "physics": False # no physics applied by default
+            }
         self.last_update = time.time()
         ################################################################
         ##                     END OF THE API                         ##
