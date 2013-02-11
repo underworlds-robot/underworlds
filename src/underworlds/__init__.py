@@ -332,6 +332,8 @@ class TimelineProxy(threading.Thread):
         self.cv = threading.Condition()
         super(TimelineProxy, self).start()
 
+        self._onchange_callbacks = []
+
         # wait for the 'invalidation' thread to notify it is ready
         self.cv.acquire()
         self.cv.wait()
@@ -345,9 +347,7 @@ class TimelineProxy(threading.Thread):
 
         self.situations.append(sit)
 
-        self.waitforchanges.acquire()
-        self.waitforchanges.notify_all()
-        self.waitforchanges.release()
+        self._notifychange()
 
     def _on_remotely_ended_situation(self, id):
 
@@ -356,10 +356,16 @@ class TimelineProxy(threading.Thread):
                 sit.endtime = time.time()
                 break
 
+        self._notifychange()
+
+    def _notifychange(self):
         self.waitforchanges.acquire()
         self.waitforchanges.notify_all()
-        self.waitforchanges.release()
 
+        for cb in self._onchange_callbacks:
+            cb()
+
+        self.waitforchanges.release()
 
 
     def start(self, situation):
@@ -381,6 +387,22 @@ class TimelineProxy(threading.Thread):
                "req": msg}
 
         self._ctx.rpc.send(json.dumps(req))
+
+    def onchange(self, cb, remove = False):
+        """ Register a callback to be invoked when the timeline is updated.
+
+        :param cb: a Python callable
+        :param remove: (default: False) if true, remove the callback instead
+        """
+
+        self.waitforchanges.acquire()
+        if not remove:
+            self._onchange_callbacks.append(cb)
+        else:
+            self._onchange_callbacks.remove(cb)
+
+        self.waitforchanges.release()
+
 
     def waitforchanges(self, timeout = None):
         """ This method blocks until either the timeline has
