@@ -35,6 +35,8 @@ class WindowsArea(gtk.DrawingArea):
 
         self.set_size_request(-1, 200)
 
+        self.update()
+        gobject.timeout_add(100, self.update)
         self._dragging = False
 
         self.timelinedrawer = TimelineDrawer()
@@ -82,6 +84,10 @@ class WindowsArea(gtk.DrawingArea):
             self.window.invalidate_rect(rect, True)
             self.window.process_updates(True)
 
+    def update(self):
+        self.redraw()
+        return True
+
     def expose(self, widget, event):
 
         self.context = widget.window.cairo_create()
@@ -89,6 +95,11 @@ class WindowsArea(gtk.DrawingArea):
 
         self.context.select_font_face("Ubuntu", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
         self.context.set_font_size(13)
+
+        # set a clip region for the expose event
+        self.context.rectangle(event.area.x, event.area.y,
+                               event.area.width, event.area.height)
+        self.context.clip()
 
         self.draw(self.context,  *self.window.get_size())
 
@@ -107,7 +118,7 @@ class TimelineDrawer:
 
         self.timeline = None
 
-        self.ms_per_pixel = 10 # timescale, in milliseconds per pixels
+        self.ms_per_pixel = 200 # timescale, in milliseconds per pixels
         self.time_of_origin = origin # timestamp, in ms, of the origin of the currently drawn timeline
 
     def settimeline(self, timeline):
@@ -259,6 +270,19 @@ class TimelineDrawer:
                 self.draw_interval(context, s, level = lvl)
                 lvl += 1
 
+    def draw_now(self, context, height, colour = (1, 0.1, 0.1, 1)):
+        """ Draws a red bar at current time
+        """
+
+        mid = height/2
+        offset = (time.time() * 1000 - self.time_of_origin) / self.ms_per_pixel
+        context.new_path()
+        context.move_to(TimelineDrawer.margins + offset, mid - TimelineDrawer.height/2 - 5)
+
+        context.set_source_rgba(*colour)
+        context.rel_line_to(0, TimelineDrawer.height + 10)
+        context.stroke()
+ 
 
     def draw(self, context, width, height, center_on_time, center_on_pos):
         """
@@ -297,6 +321,7 @@ class TimelineDrawer:
                 netto_width)
 
 
+        self.draw_now(context, height)
         self.draw_situations(context, width, height)
 
         # restore full window
