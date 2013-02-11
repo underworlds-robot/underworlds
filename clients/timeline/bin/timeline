@@ -44,6 +44,7 @@ class WindowsArea(gtk.DrawingArea):
         self.center_on_pos = 50 # abscisse of the time specified above
 
     def settimeline(self, timeline):
+
         self.timelinedrawer.settimeline(timeline)
 
     def onscroll(self, widget, evt):
@@ -224,7 +225,9 @@ class TimelineDrawer:
         context.rel_move_to(0, TimelineDrawer.height/2 + 10 + level * (interval_height + 10))
 
         startoffset = (itrvl.starttime * 1000 - self.time_of_origin) / self.ms_per_pixel
-        endoffset = (itrvl.endtime * 1000 - self.time_of_origin) / self.ms_per_pixel
+
+        endtime = itrvl.endtime or time.time() # take care of unfinished situations
+        endoffset = (endtime * 1000 - self.time_of_origin) / self.ms_per_pixel
 
         x,y = context.get_current_point()
 
@@ -237,7 +240,7 @@ class TimelineDrawer:
         context.new_path()
         context.set_source_rgba(0, 0, 0, 0.8)
         context.move_to(x + startoffset, y + interval_height - 4)
-        context.show_text(itrvl.type)
+        context.show_text(str(itrvl))
         context.stroke()
 
     def draw_event(self, context, evt, colour = (1, 0.7, 0.2, 1)):
@@ -253,7 +256,7 @@ class TimelineDrawer:
         context.set_source_rgba(0, 0, 0, 0.8)
         context.rotate(-1)
         context.rel_move_to(10,0)
-        context.show_text(evt.type)
+        context.show_text(str(evt))
         context.stroke()
  
     def draw_situations(self, context, width, height):

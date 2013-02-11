@@ -202,22 +202,28 @@ class Situation(object):
     # Default owner
     DEFAULT_OWNER = "SYSTEM"
 
-    def __init__(self, type = GENERIC, owner = DEFAULT_OWNER, pattern = None):
+    def __init__(self, desc="", type = GENERIC, owner = DEFAULT_OWNER):
 
         self.id = str(uuid.uuid4())
         self.type = type
         self.owner = owner
-        self.pattern = pattern
+        self.desc = desc
 
         # Start|Endtime are in seconds (float)
-        self.starttime = -1 # convention for situations that are not yet started
-        self.endtime = -1 # convention for situations that are not terminated
+        self.starttime = None # convention for situations that are not yet started
+        self.endtime = None # convention for situations that are not terminated
 
     def isevent(self):
         return self.endtime == self.starttime
 
     def __repr__(self):
         return self.id + " (" + self.type + ")"
+
+    def __str__(self):
+        if self.desc:
+            return self.desc
+        else:
+            return self.type
 
     def __cmp__(self, sit):
         # TODO: check here other values equality, and raise exception if any differ? may be costly, though...
