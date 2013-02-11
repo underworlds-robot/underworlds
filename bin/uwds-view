@@ -708,8 +708,15 @@ def main():
         while app.loop():
             app.render()
             app.switch_to_overlay()
-            app.display("world <%s>"% app.world, 10,10)
-            if app.currently_selected: app.display("node <%s>"% app.currently_selected, 10,30)
+            app.display("world <%s>"% app.world, 10, app.h - 30)
+            if app.currently_selected:
+                app.display("node <%s>"% app.currently_selected, 10, app.h - 50)
+                pos = app.h - 70
+                for key, value in app.currently_selected.properties.items():
+
+                    app.display("%s: %s" % (key, value), 30, pos)
+                    pos -= 20
+
             app.switch_from_overlay()
             app.controls_3d(0)
 
