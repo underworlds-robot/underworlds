@@ -41,6 +41,7 @@ from numpy import linalg
 
 
 import underworlds
+from underworlds import situations
 from underworlds.types import *
 
 
@@ -129,6 +130,8 @@ class Underworlds3DViewer:
         self.colorid2node = {} # reverse dict of node2colorid
 
         self.currently_selected = None
+        self.moving = False
+        self.moving_situation = None
 
         self.cameras = [DefaultCamera(w,h,fov)]
         self.current_cam_index = 0
@@ -691,7 +694,16 @@ class Underworlds3DViewer:
                 glTranslate(fwd*m[2],fwd*m[6],fwd*m[10])
                 glTranslate(strafe*m[0],strafe*m[4],strafe*m[8])
             else:
+                if not self.moving:
+                    print("Moving")
+                    self.moving_situation = Situation("motion of %s" % self.currently_selected.name, type = situations.MOTION)
+                    self.world.timeline.start(self.moving_situation)
+                self.moving = True
                 self.move_selected_node(fwd, strafe)
+        else:
+            if self.moving:
+                self.world.timeline.end(self.moving_situation)
+                self.moving = False
 
     def move_selected_node(self, fwd, strafe):
         self.currently_selected.transformation[0][3] += strafe
@@ -720,7 +732,7 @@ def main():
             app.switch_from_overlay()
             app.controls_3d(0)
 
-            time.sleep(0.02)
+            pygame.time.wait(10)
 
 
 #########################################################################

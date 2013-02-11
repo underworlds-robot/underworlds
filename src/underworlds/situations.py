@@ -7,7 +7,7 @@
 # These types are meaningful for all kind of situations
 ###############################################
 GENERIC = "generic situation"
-
+MOTION = "motion"
 
 
 ###############################################
