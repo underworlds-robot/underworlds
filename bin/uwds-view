@@ -61,6 +61,10 @@ def get_bounding_box(scene):
     bb_min = [1e10, 1e10, 1e10] # x,y,z
     bb_max = [-1e10, -1e10, -1e10] # x,y,z
 
+    if not scene.rootnode.children:
+        logger.warning("rootnode has no children! The scene is probably empty.")
+        return None, None
+
     return get_bounding_box_for_node(nodes, scene.rootnode, bb_min, bb_max, linalg.inv(scene.rootnode.transformation))
 
 def get_bounding_box_for_node(nodes, node, bb_min, bb_max, transformation):
@@ -326,6 +330,11 @@ class Underworlds3DViewer:
         #log some statistics
         logger.info("  -> %d nodes" % len(nodes))
         self.bb_min, self.bb_max = get_bounding_box(scene)
+
+        if not self.bb_min:
+            logger.warning("Nothing to display. Leaving now.")
+            sys.exit(0)
+
         logger.info("  -> scene bounding box:" + str(self.bb_min) + " - " + str(self.bb_max))
 
         self.scene_center = [(a + b) / 2. for a, b in zip(self.bb_min, self.bb_max)]
