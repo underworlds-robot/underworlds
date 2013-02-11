@@ -720,6 +720,8 @@ def main():
             app.switch_from_overlay()
             app.controls_3d(0)
 
+            time.sleep(0.02)
+
 
 #########################################################################
 #                               FONT MANAGEMENT                         #
