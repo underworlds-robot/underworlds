@@ -325,7 +325,6 @@ class TimelineProxy(threading.Thread):
         logger.info("The world <%s> has been created %s"%(self._world.name, time.asctime(time.localtime(self.origin))))
 
         self.situations = []
-        self.activesituations = []
 
         #### Threading related stuff
         self.waitforchanges = threading.Condition()
@@ -342,24 +341,19 @@ class TimelineProxy(threading.Thread):
     def __del__(self):
         self._running = False
 
-    def _on_remotely_started_situation(self, sit):
+    def _on_remotely_started_situation(self, sit, isevent = False):
 
         self.situations.append(sit)
-        if not sit.isevent():
-            self.activesituations.append(sit)
 
         self.waitforchanges.acquire()
         self.waitforchanges.notify_all()
         self.waitforchanges.release()
 
     def _on_remotely_ended_situation(self, id):
-        #TODO: not thread safe: someone may be iterating on activesituations
-        #while I'm modifying it.
 
-        for sit in self.activesituations:
+        for sit in self.situations:
             if sit.id == id:
                 sit.endtime = time.time()
-                self.activesituations.remove(sit)
                 break
 
         self.waitforchanges.acquire()
@@ -372,8 +366,9 @@ class TimelineProxy(threading.Thread):
         self._send("new_situation " + situation.serialize())
         self._ctx.rpc.recv() # server send a "ack"
 
-    def event(self, sit):
-        self.start(sit)
+    def event(self, situation):
+        self._send("event " + situation.serialize())
+        self._ctx.rpc.recv() # server send a "ack"
 
     def end(self, situation):
         self._send("end_situation " + situation.id)
@@ -425,10 +420,14 @@ class TimelineProxy(threading.Thread):
             if socks.get(invalidation_pub) == zmq.POLLIN:
                 world, req = invalidation_pub.recv().split("###")
                 action, arg = req.strip().split(" ", 1)
+                if action == "event":
+                    sit = Situation.deserialize(arg)
+                    netlogger.debug("Notification of an event: " + sit.id)
+                    self._on_remotely_started_situation(sit, isevent = True)
                 if action == "start":
                     sit = Situation.deserialize(arg)
                     netlogger.debug("Request to start situation: " + sit.id)
-                    self._on_remotely_started_situation(sit)
+                    self._on_remotely_started_situation(sit, isevent = False)
                 elif action == "end":
                     netlogger.debug("Request to end situation: " + arg)
                     self._on_remotely_ended_situation(arg)

@@ -62,6 +62,17 @@ class Server(Thread):
         
         return str(action + " " + node.id)
 
+    def event(self, timeline, sit):
+
+        if timeline.situation(sit.id): # the situation already exist. Error!
+            raise StandardError("Attempting to add twice the same situation!")
+
+        else: # new situation
+            timeline.event(sit)
+            action = "event"
+
+        return str(action + " " + sit.serialize())
+
     def new_situation(self, timeline, sit):
 
         if timeline.situation(sit.id): # the situation already exist. Error!
@@ -204,6 +215,14 @@ class Server(Thread):
                     #invalidation.send(str("%s?timeline### %s" % (world, action)))
                     pass #TODO
 
+                elif cmd == "event":
+                    self.update_current_links(client, world, PROVIDER)
+                    situation = Situation.deserialize(arg)
+                    rpc.send("ack")
+                    action = self.event(timeline, situation)
+                    # tells everyone about the change
+                    logger.debug("Sent invalidation action [" + action + "]")
+                    invalidation.send(str("%s?timeline### %s" % (world, action)))
                 elif cmd == "new_situation":
                     self.update_current_links(client, world, PROVIDER)
                     situation = Situation.deserialize(arg)

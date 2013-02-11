@@ -108,7 +108,6 @@ class Timeline:
         self.origin = time.time()
 
         self.situations = []
-        self.activesituations = []
 
     def on(self, event):
         """
@@ -135,9 +134,8 @@ class Timeline:
         Note that in the special case of events, the situation ends
         immediately.
         """
+        situation.starttime = time.time()
         self.situations.append(situation)
-        if not situation.isevent():
-            self.activesituations.append(situation)
 
     def end(self, situation):
         """ Asserts the end of a situation.
@@ -145,16 +143,13 @@ class Timeline:
         Note that in the special case of events, this method a no effect.
         """
         situation.endtime = time.time()
-        try:
-            self.activesituations.remove(situation)
-        except ValueError: #not there? ignore the 'end'
-            pass
 
     def event(self, event):
         """ Asserts a new event occured in this timeline
         at time 'time.time()'.
         """
         self.start(event)
+        event.endtime = event.starttime
 
     def situation(self, id):
         for sit in self.situations:
@@ -215,7 +210,7 @@ class Situation(object):
         self.pattern = pattern
 
         # Start|Endtime are in seconds (float)
-        self.starttime = time.time()
+        self.starttime = -1 # convention for situations that are not yet started
         self.endtime = -1 # convention for situations that are not terminated
 
     def isevent(self):
@@ -256,7 +251,6 @@ def createevent():
 
 
     sit = Situation(type = GENERIC, owner = Situation.DEFAULT_OWNER, pattern = None)
-    sit.endtime = sit.starttime
 
     return sit
 
