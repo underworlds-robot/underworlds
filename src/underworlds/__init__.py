@@ -249,6 +249,7 @@ class NodesProxy(threading.Thread):
         # wait until we receive something on the 'invalidation'
         # channel. This makes sure we wont miss any following
         # message
+        time.sleep(0.01) #leave some time to make sure the main thread is already waiting on the condition variable
         self.cv.acquire()
         invalidation_pub.recv()
         self.cv.notify_all()
@@ -424,6 +425,7 @@ class TimelineProxy(threading.Thread):
         # wait until we receive something on the 'invalidation'
         # channel. This makes sure we wont miss any following
         # message
+        time.sleep(0.01) #leave some time to make sure the main thread is already waiting on the condition variable
         self.cv.acquire()
         invalidation_pub.recv()
         self.cv.notify_all()
