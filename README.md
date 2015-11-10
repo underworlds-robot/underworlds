@@ -1,8 +1,10 @@
 Underworlds: Geometric & Temporal Representation for Robots
------------------------------------------------------------
+===========================================================
+
 
 Description
-===========
+-----------
+
 
 Underworlds is a distributed and lightweight framework that aims at sharing
 between clients parallel models of the physical world surrounding a robot.
@@ -20,28 +22,35 @@ This package provides the library, and a small set of core clients that are
 useful for inspection and debugging.
 
 Installation
-============
+------------
 
+```
 > python setup.py install
+```
 
 Testing Underworlds
-===================
+-------------------
 
-1- Start the `underworlds` daemon:
 
+- Start the `underworlds` daemon:
+
+```
 > underworlded start
+```
 
-2- Load some model:
-
- > uwds-load testing/res/monkey_mat.dae test
+- Load some model:
+```
+> uwds-load testing/res/monkey_mat.dae test
+```
 
 This loads 3 monkey heads in the 'test' world.
 
-3- Get a 3D view of this world:
+- Get a 3D view of this world:
 
+```
 > uwds-view test
+```
 
-Open an OpenGL windows that display the content of the 'test' world. You can
+This opens an OpenGL windows that display the content of the 'test' world. You can
 click on meshes to move them with the keyboard.
-
 
