@@ -103,6 +103,7 @@ class ModelLoader:
 
         """
 
+        # Create a context
         with underworlds.Context("model loader") as ctx:
             logger.info("Loading model <%s> with ASSIMP..." % filename)
             model = pyassimp.load(filename, aiProcessPreset_TargetRealtime_MaxQuality)
@@ -118,6 +119,9 @@ class ModelLoader:
                 self.fill_node_details(*pair, assimp_model = model)
             logger.info("...done")
 
+            # Send the nodes to the server (only the nodes -- not yet their
+            # associated meshes)
+            logger.info("Sending the nodes to the server...")
             for name, pair in self.node_map.items():
                 if pair[0] == model.rootnode:
                     logger.info("Merging the root nodes")
@@ -125,6 +129,7 @@ class ModelLoader:
 
                 nodes.update(pair[1])
 
+            # Now, send the meshes (but only if they do not already exist on the server)
             logger.info("Sending meshes to the server...")
             count_sent = 0
             count_notsent = 0

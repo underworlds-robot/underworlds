@@ -216,7 +216,7 @@ class NodesProxy(threading.Thread):
         This is due to the lazy access process.
 
         However, once accessed once, nodes keep their index (until a
-        node which a smaller index is removed).
+        node with a smaller index is removed).
 
         """
         self.send("update_node " + node.serialize())

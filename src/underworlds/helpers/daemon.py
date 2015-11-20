@@ -126,4 +126,4 @@ class Daemon:
         
         It will be called after the process has been daemonized by 
         start() or restart()."""
-
+        raise NotImplementedError()

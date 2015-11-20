@@ -6,10 +6,10 @@
 
 Based on:
 - pygame + mouselook code from http://3dengine.org/Spectator_%28PyOpenGL%29
- - http://www.lighthouse3d.com/tutorials
- - http://www.songho.ca/opengl/gl_transform.html
- - http://code.activestate.com/recipes/325391/
- - ASSIMP's C++ SimpleOpenGL viewer
+- http://www.lighthouse3d.com/tutorials
+- http://www.songho.ca/opengl/gl_transform.html
+- http://code.activestate.com/recipes/325391/
+- ASSIMP's C++ SimpleOpenGL viewer
 """
 import sys
 
@@ -845,6 +845,10 @@ class FontManager:
 
     def __del__(self):
         pygame.font.quit()
+
+#########################################################################
+#########################################################################
+
 if __name__ == '__main__':
     if not len(sys.argv) > 1:
         print("Usage: " + __file__ + " <world name>")
