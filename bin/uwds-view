@@ -252,7 +252,6 @@ class Underworlds3DViewer:
                                       'a_normal'), self.shader)
 
 
-        import pdb;pdb.set_trace()
         #self.set_shader_accessors( (
         #    'Global_ambient',
         #    'Light_ambient','Light_diffuse','Light_location',

@@ -64,8 +64,8 @@ def find_support(node, candidates):
 
 def filter(in_scene, out_scene):
 
-    statics = []
-    dynamics = []
+    static_objs = []
+    dynamic_objs = []
 
     for n in in_scene.nodes:
         if n.type == MESH:
@@ -76,16 +76,16 @@ def filter(in_scene, out_scene):
 
             print("%s -> dynamic: %s" % (n.name, n.properties["physics"]))
             if n.properties["physics"]:
-                dynamics.append(n)
+                dynamic_objs.append(n)
                 print("%s -> aabb: %s" % (n.name, aabb))
             else:
-                statics.append(n)
+                static_objs.append(n)
 
     # sorts static object from the highest one to the lowest one
-    statics.sort(key=lambda node: node.properties["transformed_aabb"][1][1])
+    static_objs.sort(key=lambda node: node.properties["transformed_aabb"][1][1])
 
-    for d in dynamics:
-        support, dt = find_support(d, statics)
+    for d in dynamic_objs:
+        support, dt = find_support(d, static_objs)
         if support:
             print("%s should be on %s. Moving its center at %.2fm" % (d.name, support.name, dt))
 
