@@ -27,14 +27,7 @@ logging.basicConfig(level=logging.INFO)
 
 import underworlds
 from underworlds.types import *
-
-def transform(vector3, matrix4x4):
-    """ Apply a transformation matrix on a 3D vector.
-
-    :param vector3: a numpy array with 3 elements
-    :param matrix4x4: a numpy 4x4 matrix
-    """
-    return numpy.dot(matrix4x4, numpy.append(vector3, 1.))
+from underworlds.helpers.geometry import transform
 
 class VisibilityMonitor:
 
@@ -250,10 +243,6 @@ class VisibilityMonitor:
         glUseProgram( 0 )
 
     def check_visibility(self, debug = False):
-        """
-        Attention: The performances of this method relies heavily on the size of the display!
-        """
-
         for c in self.cameras:
                 
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)

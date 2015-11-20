@@ -43,6 +43,7 @@ from numpy import linalg
 import underworlds
 from underworlds import situations
 from underworlds.types import *
+from underworlds.helpers.geometry import transform, get_scene_bounding_box
 
 
 #rendering mode
@@ -109,47 +110,11 @@ BASIC_FRAGMENT_SHADER="""
 #version 120
 
 varying vec4 v_color;
+
 void main() {
     gl_FragColor = v_color;
 }
 """
-
-def transform(vector3, matrix4x4):
-    """ Apply a transformation matrix on a 3D vector.
-
-    :param vector3: a numpy array with 3 elements
-    :param matrix4x4: a numpy 4x4 matrix
-    """
-    return numpy.dot(matrix4x4, numpy.append(vector3, 1.))
-
-def get_bounding_box(scene):
-    nodes = scene.nodes
-    bb_min = [1e10, 1e10, 1e10] # x,y,z
-    bb_max = [-1e10, -1e10, -1e10] # x,y,z
-
-    if not scene.rootnode.children:
-        logger.warning("rootnode has no children! The scene is probably empty.")
-        return None, None
-
-    return get_bounding_box_for_node(nodes, scene.rootnode, bb_min, bb_max, linalg.inv(scene.rootnode.transformation))
-
-def get_bounding_box_for_node(nodes, node, bb_min, bb_max, transformation):
-
-    transformation = numpy.dot(transformation, node.transformation)
-    if node.type == MESH:
-        for v in node.aabb:
-            v = transform(v, transformation)
-            bb_min[0] = min(bb_min[0], v[0])
-            bb_min[1] = min(bb_min[1], v[1])
-            bb_min[2] = min(bb_min[2], v[2])
-            bb_max[0] = max(bb_max[0], v[0])
-            bb_max[1] = max(bb_max[1], v[1])
-            bb_max[2] = max(bb_max[2], v[2])
-
-    for child in node.children:
-        bb_min, bb_max = get_bounding_box_for_node(nodes, nodes[child], bb_min, bb_max, transformation)
-
-    return bb_min, bb_max
 
 class DefaultCamera:
     def __init__(self, w, h, fov):
@@ -404,12 +369,14 @@ class Underworlds3DViewer:
 
         #log some statistics
         logger.info("  -> %d nodes" % len(nodes))
-        self.bb_min, self.bb_max = get_bounding_box(scene)
 
-        if not self.bb_min:
+        scene_aabb = get_scene_bounding_box(scene)
+
+        if not scene_aabb:
             logger.warning("Nothing to display. Leaving now.")
             sys.exit(0)
 
+        self.bb_min, self.bb_max = scene_aabb
         logger.info("  -> scene bounding box:" + str(self.bb_min) + " - " + str(self.bb_max))
 
         self.scene_center = [(a + b) / 2. for a, b in zip(self.bb_min, self.bb_max)]
