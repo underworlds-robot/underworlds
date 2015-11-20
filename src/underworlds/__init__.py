@@ -564,11 +564,12 @@ class Context(object):
         self.send("uptime")
         return float(self.rpc.recv())
 
-    def push_mesh(self, id, vertices, faces, normals, material = None):
+    def push_mesh(self, id, vertices, faces, normals, colors = None, material = None):
         data = json.dumps(
             {"vertices": vertices,
              "faces": faces,
              "normals": normals,
+             "colors": colors,
              "material": material})
 
         self.send("push_mesh %s %s" % (id, data))

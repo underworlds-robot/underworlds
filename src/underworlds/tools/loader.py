@@ -25,6 +25,7 @@ class ModelLoader:
         m = (mesh.vertices, \
             mesh.faces, \
             mesh.normals, \
+            mesh.colors, \
             mesh.material.properties)
         return hash(str(m))
 
@@ -137,6 +138,7 @@ class ModelLoader:
                                 mesh.vertices.tolist(), 
                                 mesh.faces.tolist(), 
                                 mesh.normals.tolist(),
+                                mesh.colors.tolist(),
                                 mesh.material.properties)
                     count_sent += 1
 
