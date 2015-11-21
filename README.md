@@ -26,7 +26,8 @@ The only mandatory prerequisite is the Python bindings of `ZeroMQ` (`apt-get
 install python-zmq`).
 
 `pyassimp`, `python-OpenGL` and `pygame` are also necessary to use the 3D mesh
-loader and the 3D scene viewer.
+loader and the 3D scene viewer (`apt-get install python-pyassimp python-opengl
+python-pygame`).
 
 Then:
 
