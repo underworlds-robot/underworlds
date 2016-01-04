@@ -51,12 +51,11 @@ physics engine, and so on.
 The core library comes with a few useful components that can be used as
 starting points for your own components.
 
-`uwds-load <bin/uwds-load>`__ for instance opens a static 3D model (like
+`uwds-load <https://github.com/severin-lemaignan/underworlds/tree/master/bin/uwds-load>`__ for instance opens a static 3D model (like
 a FBX file) and adds it to a specific world. Let's see how this example
 work.
 
-The interesting part of the loading takes place in the `method load of
-ModelLoader <src/underworlds/tools/loader.py#L92>`__:
+The interesting part of the loading takes place in :py:meth:`underworlds.tools.loader.ModelLoader.load` :
 
 First, we create a *context*: the context encapsulates a connection to
 the shared datastructure. We give each context a name (typically, the
@@ -109,8 +108,8 @@ Scenes and nodes
 
 A scene represents a 3D environment, made of a set of *nodes*: a node
 can represent either a physical object (or part thereof), or a camera
-(more types of nodes may be added in the future, like *fields*). The
-`node <src/underworlds/types.py#L25>`__ itself has several properties
+(more types of nodes may be added in the future, like *fields*). 
+:py:class:`underworlds.types.Node` itself has several properties
 like a unique identifier, a name, possibly a list of children nodes, a
 3D transformation matrix relative to its parent, etc.
 
@@ -136,7 +135,7 @@ with ``scene.rootnode``.
 3D rendering
 ~~~~~~~~~~~~
 
-The `uwds-view <bin/uwds-view>`__ client shows how the datastructures
+The `uwds-view <https://github.com/severin-lemaignan/underworlds/tree/master/bin/uwds-view>`__ client shows how the datastructures
 provided by Underworlds can be used for realtime 3D rendering with
 OpenGL.
 
@@ -160,7 +159,8 @@ creates a new world that one could call ``stable world``. This new world
 could then be used as input for further processing by other reasonners,
 planners, etc.
 
-`flying\_filter.py <clients/flying_filter.py>`__ implements a naive
+`flying\_filter.py
+<https://github.com/severin-lemaignan/underworlds/tree/master/clients/flying_filter.py>`__ implements a naive
 version of such a physics-based filter (it simply makes flying objects
 to 'drop' on their supports).
 
