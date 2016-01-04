@@ -12,6 +12,6 @@ setup(name='underworlds',
       package_dir = {'': 'src'},
       scripts=['bin/' + f for f in os.listdir('bin')],
       packages=['underworlds', 'underworlds.helpers', 'underworlds.tools'],
-      data_files=[('share/doc/underworlds', ['LICENSE', 'README'])],
+      data_files=[('share/doc/underworlds', ['LICENSE', 'README.md'])],
       requires=["pyassimp"]
       )
