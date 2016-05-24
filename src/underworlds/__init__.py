@@ -169,7 +169,7 @@ class NodesProxy(threading.Thread):
 
             return self._nodes[id]
 
-        elif isinstance(key, basestring): #assume it's a node ID
+        else: #assume it's a node ID
 
             if key in self._ids:
                 # did the node changed since the last time we obtained it?
@@ -184,9 +184,6 @@ class NodesProxy(threading.Thread):
                     #The node does not exist!!
                     raise KeyError("The node %s does not exist" % key)
                 return self._nodes[key]
-
-        else:
-            raise TypeError()
 
     def __len__(self):
         return self._len
@@ -525,7 +522,7 @@ class Context(object):
         self.rpc.connect ("tcp://localhost:5555")
 
         logger.info("Connecting to the underworlds server...")
-        self.send(b"helo %s" % name)
+        self.send("helo %s" % name)
         try:
             self.rpc.recv()
         except zmq.ZMQError as e:
@@ -543,7 +540,7 @@ class Context(object):
         req = {"client":self.id,
                "req": msg}
 
-        self.rpc.send(json.dumps(req))
+        self.rpc.send_json(req)
 
     def topology(self):
         """Returns the current topology to the underworlds environment.
@@ -556,7 +553,7 @@ class Context(object):
         """
         self.send("get_topology")
 
-        return json.loads(self.rpc.recv())
+        return self.rpc.recv_json()
 
     def uptime(self):
         """Returns the server uptime in seconds.
@@ -577,11 +574,11 @@ class Context(object):
 
     def mesh(self, id):
         self.send("get_mesh %s" % id)
-        return json.loads(self.rpc.recv())
+        return self.rpc.recv_json()
 
     def has_mesh(self, id):
         self.send("has_mesh %s" % id)
-        return json.loads(self.rpc.recv())
+        return self.rpc.recv_json()
 
     def __enter__(self):
         return self

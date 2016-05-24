@@ -42,7 +42,7 @@ class Server(Thread):
         logger.info("New world %s has been created." % name)
 
     def get_current_topology(self):
-        return {"clientnames": self._clientnames, "clients": self._clients, "worlds": self._worlds.keys()}
+        return {"clientnames": self._clientnames, "clients": self._clients, "worlds": list(self._worlds.keys())}
 
     def delete_node(self, scene, id):
         scene.nodes.remove(scene.node(id))
@@ -65,7 +65,7 @@ class Server(Thread):
     def event(self, timeline, sit):
 
         if timeline.situation(sit.id): # the situation already exist. Error!
-            raise StandardError("Attempting to add twice the same situation!")
+            raise Exception("Attempting to add twice the same situation!")
 
         else: # new situation
             timeline.event(sit)
@@ -76,7 +76,7 @@ class Server(Thread):
     def new_situation(self, timeline, sit):
 
         if timeline.situation(sit.id): # the situation already exist. Error!
-            raise StandardError("Attempting to add twice the same situation!")
+            raise Exception("Attempting to add twice the same situation!")
 
         else: # new situation
             timeline.start(sit)
@@ -89,7 +89,7 @@ class Server(Thread):
         sit = timeline.situation(id)
 
         if not sit:
-            raise StandardError("Attempting to end a non-existant situation!")
+            raise Exception("Attempting to end a non-existant situation!")
 
         timeline.end(sit)
         action = "end"

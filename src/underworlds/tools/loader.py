@@ -118,14 +118,14 @@ class ModelLoader:
             self.recur_node(model.rootnode)
             logger.info("%d nodes in the model" % len(self.node_map))
             logger.info("Loading the nodes...")
-            for n, pair in self.node_map.items():
+            for n, pair in list(self.node_map.items()):
                 self.fill_node_details(*pair, assimp_model = model)
             logger.info("...done")
 
             # Send the nodes to the server (only the nodes -- not yet their
             # associated meshes)
             logger.info("Sending the nodes to the server...")
-            for name, pair in self.node_map.items():
+            for name, pair in list(self.node_map.items()):
                 if pair[0] == model.rootnode:
                     logger.info("Merging the root nodes")
                     pair[1].id = world.scene.rootnode.id
@@ -136,7 +136,7 @@ class ModelLoader:
             logger.info("Sending meshes to the server...")
             count_sent = 0
             count_notsent = 0
-            for id, mesh in self.meshes.items():
+            for id, mesh in list(self.meshes.items()):
                 if ctx.has_mesh(id):
                     logger.debug("Not resending mesh <%s>: already available on the server" % id)
                     count_notsent += 1
@@ -157,7 +157,7 @@ class ModelLoader:
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     if len(sys.argv) == 1:
-        print("usage: %s path/to/model" % sys.argv[0])
+        print(("usage: %s path/to/model" % sys.argv[0]))
         sys.exit(2)
 
     # Loads the model in the 'DEFAULT_WORLD' (ie, 'base')

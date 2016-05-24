@@ -4,6 +4,7 @@ from numpy import linalg
 import logging; logger = logging.getLogger("underworlds.helpers.geometry")
 
 from ..types import MESH
+from functools import reduce
 
 def transform(vector3, matrix4x4):
     """ Apply a transformation matrix on a 3D vector.

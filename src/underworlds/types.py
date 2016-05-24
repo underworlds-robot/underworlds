@@ -65,7 +65,7 @@ class Node():
         n = Node()
         data = json.loads(serialized)
 
-        for key, value in data.items():
+        for key, value in list(data.items()):
             setattr(n, str(key), value)
         #n.__dict__ = data
         return n
@@ -242,7 +242,7 @@ class Situation(object):
         sit = Situation()
         data = json.loads(serialized)
 
-        for key, value in data.items():
+        for key, value in list(data.items()):
             setattr(sit, str(key), value)
 
         return sit
