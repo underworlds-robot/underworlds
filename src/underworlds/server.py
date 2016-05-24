@@ -165,13 +165,13 @@ class Server(Thread):
                     rpc.send("ack")
 
                 elif cmd == "get_nodes_len":
-                    rpc.send(str(len(scene.nodes)))
+                    rpc.send_json(len(scene.nodes))
 
                 elif cmd == "get_nodes_ids":
-                    rpc.send(json.dumps([n.id for n in scene.nodes]))
+                    rpc.send_json([n.id for n in scene.nodes])
 
                 elif cmd == "get_root_node":
-                    rpc.send(scene.rootnode.id)
+                    rpc.send_json(scene.rootnode.id)
 
                 elif cmd == "get_node":
                     self.update_current_links(client, world, READER)
@@ -184,7 +184,7 @@ class Server(Thread):
 
                 elif cmd == "update_node":
                     self.update_current_links(client, world, PROVIDER)
-                    node = Node.deserialize(arg)
+                    node = Node.deserialize(json.loads(arg))
                     rpc.send("ack")
                     action = self.update_node(scene, node)
                     # tells everyone about the change
@@ -204,11 +204,11 @@ class Server(Thread):
                 ###########################################################################
                 elif cmd == "timeline_origin":
                     self.update_current_links(client, world, READER)
-                    rpc.send(json.dumps(timeline.origin))
+                    rpc.send_json(timeline.origin)
 
                 elif cmd == "get_situations":
                     #self.update_current_links(client, world, READER)
-                    #rpc.send(json.dumps(timeline.origin))
+                    #rpc.send_json(timeline.origin)
                     #action = self.new_situation(timeline, situation)
                     ## tells everyone about the change
                     #logger.debug("Sent invalidation action [" + action + "]")
@@ -251,10 +251,10 @@ class Server(Thread):
                     rpc.send("ack")
 
                 elif cmd == "get_mesh":
-                    rpc.send(json.dumps(self.meshes[arg]))
+                    rpc.send_json(self.meshes[arg])
 
                 elif cmd == "has_mesh":
-                    rpc.send(json.dumps(arg in self.meshes))
+                    rpc.send_json(arg in self.meshes)
 
                 ###########################################################################
                 # MISC
@@ -264,7 +264,7 @@ class Server(Thread):
                     rpc.send(str(self.uptime()))
 
                 elif cmd == "get_topology":
-                    rpc.send(json.dumps(self.get_current_topology()))
+                    rpc.send_json(self.get_current_topology())
 
                 ###########################################################################
 

@@ -27,7 +27,7 @@ class NodesProxy(threading.Thread):
 
 
         self.send("get_nodes_len")
-        self._len = int(self._ctx.rpc.recv())
+        self._len = self._ctx.rpc.recv_json()
 
         self._nodes = {} # node store
 
@@ -43,13 +43,13 @@ class NodesProxy(threading.Thread):
         # list of invalid ids (ie, nodes that have remotely changed).
         # This list is updated asynchronously from a server publisher
         self.send("get_nodes_ids")
-        self._updated_ids = deque(json.loads(self._ctx.rpc.recv()))
+        self._updated_ids = deque(self._ctx.rpc.recv_json())
 
         self._deleted_ids = deque()
 
         # Get the root node
         self.send("get_root_node")
-        self.rootnode = self._ctx.rpc.recv()
+        self.rootnode = self._ctx.rpc.recv_json()
         self._update_node_from_remote(self.rootnode)
         self._ids.append(self.rootnode)
  
@@ -74,7 +74,7 @@ class NodesProxy(threading.Thread):
                "world": self._world.name,
                "req": msg}
 
-        self._ctx.rpc.send(json.dumps(req))
+        self._ctx.rpc.send_json(req)
 
 
     def _on_remotely_updated_node(self, id):
@@ -116,10 +116,10 @@ class NodesProxy(threading.Thread):
 
     def _get_node_from_remote(self, id):
 
-        self.send("get_node " + str(id))
+        self.send("get_node " + id)
         
         self._ids.append(id)
-        data = self._ctx.rpc.recv()
+        data = self._ctx.rpc.recv_json()
         self._nodes[id] = Node.deserialize(data)
 
 
@@ -127,7 +127,8 @@ class NodesProxy(threading.Thread):
 
         self.send("get_node " + id)
 
-        data = self._ctx.rpc.recv()
+        data = self._ctx.rpc.recv_json()
+
         updated_node = Node.deserialize(data)
         self._nodes[id] = updated_node
 
@@ -232,7 +233,7 @@ class NodesProxy(threading.Thread):
         take some time (a couple of milliseconds) to propagate
         the change.
         """
-        self.send("delete_node " + node.id)
+        self.send("delete_node " + str(node.id))
         self._ctx.rpc.recv() # server send a "ack"
 
 
@@ -241,7 +242,7 @@ class NodesProxy(threading.Thread):
         #implement here the listener for model updates
         invalidation_pub = self._ctx.zmq_context.socket(zmq.SUB)
         invalidation_pub.connect ("tcp://localhost:5556")
-        invalidation_pub.setsockopt(zmq.SUBSCRIBE, "") # no filter
+        invalidation_pub.setsockopt(zmq.SUBSCRIBE, b"") # no filter
 
         # wait until we receive something on the 'invalidation'
         # channel. This makes sure we wont miss any following
@@ -253,8 +254,8 @@ class NodesProxy(threading.Thread):
         self.cv.release()
     
         # receive only invalidation requests for my current world
-        invalidation_pub.setsockopt(zmq.UNSUBSCRIBE, "")
-        invalidation_pub.setsockopt(zmq.SUBSCRIBE, self._world.name + "?nodes")
+        invalidation_pub.setsockopt(zmq.UNSUBSCRIBE, b"")
+        invalidation_pub.setsockopt(zmq.SUBSCRIBE, (self._world.name + "?nodes").encode())
 
         poller = zmq.Poller()
         poller.register(invalidation_pub, zmq.POLLIN)
@@ -319,7 +320,7 @@ class TimelineProxy(threading.Thread):
         self._world = world
 
         self._send("timeline_origin")
-        self.origin = json.loads(self._ctx.rpc.recv())
+        self.origin = self._ctx.rpc.recv_json()
         logger.info("The world <%s> has been created %s"%(self._world.name, time.asctime(time.localtime(self.origin))))
 
         self.situations = []
@@ -384,7 +385,7 @@ class TimelineProxy(threading.Thread):
                "world": self._world.name,
                "req": msg}
 
-        self._ctx.rpc.send(json.dumps(req))
+        self._ctx.rpc.send_json(req)
 
     def onchange(self, cb, remove = False):
         """ Register a callback to be invoked when the timeline is updated.
@@ -417,7 +418,7 @@ class TimelineProxy(threading.Thread):
         #implement here the listener for model updates
         invalidation_pub = self._ctx.zmq_context.socket(zmq.SUB)
         invalidation_pub.connect ("tcp://localhost:5556")
-        invalidation_pub.setsockopt(zmq.SUBSCRIBE, "") # no filter
+        invalidation_pub.setsockopt(zmq.SUBSCRIBE, b"") # no filter
 
         # wait until we receive something on the 'invalidation'
         # channel. This makes sure we wont miss any following
@@ -429,8 +430,8 @@ class TimelineProxy(threading.Thread):
         self.cv.release()
     
         # receive only invalidation requests for my current world
-        invalidation_pub.setsockopt(zmq.UNSUBSCRIBE, "")
-        invalidation_pub.setsockopt(zmq.SUBSCRIBE, self._world.name + "?timeline")
+        invalidation_pub.setsockopt(zmq.UNSUBSCRIBE, b"")
+        invalidation_pub.setsockopt(zmq.SUBSCRIBE, (self._world.name + "?timeline").encode())
 
         poller = zmq.Poller()
         poller.register(invalidation_pub, zmq.POLLIN)
@@ -478,7 +479,7 @@ class WorldProxy:
                "world": self._world.name,
                "req": "deepcopy %s" % (world.name)}
 
-        self._ctx.rpc.send(json.dumps(req))
+        self._ctx.rpc.send_json(req)
         self._ctx.rpc.recv() #ack
 
     def finalize(self):
@@ -570,7 +571,7 @@ class Context(object):
              "material": material})
 
         self.send("push_mesh %s %s" % (id, data))
-        self.rpc.recv()
+        self.rpc.recv() # ack
 
     def mesh(self, id):
         self.send("get_mesh %s" % id)

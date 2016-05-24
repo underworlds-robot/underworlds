@@ -61,9 +61,8 @@ class Node():
         return json.dumps(self.__dict__)
 
     @staticmethod
-    def deserialize(serialized):
+    def deserialize(data):
         n = Node()
-        data = json.loads(serialized)
 
         for key, value in list(data.items()):
             setattr(n, str(key), value)
