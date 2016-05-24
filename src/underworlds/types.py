@@ -73,6 +73,8 @@ class Node():
 
 
 class Scene():
+    """An Underworlds scene
+    """
 
     def __init__(self):
 

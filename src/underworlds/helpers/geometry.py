@@ -1,6 +1,10 @@
 import numpy
 from numpy import linalg
 
+import logging; logger = logging.getLogger("underworlds.helpers.geometry")
+
+from ..types import MESH
+
 def transform(vector3, matrix4x4):
     """ Apply a transformation matrix on a 3D vector.
 
@@ -21,10 +25,10 @@ def get_scene_bounding_box(scene):
         logger.warning("rootnode has no children! The scene is probably empty.")
         return None, None
 
-    return _merge_with_bounding_box_for_node(scene, scene.rootnode, bb_min, bb_max, linalg.inv(scene.rootnode.transformation))
+    return get_bounding_box_for_node(scene.nodes, scene.rootnode, bb_min, bb_max, linalg.inv(scene.rootnode.transformation))
 
-def _merge_with_bounding_box_for_node(scene, node, bb_min, bb_max, transformation):
-
+def get_bounding_box_for_node(nodes, node, bb_min, bb_max, transformation):
+    
     transformation = numpy.dot(transformation, node.transformation)
     if node.type == MESH:
         for v in node.aabb:
@@ -37,7 +41,7 @@ def _merge_with_bounding_box_for_node(scene, node, bb_min, bb_max, transformatio
             bb_max[2] = max(bb_max[2], v[2])
 
     for child in node.children:
-        bb_min, bb_max = get_bounding_box_for_node(scene, scene.nodes[child], bb_min, bb_max, transformation)
+        bb_min, bb_max = get_bounding_box_for_node(nodes, nodes[child], bb_min, bb_max, transformation)
 
     return bb_min, bb_max
 

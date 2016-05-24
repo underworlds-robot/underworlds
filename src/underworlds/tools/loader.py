@@ -51,7 +51,8 @@ class ModelLoader:
         logger.debug("Parsing node " + str(assimp_node))
         underworlds_node.name = assimp_node.name
 
-        underworlds_node.parent = self.node_map[assimp_node.parent.name][1].id
+        if assimp_node is not assimp_model.rootnode:
+            underworlds_node.parent = self.node_map[assimp_node.parent.name][1].id
 
         for c in assimp_node.children:
             underworlds_node.children.append(self.node_map[c.name][1].id)
