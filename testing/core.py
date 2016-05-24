@@ -16,9 +16,9 @@ class TestCore(unittest.TestCase):
 
         serialized = n.serialize()
 
-        n2 = Node.deserialize(json.loads(serialized))
+        n2 = Node.deserialize(serialized)
 
-        self.assertEquals(n, n2)
+        self.assertEqual(n, n2)
 
 
 def test_suite():
