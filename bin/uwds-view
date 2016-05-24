@@ -517,7 +517,7 @@ class Underworlds3DViewer:
         glReadPixels(0, 0, self.w, self.h, GL_RGB, GL_UNSIGNED_BYTE, buffer)
 
         # Use PIL to convert raw RGB buffer and flip the right way up
-        image = Image.fromstring(mode="RGB", size=(self.w, self.h), data=buffer)
+        image = Image.frombytes(mode="RGB", size=(self.w, self.h), data=buffer)
         image = image.transpose(Image.FLIP_TOP_BOTTOM)
 
         # Save image to disk
