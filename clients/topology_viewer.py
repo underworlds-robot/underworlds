@@ -204,6 +204,12 @@ class UnderworldsTopologyWindow(UnderworldsWindow):
         return dotcode
 
     def on_node_clicked(self, widget, world, event):
+
+        ### Workaround for xdot mangling the URL (-> the world look like that: "b'test'")
+        import ast
+        world = ast.literal_eval(world).decode()
+        ###
+
         window = UnderworldsWorldWindow(world)
         window.on_reload(None)
 
@@ -219,8 +225,6 @@ class UnderworldsWorldWindow(UnderworldsWindow):
         self.nodes = self.world.scene.nodes
 
     def get_dot_content(self):
-
-
 
         dotcode = "digraph G {\n"
 
