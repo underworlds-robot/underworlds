@@ -3,6 +3,7 @@ import time
 
 import underworlds
 from underworlds.server import Server
+from underworlds.tools.loader import ModelLoader
 
 class TestVisibility(unittest.TestCase):
 
@@ -15,12 +16,13 @@ class TestVisibility(unittest.TestCase):
 
     def test_visibility(self):
         world = self.ctx.worlds["base"]
-        world.load("res/base_visibility.dae")
+        ModelLoader(world.name).load("res/base_visibility.dae")
+
         self.bs = world.get_state()
 
 
-        self.assertTrue(False, "This test is not expected to run... 'visibility_monitor' should first be turned into some sort of library.")
 
+        self.assertTrue(False, "This test is not expected to run... 'visibility_monitor' should first be turned into some sort of library.")
         self.assertTrue(underworlds.services.visibility(self.bs, "Cube1", "Camera1"))
         self.assertFalse(underworlds.services.visibility(self.bs, "Cube2", "Camera1"))
 

@@ -4,6 +4,7 @@ import time
 import underworlds
 from underworlds.server import Server
 from underworlds.types import Node
+from underworlds.tools.loader import ModelLoader
 
 
 class TestCollada(unittest.TestCase):
@@ -17,14 +18,11 @@ class TestCollada(unittest.TestCase):
     def test_frames(self):
 
         world = self.ctx.worlds["base"]
-        world.load("res/base.dae")
+        ModelLoader(world.name).load("res/monkey_mat.dae")
 
-        objects = ["Cube", "Camera", "Lamp"]
+        objects = ['Scene', 'Camera', 'Lamp', 'Monkey_002', 'Monkey_001', 'Monkey']
 
-        bs = world.get_state()
-
-        self.assertItemsEqual(objects, bs.list_objects())
-        self.assertItemsEqual(objects, bs.list_frames())
+        self.assertItemsEqual(objects, [n.name for n in world.scene.nodes])
 
     def tearDown(self):
         self.ctx.close()

@@ -10,7 +10,7 @@ import getopt
 import operator
 
 def usage():
-    print """Unit-testing for the LAAS-CNRS 'underworlds' module.
+    print("""Unit-testing for the LAAS-CNRS 'underworlds' module.
 
 Usage:
 run_tests [OPTIONS]
@@ -18,7 +18,7 @@ run_tests [OPTIONS]
   -f, --failfast           Stops at first failure or error
   -l, --log=[file|stdout]  Where to log: file (in """ + LOG_FILENAME + """) 
                            or stdout (default).
-"""
+""")
 
 
 LOG_FILENAME = "underworlds_tests.log"
@@ -36,7 +36,7 @@ try:
     optlist, args = getopt.getopt(sys.argv[1:], 'hfl:', ['help', 'failfast', 'log='])
 except getopt.GetoptError as err:
     # print help information and exit:
-    print str(err) # will print something like "option -a not recognized"
+    print(str(err)) # will print something like "option -a not recognized"
     usage()
     sys.exit(2)
 
@@ -49,10 +49,10 @@ for o, a in optlist:
         failfast = True
     elif o in ("-l", "--log"):
         if a == "file":
-            print("The output of the unit-tests will be saved in " + LOG_FILENAME)
+            print(("The output of the unit-tests will be saved in " + LOG_FILENAME))
             log_handler = logging.FileHandler(LOG_FILENAME)
     else:
-        print "Unhandled option " + o
+        print("Unhandled option " + o)
         usage()
         sys.exit(2)
 
@@ -105,11 +105,11 @@ print("\n\n=====================================================================
 print("| suite            | nb tests | tests run | failures | errors ||  OK |")
 print("|--------------------------------------------------------------------|")
 for name in results:
-    total = map(operator.add, total, results[name])
-    print(  "| " + name + (" "* (17 - len(name))) + \
-            "|   % 3d    |    % 3d    |   % 3d    |  % 3d   || % 3d |" % (results[name]))
+    total = list(map(operator.add, total, results[name]))
+    print((  "| " + name + (" "* (17 - len(name))) + \
+            "|   % 3d    |    % 3d    |   % 3d    |  % 3d   || % 3d |" % (results[name])))
     print("|--------------------------------------------------------------------|")
     
-print("| TOTAL            |  % 4d    |   % 4d    |   % 3d    |  % 3d   || % 3d |" % (tuple(total)))
+print(("| TOTAL            |  % 4d    |   % 4d    |   % 3d    |  % 3d   || % 3d |" % (tuple(total))))
 print("======================================================================")
 

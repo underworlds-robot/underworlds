@@ -1,4 +1,5 @@
 import unittest
+import json
 
 from underworlds.types import Node, MESH
 
@@ -15,7 +16,7 @@ class TestCore(unittest.TestCase):
 
         serialized = n.serialize()
 
-        n2 = Node.deserialize(serialized)
+        n2 = Node.deserialize(json.loads(serialized))
 
         self.assertEquals(n, n2)
 
