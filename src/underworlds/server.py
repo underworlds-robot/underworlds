@@ -126,7 +126,7 @@ class Server(Thread):
             
             if socks.get(rpc) == zmq.POLLIN:
 
-                req = json.loads(rpc.recv())
+                req = rpc.recv_json()
                 client = req["client"]
                 world = None
                 scene = None
@@ -152,7 +152,7 @@ class Server(Thread):
 
                 if cmd == "helo":
                     self.new_client(client, arg)
-                    rpc.send(str("helo " + client))
+                    rpc.send_json("helo " + client)
 
 
                 ###########################################################################
@@ -162,7 +162,7 @@ class Server(Thread):
                     self.update_current_links(client, world, PROVIDER)
                     logger.info("Running a deep copy of world <%s> into world <%s>" % (arg, world))
                     self._worlds[world].deepcopy(self._worlds[arg])
-                    rpc.send("ack")
+                    rpc.send(b"ack")
 
                 elif cmd == "get_nodes_len":
                     rpc.send_json(len(scene.nodes))
@@ -178,26 +178,26 @@ class Server(Thread):
                     node = scene.node(arg)
                     if not node:
                         logger.warning("Client %s has required a inexistant node %s" % (client, arg))
-                        rpc.send("")
+                        rpc.send(b"")
                     else:
-                        rpc.send(scene.node(arg).serialize())
+                        rpc.send_json(scene.node(arg).serialize())
 
                 elif cmd == "update_node":
                     self.update_current_links(client, world, PROVIDER)
                     node = Node.deserialize(json.loads(arg))
-                    rpc.send("ack")
+                    rpc.send(b"ack")
                     action = self.update_node(scene, node)
                     # tells everyone about the change
                     logger.debug("Sent invalidation action [" + action + "]")
-                    invalidation.send(str("%s?nodes### %s" % (world, action)))
+                    invalidation.send(("%s?nodes### %s" % (world, action)).encode())
 
                 elif cmd == "delete_node":
                     self.update_current_links(client, world, PROVIDER)
-                    rpc.send("ack")
+                    rpc.send(b"ack")
                     action = self.delete_node(scene, arg)
                     # tells everyone about the change
                     logger.debug("Sent invalidation action [delete]")
-                    invalidation.send(str("%s?nodes### delete %s" % (world, arg)))
+                    invalidation.send(("%s?nodes### delete %s" % (world, arg)).encode())
 
                 ###########################################################################
                 # TIMELINES
@@ -212,33 +212,33 @@ class Server(Thread):
                     #action = self.new_situation(timeline, situation)
                     ## tells everyone about the change
                     #logger.debug("Sent invalidation action [" + action + "]")
-                    #invalidation.send(str("%s?timeline### %s" % (world, action)))
+                    #invalidation.send(("%s?timeline### %s" % (world, action)).encode())
                     pass #TODO
 
                 elif cmd == "event":
                     self.update_current_links(client, world, PROVIDER)
                     situation = Situation.deserialize(arg)
-                    rpc.send("ack")
+                    rpc.send(b"ack")
                     action = self.event(timeline, situation)
                     # tells everyone about the change
                     logger.debug("Sent invalidation action [" + action + "]")
-                    invalidation.send(str("%s?timeline### %s" % (world, action)))
+                    invalidation.send("%s?timeline### %s" % (world, action).encode())
                 elif cmd == "new_situation":
                     self.update_current_links(client, world, PROVIDER)
                     situation = Situation.deserialize(arg)
-                    rpc.send("ack")
+                    rpc.send(b"ack")
                     action = self.new_situation(timeline, situation)
                     # tells everyone about the change
                     logger.debug("Sent invalidation action [" + action + "]")
-                    invalidation.send(str("%s?timeline### %s" % (world, action)))
+                    invalidation.send(("%s?timeline### %s" % (world, action)).encode())
 
                 elif cmd == "end_situation":
                     self.update_current_links(client, world, PROVIDER)
-                    rpc.send("ack")
+                    rpc.send(b"ack")
                     action = self.end_situation(timeline, arg)
                     # tells everyone about the change
                     logger.debug("Sent invalidation action [" + action + "]")
-                    invalidation.send(str("%s?timeline### %s" % (world, action)))
+                    invalidation.send(("%s?timeline### %s" % (world, action)).encode())
 
 
 
@@ -248,7 +248,7 @@ class Server(Thread):
                 elif cmd == "push_mesh":
                     mesh_id, data = arg.split(" ",1)
                     self.meshes[mesh_id] = json.loads(data)
-                    rpc.send("ack")
+                    rpc.send(b"ack")
 
                 elif cmd == "get_mesh":
                     rpc.send_json(self.meshes[arg])
@@ -261,7 +261,7 @@ class Server(Thread):
                 ###########################################################################
 
                 elif cmd == "uptime":
-                    rpc.send(str(self.uptime()))
+                    rpc.send_json(self.uptime())
 
                 elif cmd == "get_topology":
                     rpc.send_json(self.get_current_topology())
@@ -270,9 +270,9 @@ class Server(Thread):
 
                 else:
                     logger.warning("Unknown request <%s>" % cmd)
-                    rpc.send(str("unknown request"))
+                    rpc.send(b"unknown request")
             else:
-                invalidation.send(str("nop"))
+                invalidation.send(b"nop")
 
         logger.info("Closing the server.")
 

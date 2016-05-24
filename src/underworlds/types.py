@@ -50,18 +50,24 @@ class Node():
         type = ["undefined", "mesh", "entity", "camera"][self.type]
         return self.name if self.name else self.id + " (" + type + ")"
 
-    def __cmp__(self, node):
-        # TODO: check here other values equality, and raise exception if any differ? may be costly, though...
-         return cmp(self.id, node.id)
+    def __lt__(self, node):
+        return self.id < node.id
+
+    def __eq__(self, node):
+        return self.id == node.id
 
     def __hash__(self):
         return hash(self.id)
 
     def serialize(self):
-        return json.dumps(self.__dict__)
+        """Outputs a dict-like view of the node
+        """
+        return self.__dict__
 
     @staticmethod
     def deserialize(data):
+        """Creates a node from a dict-like description.
+        """
         n = Node()
 
         for key, value in list(data.items()):
@@ -234,12 +240,15 @@ class Situation(object):
         return hash(self.id)
 
     def serialize(self):
-        return json.dumps(self.__dict__)
+        """Outputs a dict-like view of the situation
+        """
+        return self.__dict__
 
     @staticmethod
-    def deserialize(serialized):
+    def deserialize(data):
+        """Creates a situation from a dict-like description.
+        """
         sit = Situation()
-        data = json.loads(serialized)
 
         for key, value in list(data.items()):
             setattr(sit, str(key), value)

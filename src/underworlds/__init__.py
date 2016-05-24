@@ -217,7 +217,7 @@ class NodesProxy(threading.Thread):
         node with a smaller index is removed).
 
         """
-        self.send("update_node " + node.serialize())
+        self.send("update_node " + json.dumps(node.serialize()))
         self._ctx.rpc.recv() # server send a "ack"
 
     def remove(self, node):
@@ -264,7 +264,9 @@ class NodesProxy(threading.Thread):
             socks = dict(poller.poll(200))
             
             if socks.get(invalidation_pub) == zmq.POLLIN:
-                world, req = invalidation_pub.recv().split("###")
+                msg = invalidation_pub.recv().decode()
+
+                world, req = msg.split("###")
                 action, id = req.strip().split()
                 if action == "update":
                     netlogger.debug("Request to update node: " + id)
@@ -278,6 +280,9 @@ class NodesProxy(threading.Thread):
                     self._on_remotely_deleted_node(id)
                 elif action == "nop":
                     pass
+                else:
+                    raise RuntimeError("Received invalid message on the invalidation "
+                                       "channel: <%s>" % req)
 
 
 
@@ -440,7 +445,8 @@ class TimelineProxy(threading.Thread):
             socks = dict(poller.poll(200))
             
             if socks.get(invalidation_pub) == zmq.POLLIN:
-                world, req = invalidation_pub.recv().split("###")
+                msg = invalidation_pub.recv().decode()
+                world, req = msg.split("###")
                 action, arg = req.strip().split(" ", 1)
                 if action == "event":
                     sit = Situation.deserialize(arg)
@@ -465,6 +471,10 @@ class TimelineProxy(threading.Thread):
 class WorldProxy:
 
     def __init__(self, ctx, name):
+    
+        if not isinstance(name, str):
+            raise TypeError("A world proxy must be initialized "
+                            "with a string as name. Got %s instead." % type(name))
 
         self._ctx = ctx # context
 
@@ -560,7 +570,7 @@ class Context(object):
         """Returns the server uptime in seconds.
         """
         self.send("uptime")
-        return float(self.rpc.recv())
+        return self.rpc.recv_json()
 
     def push_mesh(self, id, vertices, faces, normals, colors = None, material = None):
         data = json.dumps(
