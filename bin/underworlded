@@ -42,12 +42,18 @@ if __name__ == "__main__":
                 elif 'restart' == sys.argv[1]:
                         print("underworlds server restarted. Logs go to %s" % LOGFILE)
                         daemon.restart()
+                elif 'foreground' == sys.argv[1]:
+                        print("Starting underworlds server in foreground. Use 'underworlded start' to start as a daemon.")
+                        consolelog = logging.StreamHandler()
+                        logger.addHandler(consolelog)
+                        server = Server()
+                        server.start()
                 else:
                         print "Unknown command"
                         sys.exit(2)
                 sys.exit(0)
         else:
-                print "usage: %s start|stop|restart" % sys.argv[0]
+                print "usage: %s start|stop|restart|foreground" % sys.argv[0]
                 sys.exit(2)
 
 
