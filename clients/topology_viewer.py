@@ -1,11 +1,12 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import os
 import sys
 sys.path.append("/usr/share/xdot") # Debian bug in xdot packaging. cf http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=679532
-import gtk
-import gtk.gdk
-import gobject
+import gi
+gi.require_version('Gtk', '3.0')
+
+from gi.repository import Gtk
 
 try:
     import xdot
@@ -14,7 +15,7 @@ except ImportError:
           "On Debian/Ubuntu, apt-get install xdot.")
     sys.exit(1)
 
-import logging; logger = logging.getLogger("underworlds")
+import logging; logger = logging.getLogger("underworlds.topology_viewer")
 logging.basicConfig(level=logging.INFO)
 
 import time
@@ -108,21 +109,6 @@ def wavelength_to_rgb(wl):
 
 class UnderworldsWindow(xdot.DotWindow):
 
-    ui = '''
-    <ui>
-        <toolbar name="ToolBar">
-            <toolitem action="Reload"/>
-            <separator/>
-            <toolitem action="Autorefresh"/>
-            <separator/>
-            <toolitem action="ZoomIn"/>
-            <toolitem action="ZoomOut"/>
-            <toolitem action="ZoomFit"/>
-            <toolitem action="Zoom100"/>
-        </toolbar>
-    </ui>
-    '''
-
     base_name = "Underworlds Viewer"
 
     def __init__(self):
@@ -132,18 +118,18 @@ class UnderworldsWindow(xdot.DotWindow):
         self.autorefresh = False
 
         # Create actions
-        actiongroup = gtk.ActionGroup('ReloadAction')
+        actiongroup = Gtk.ActionGroup('ReloadAction')
         actiongroup.add_actions((
-            ('Reload', gtk.STOCK_REFRESH, None, None, "Reload the topology", self.on_reload),
+            ('Reload', Gtk.STOCK_REFRESH, None, None, "Reload the topology", self.on_reload),
         ))
         actiongroup.add_toggle_actions((
-            ('Autorefresh', gtk.STOCK_MEDIA_PLAY, None, None, "Autorefresh", self.toggle_autorefresh, False),
+            ('Autorefresh', Gtk.STOCK_MEDIA_PLAY, None, None, "Autorefresh", self.toggle_autorefresh, False),
         ))
 
         # Add the actiongroup to the uimanager
         self.uimanager.insert_action_group(actiongroup)
 
-        self.widget.connect('clicked', self.on_node_clicked)
+        self.dotwidget.connect('clicked', self.on_node_clicked)
 
         self._ctx = underworlds.Context("topology observer")
 
@@ -283,8 +269,8 @@ class UnderworldsWorldWindow(UnderworldsWindow):
 def main():
     window = UnderworldsTopologyWindow()
     window.on_reload(None)
-    window.connect('destroy', gtk.main_quit)
-    gtk.main()
+    window.connect('destroy', Gtk.main_quit)
+    Gtk.main()
 
 if __name__ == '__main__':
     main()
