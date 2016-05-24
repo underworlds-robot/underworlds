@@ -66,7 +66,7 @@ click on meshes to move them with the keyboard.
 Running the unit-tests
 ----------------------
 
-Underworlds provides a fairly extensive set of unit-tests. Run them with:
+Underworlds provides a few unit-tests. Run them with:
 
 ```
 > cd testing
