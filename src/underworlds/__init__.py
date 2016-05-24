@@ -373,11 +373,11 @@ class TimelineProxy(threading.Thread):
 
 
     def start(self, situation):
-        self._send("new_situation " + situation.serialize())
+        self._send("new_situation " + json.dumps(situation.serialize()))
         self._ctx.rpc.recv() # server send a "ack"
 
     def event(self, situation):
-        self._send("event " + situation.serialize())
+        self._send("event " + json.dumps(situation.serialize()))
         self._ctx.rpc.recv() # server send a "ack"
 
     def end(self, situation):

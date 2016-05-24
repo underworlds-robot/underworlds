@@ -82,7 +82,7 @@ class Server(Thread):
             timeline.start(sit)
             action = "start"
         
-        return str(action + " " + sit.serialize())
+        return action + " " + json.dumps(sit.serialize())
 
     def end_situation(self, timeline, id):
 
@@ -225,7 +225,7 @@ class Server(Thread):
                     invalidation.send("%s?timeline### %s" % (world, action).encode())
                 elif cmd == "new_situation":
                     self.update_current_links(client, world, PROVIDER)
-                    situation = Situation.deserialize(arg)
+                    situation = Situation.deserialize(json.loads(arg))
                     rpc.send(b"ack")
                     action = self.new_situation(timeline, situation)
                     # tells everyone about the change
