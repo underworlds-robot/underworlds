@@ -85,15 +85,16 @@ def runtest(module):
 ########################################################################
 
 #Import unit-tests
-import nodes, collada, core, single_user, timeline, topology, visibility
+import nodes, collada, core, single_user, timeline, topology, visibility, basic_server_interaction
 
 
-runtest(collada)
 runtest(core)
 runtest(nodes)
+runtest(basic_server_interaction)
 runtest(single_user)
-runtest(timeline)
+runtest(collada)
 runtest(topology)
+runtest(timeline)
 runtest(visibility)
 
 ########################################################################
