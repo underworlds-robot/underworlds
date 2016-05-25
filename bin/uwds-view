@@ -117,8 +117,9 @@ void main() {
 }
 """
 
-class DefaultCamera:
+class DefaultCamera(Node):
     def __init__(self, w, h, fov):
+        super(DefaultCamera, self).__init__(name="default camera", type=CAMERA)
         self.clipplanenear = 0.001
         self.clipplanefar = 100000.0
         self.aspect = w/h
@@ -128,9 +129,6 @@ class DefaultCamera:
                                [-0.01,  0.89,  0.44,  5.34],
                                [ 0.,    0.,    0.,    1.  ]]
         self.lookat = [0.0,0.0,-1.0]
-
-    def __str__(self):
-        return "Default camera"
 
 
 class Underworlds3DViewer:
@@ -335,7 +333,6 @@ class Underworlds3DViewer:
 
     def glize(self, node):
 
-        logger.info("Loading node <%s>" % node)
 
         node.selected = False
         node.transformation = numpy.array(node.transformation)
@@ -357,8 +354,9 @@ class Underworlds3DViewer:
                 self.prepare_gl_buffers(mesh)
 
         elif node.type == CAMERA:
-            logger.info("Added camera <%s>" % node.name)
-            self.cameras.append(node)
+            if node not in self.cameras:
+                logger.info("Added camera <%s>" % node.name)
+                self.cameras.append(node)
 
 
     def load_world(self):
@@ -367,6 +365,7 @@ class Underworlds3DViewer:
         scene = self.scene = self.world.scene
         nodes = scene.nodes
         for node in nodes:
+            logger.info("Loading node <%s>" % node)
             self.glize(node)
 
         #log some statistics
