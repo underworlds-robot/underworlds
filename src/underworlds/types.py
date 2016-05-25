@@ -22,7 +22,7 @@ MESH = 1
 ENTITY = 2
 CAMERA = 3
 
-class Node():
+class Node(object):
     def __init__(self, name = "", type = UNDEFINED):
 
         ################################################################
@@ -77,7 +77,7 @@ class Node():
 
 
 
-class Scene():
+class Scene(object):
     """An Underworlds scene
     """
 
@@ -99,7 +99,7 @@ class Scene():
             if n.id == id:
                 return n
 
-class Timeline:
+class Timeline(object):
     """ Stores 'situations' (ie, either events -- temporal objects
     without duration -- or static situations -- temporal objects
     with a non-null duration).
@@ -164,7 +164,7 @@ class Timeline:
                 return sit
 
 
-class EventMonitor:
+class EventMonitor(object):
 
     def __init__(self, evt):
         self.evt = evt
@@ -180,7 +180,7 @@ class EventMonitor:
         """
         raise NotImplementedError
 
-class World:
+class World(object):
 
     def __init__(self, name):
 
