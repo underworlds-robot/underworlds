@@ -449,11 +449,11 @@ class TimelineProxy(threading.Thread):
                 world, req = msg.split("###")
                 action, arg = req.strip().split(" ", 1)
                 if action == "event":
-                    sit = Situation.deserialize(arg)
+                    sit = Situation.deserialize(json.loads(arg))
                     netlogger.debug("Notification of an event: " + sit.id)
                     self._on_remotely_started_situation(sit, isevent = True)
                 if action == "start":
-                    sit = Situation.deserialize(arg)
+                    sit = Situation.deserialize(json.loads(arg))
                     netlogger.debug("Request to start situation: " + sit.id)
                     self._on_remotely_started_situation(sit, isevent = False)
                 elif action == "end":
@@ -573,6 +573,7 @@ class Context(object):
         return self.rpc.recv_json()
 
     def push_mesh(self, id, vertices, faces, normals, colors = None, material = None):
+
         data = json.dumps(
             {"vertices": vertices,
              "faces": faces,
