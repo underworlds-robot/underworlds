@@ -165,6 +165,7 @@ class Underworlds3DViewer:
         self.moving_situation = None
 
         self.cameras = []
+        self.current_cam_index = 0
 
         self.load_world()
 
@@ -173,7 +174,6 @@ class Underworlds3DViewer:
         self.last_fps_time = glutGet(GLUT_ELAPSED_TIME)
 
 
-        self.current_cam_index = 0
         self.cycle_cameras()
 
     def prepare_shaders(self):
@@ -333,7 +333,6 @@ class Underworlds3DViewer:
 
     def glize(self, node):
 
-
         node.selected = False
         node.transformation = numpy.array(node.transformation)
 
@@ -356,7 +355,11 @@ class Underworlds3DViewer:
         elif node.type == CAMERA:
             if node not in self.cameras:
                 logger.info("Added camera <%s>" % node.name)
-                self.cameras.append(node)
+            else:
+                self.cameras.remove(node)
+            self.cameras.append(node)
+            self.current_cam = self.cameras[self.current_cam_index]
+
 
 
     def load_world(self):
@@ -795,26 +798,36 @@ class Underworlds3DViewer:
 
             self.current_cam.transformation = numpy.dot(self.current_cam.transformation, cam_transform)
 
-
-            cam_pos = transform([0.0, 0.0, 0.0], self.current_cam.transformation)
-            # 'at' is simply a fixed point in the camera frame, at 1 unit in front of the optical center
-            at = transform([0.0, 0.0, -1.0], self.current_cam.transformation)
-
-            glMatrixMode(GL_MODELVIEW)
-            glLoadIdentity()
-            gluLookAt(cam_pos[0], cam_pos[2], -cam_pos[1],
-                           at[0],      at[2],      -at[1],
-                               0,          0,           1)
+            self.broadcast_node_transform(self.current_cam)
 
             update_camera = False
+
+        cam_pos = transform([0.0, 0.0, 0.0], self.current_cam.transformation)
+        # 'at' is simply a fixed point in the camera frame, at 1 unit in front of the optical center
+        at = transform([0.0, 0.0, -1.0], self.current_cam.transformation)
+
+        glMatrixMode(GL_MODELVIEW)
+        glLoadIdentity()
+        gluLookAt(cam_pos[0], cam_pos[2], -cam_pos[1],
+                        at[0],      at[2],      -at[1],
+                            0,          0,           1)
+
 
     def move_selected_node(self, fwd, strafe):
         self.currently_selected.transformation[0][3] += strafe
         self.currently_selected.transformation[2][3] += fwd
-        t = self.currently_selected.transformation
-        self.currently_selected.transformation = self.currently_selected.transformation.tolist()
-        self.scene.nodes.update(self.currently_selected)
-        self.currently_selected.transformation = t
+
+        self.broadcast_node_transform(self.currently_selected)
+
+
+    def broadcast_node_transform(self, node):
+
+        # numpy array are not json-serializable. We need to convert them
+        # first to lists
+        t = node.transformation
+        node.transformation = t.tolist()
+        self.scene.nodes.update(node)
+        node.transformation = t
 
 def main():
     with underworlds.Context("3D viewer") as ctx:
