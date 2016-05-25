@@ -612,6 +612,7 @@ class Underworlds3DViewer:
         for child in node.children:
             self.recursive_render(self.scene.nodes[child], shader, mode)
 
+
     def switch_to_overlay(self):
         glPushMatrix()
         self.set_overlay_projection()
@@ -723,12 +724,10 @@ class Underworlds3DViewer:
 
         if update_camera:
 
-            cam_transform = numpy.identity(4)
-
             cam_transform = transformations.euler_matrix(rotate_x * math.pi/180.0,
                                                          rotate_y * math.pi/180.0,
-                                                         0)
-            cam_transform[0,3] = -fwd
+                                                         0).astype(numpy.float32)
+            cam_transform[2,3] = -fwd
             cam_transform[1,3] = -strafe
 
             self.current_cam.transformation = numpy.dot(self.current_cam.transformation, cam_transform)
@@ -742,17 +741,11 @@ class Underworlds3DViewer:
 
     def update_view_camera(self):
 
-        cam_pos = transform([0.0, 0.0, 0.0], self.current_cam.transformation)
-        # 'at' is simply a fixed point in the camera frame, at 1 unit in front of the optical center
-        at = transform([0.0, 0.0, -1.0], self.current_cam.transformation)
+        self.view_matrix = linalg.inv(self.current_cam.transformation)
 
         glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
-        gluLookAt(cam_pos[0], cam_pos[1], cam_pos[2],
-                        at[0],      at[1],      at[2],
-                            0,          0,           1)
-
-        self.view_matrix = glGetFloatv( GL_MODELVIEW_MATRIX).transpose()
+        glMultMatrixf(self.view_matrix.transpose())
 
     def move_selected_node(self, fwd, strafe):
         self.currently_selected.transformation[0][3] += strafe
