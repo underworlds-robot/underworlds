@@ -179,6 +179,7 @@ class Underworlds3DViewer:
 
 
         self.cycle_cameras()
+        self.update_view_camera()
 
     def prepare_shaders(self):
 
@@ -729,6 +730,11 @@ class Underworlds3DViewer:
             self.broadcast_node_transform(self.current_cam)
 
             update_camera = False
+
+        self.update_view_camera()
+
+
+    def update_view_camera(self):
 
         cam_pos = transform([0.0, 0.0, 0.0], self.current_cam.transformation)
         # 'at' is simply a fixed point in the camera frame, at 1 unit in front of the optical center
