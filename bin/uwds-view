@@ -682,10 +682,12 @@ class Underworlds3DViewer:
                     right_key=pygame.K_RIGHT):
 
         mouse_dx,mouse_dy = pygame.mouse.get_rel()
+        pressed_buttons = pygame.mouse.get_pressed()
 
         update_camera = False
 
-        if pygame.mouse.get_pressed()[mouse_button]:
+
+        if pressed_buttons[mouse_button]:
 
             rotate_x = -mouse_dx * 0.1
             rotate_y = mouse_dy * 0.1
@@ -693,13 +695,12 @@ class Underworlds3DViewer:
         else:
             rotate_x = rotate_y = 0
 
-
         if up_key in self.keys:
-            fwd = .1
+            up = .1
         elif down_key in self.keys:
-            fwd = -.1
+            up = -.1
         else:
-            fwd = 0
+            up = 0
 
         if left_key in self.keys:
             strafe = .1
@@ -708,7 +709,7 @@ class Underworlds3DViewer:
         else:
             strafe = 0
 
-        if fwd or strafe:
+        if up or strafe:
             if not self.currently_selected:
                 update_camera = True
             else:
@@ -724,11 +725,12 @@ class Underworlds3DViewer:
 
         if update_camera:
 
-            cam_transform = transformations.euler_matrix(rotate_x * math.pi/180.0,
-                                                         rotate_y * math.pi/180.0,
+            cam_transform = transformations.euler_matrix(rotate_y * math.pi/180.0,
+                                                         -rotate_x * math.pi/180.0,
                                                          0).astype(numpy.float32)
-            cam_transform[2,3] = -fwd
-            cam_transform[1,3] = -strafe
+            cam_transform[0,3] = -strafe
+            cam_transform[1,3] = up
+            #cam_transform[2,3] = fwd
 
             self.current_cam.transformation = numpy.dot(self.current_cam.transformation, cam_transform)
 
