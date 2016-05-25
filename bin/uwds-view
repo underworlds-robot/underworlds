@@ -728,7 +728,7 @@ class Underworlds3DViewer:
             cam_transform = transformations.euler_matrix(rotate_x * math.pi/180.0,
                                                          rotate_y * math.pi/180.0,
                                                          0)
-            cam_transform[2,3] = -fwd
+            cam_transform[0,3] = -fwd
             cam_transform[1,3] = -strafe
 
             self.current_cam.transformation = numpy.dot(self.current_cam.transformation, cam_transform)
