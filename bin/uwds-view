@@ -5,7 +5,7 @@
 3D scene.
 
 Based on:
-- pygame + mouselook code from http://3dengine.org/Spectator_%28PyOpenGL%29
+- pygame code from http://3dengine.org/Spectator_%28PyOpenGL%29
 - http://www.lighthouse3d.com/tutorials
 - http://www.songho.ca/opengl/gl_transform.html
 - http://code.activestate.com/recipes/325391/
@@ -164,8 +164,7 @@ class Underworlds3DViewer:
         self.moving = False
         self.moving_situation = None
 
-        self.cameras = [DefaultCamera(w,h,fov)]
-        self.current_cam_index = 0
+        self.cameras = []
 
         self.load_world()
 
@@ -174,6 +173,7 @@ class Underworlds3DViewer:
         self.last_fps_time = glutGet(GLUT_ELAPSED_TIME)
 
 
+        self.current_cam_index = 0
         self.cycle_cameras()
 
     def prepare_shaders(self):
@@ -386,7 +386,8 @@ class Underworlds3DViewer:
 
     def cycle_cameras(self):
         if not self.cameras:
-            logger.info("No camera in the scene")
+            logger.info("No camera in the scene. Adding a default one")
+            self.cameras = [DefaultCamera(w,h,fov)]
             return None
         self.current_cam_index = (self.current_cam_index + 1) % len(self.cameras)
         self.current_cam = self.cameras[self.current_cam_index]
@@ -473,13 +474,11 @@ class Underworlds3DViewer:
 
         colorid = colors[mousex + mousey * self.w]
 
-        if colorid:
-            try:
-                return self.colorid2node[colorid]
-            except KeyError:
-                logger.warning("Unknown colorID %d" % colorid)
-
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+
+        if colorid in self.colorid2node:
+            return self.colorid2node[colorid]
+
 
     def check_visibility(self):
         """
