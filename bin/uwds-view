@@ -355,6 +355,7 @@ class Underworlds3DViewer:
         elif node.type == CAMERA:
             if node not in self.cameras:
                 logger.info("Added camera <%s>" % node.name)
+                logger.info("Camera position: %.3f, %.3f, %.3f" % tuple(node.transformation[:,3][:3].tolist()))
             else:
                 self.cameras.remove(node)
             self.cameras.append(node)
@@ -394,7 +395,7 @@ class Underworlds3DViewer:
             return None
         self.current_cam_index = (self.current_cam_index + 1) % len(self.cameras)
         self.current_cam = self.cameras[self.current_cam_index]
-        self.set_camera(self.current_cam)
+        self.set_camera_projection(self.current_cam)
         logger.info("Switched to camera <%s>" % self.current_cam)
 
     def set_overlay_projection(self):
@@ -430,19 +431,6 @@ class Underworlds3DViewer:
         glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
 
-
-    def set_camera(self, camera):
-
-        self.set_camera_projection(camera)
-
-        glMatrixMode(GL_MODELVIEW)
-        glLoadIdentity()
-
-        cam = transform([0.0, 0.0, 0.0], camera.transformation)
-        at = transform(camera.lookat, camera.transformation)
-        gluLookAt(cam[0], cam[2], -cam[1],
-                   at[0],  at[2],  -at[1],
-                       0,      0,       1)
 
     def render_colors(self):
 
@@ -808,8 +796,8 @@ class Underworlds3DViewer:
 
         glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
-        gluLookAt(cam_pos[0], cam_pos[2], -cam_pos[1],
-                        at[0],      at[2],      -at[1],
+        gluLookAt(cam_pos[0], cam_pos[1], cam_pos[2],
+                        at[0],      at[1],      at[2],
                             0,          0,           1)
 
 
