@@ -93,7 +93,9 @@ class ModelLoader:
 
     def recur_node(self, assimp_node,level = 0):
         logger.info("  " + "\t" * level + "- " + str(assimp_node))
-        self.node_map[assimp_node.name] = (assimp_node, Node()) # cannot use assimp_node as key: it is unhashable
+
+        if assimp_node.name not in self.node_map: # the rootnode will already be there
+            self.node_map[assimp_node.name] = (assimp_node, Node()) # cannot use assimp_node as key: it is unhashable
         for child in assimp_node.children:
             self.recur_node(child, level + 1)
 
@@ -119,8 +121,13 @@ class ModelLoader:
 
             world = ctx.worlds[self.world]
             nodes = world.scene.nodes
+
+            logger.info("Merging the root nodes")
+            self.node_map[model.rootnode.name] = (model.rootnode, world.scene.rootnode)
+
             logger.info("Nodes found:")
             self.recur_node(model.rootnode)
+
             logger.info("%d nodes in the model" % len(self.node_map))
             logger.info("Loading the nodes...")
             for n, pair in list(self.node_map.items()):
@@ -131,10 +138,6 @@ class ModelLoader:
             # associated meshes)
             logger.info("Sending the nodes to the server...")
             for name, pair in list(self.node_map.items()):
-                if pair[0] == model.rootnode:
-                    logger.info("Merging the root nodes")
-                    pair[1].id = world.scene.rootnode.id
-
                 nodes.update(pair[1])
 
             # Now, send the meshes (but only if they do not already exist on the server)
