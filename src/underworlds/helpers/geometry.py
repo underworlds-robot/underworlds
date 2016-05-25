@@ -30,7 +30,6 @@ def get_scene_bounding_box(scene):
 
 def _compute_bounding_box_for_node(nodes, node, bb_min, bb_max, transformation):
     
-    transformation = numpy.dot(transformation, node.transformation)
     if node.type == MESH:
         for v in node.aabb:
             v = transform(v, transformation)
@@ -50,10 +49,19 @@ def get_bounding_box_for_node(scene, node):
     bb_min = [1e10, 1e10, 1e10] # x,y,z
     bb_max = [-1e10, -1e10, -1e10] # x,y,z
 
-    parents = reversed(_get_parent_chain(scene, node, []))
-    global_transformation = reduce(numpy.dot, [p.transformation for p in parents])
+    global_transformation = get_world_transform(scene, node)
 
     return _compute_bounding_box_for_node(scene.nodes, node, bb_min, bb_max, global_transformation)
+
+def get_world_transform(scene, node):
+
+    if node == scene.rootnode:
+        return numpy.identity(4)
+
+    parents = reversed(_get_parent_chain(scene, node, []))
+    parent_transform = reduce(numpy.dot, [p.transformation for p in parents])
+    return numpy.dot(parent_transform, node.transformation)
+
 
 def _get_parent_chain(scene, node, parents):
 
