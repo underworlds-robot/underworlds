@@ -80,7 +80,12 @@ class ModelLoader:
             underworlds_node.type = CAMERA
             underworlds_node.clipplanenear = cam.clipplanenear
             underworlds_node.clipplanefar = cam.clipplanefar
-            underworlds_node.aspect = cam.aspect
+            if cam.aspect == 0.0:
+                logger.warning("Camera aspect not set. Setting to default 4:3")
+                underworlds_node.aspect = 1.333
+            else:
+                underworlds_node.aspect = cam.aspect
+
             underworlds_node.horizontalfov = cam.horizontalfov
             underworlds_node.lookat = [round(a, 5) for a in cam.lookat]
         else:
