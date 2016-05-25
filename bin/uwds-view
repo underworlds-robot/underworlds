@@ -39,11 +39,10 @@ import math, random
 import numpy
 from numpy import linalg
 
-
 import underworlds
 from underworlds import situations
 from underworlds.types import *
-from underworlds.helpers.geometry import transform, get_scene_bounding_box
+from underworlds.helpers.geometry import transform, get_scene_bounding_box, get_world_transform
 from underworlds.helpers import transformations
 
 
@@ -55,7 +54,7 @@ FLAT_VERTEX_SHADER="""
 #version 120
 
 //uniform mat4 u_viewProjectionMatrix;
-//uniform mat4 u_modelMatrix;
+uniform mat4 u_modelMatrix;
 
 uniform vec4 u_materialDiffuse;
 
@@ -66,10 +65,8 @@ varying vec4 v_color;
 void main(void)
 {
     v_color = u_materialDiffuse;
-    gl_Position = gl_ModelViewProjectionMatrix * vec4(
-                a_vertex, 1.0
-            );
-    // gl_Position = u_viewProjectionMatrix * u_modelMatrix * a_vertex;
+     //gl_Position = u_viewProjectionMatrix * u_modelMatrix * vec4(a_vertex, 1.0);
+     gl_Position = gl_ModelViewProjectionMatrix * u_modelMatrix * vec4(a_vertex,1.0);
 }
 """
 
@@ -78,7 +75,7 @@ BASIC_VERTEX_SHADER="""
 #version 130
 
 //uniform mat4 u_viewProjectionMatrix;
-//uniform mat4 u_modelMatrix;
+uniform mat4 u_modelMatrix;
 //uniform mat3 u_normalMatrix;
 uniform vec3 u_lightPos;
 
@@ -110,10 +107,8 @@ void main(void)
 
     v_color = u_materialDiffuse  * intensity;
 
-    //gl_Position = u_viewProjectionMatrix * u_modelMatrix * a_vertex;
-    gl_Position = gl_ModelViewProjectionMatrix * vec4(
-                a_vertex, 1.0
-            );
+    //gl_Position = u_viewProjectionMatrix * u_modelMatrix * vec4(a_vertex, 1.0);
+    gl_Position = gl_ModelViewProjectionMatrix * u_modelMatrix * vec4(a_vertex, 1.0);
 }
 """
 
@@ -139,7 +134,6 @@ class DefaultCamera(Node):
                                [-0.01,  0.89,  0.44,  5.34],
                                [ 0.,    0.,    0.,    1.  ]]
         self.lookat = [0.0,0.0,-1.0]
-
 
 class Underworlds3DViewer:
 
@@ -195,12 +189,14 @@ class Underworlds3DViewer:
 
         self.flatshader = shaders.compileProgram(flatvertex,fragment)
 
-        self.set_shader_accessors( ('u_materialDiffuse',), 
+        self.set_shader_accessors( ('u_modelMatrix',
+                                    'u_materialDiffuse',), 
                                     ('a_vertex',), self.flatshader)
 
         self.shader = shaders.compileProgram(vertex,fragment)
 
-        self.set_shader_accessors( ('u_lightPos',
+        self.set_shader_accessors( ('u_modelMatrix',
+                                    'u_lightPos',
                                     'u_materialDiffuse'), 
                                     ('a_vertex',
                                       'a_normal'), self.shader)
@@ -281,7 +277,7 @@ class Underworlds3DViewer:
     def glize(self, node):
 
         node.selected = False
-        node.transformation = numpy.array(node.transformation)
+        node.transformation = numpy.array(node.transformation, dtype=numpy.float32)
 
         if node.type == MESH:
             colorid = self.get_color_id()
@@ -544,15 +540,12 @@ class Underworlds3DViewer:
             normals = False
             ambient = False
 
-        # save model matrix and apply node transformation
-        glPushMatrix()
         try:
-            m = node.transformation.transpose() # OpenGL row major
+            m = get_world_transform(self.scene, node)
         except AttributeError:
             #probably a new incoming node, that has not yet been converted to numpy
             self.glize(node)
-            m = node.transformation.transpose() # OpenGL row major
-        glMultMatrixf(m)
+            m = get_world_transform(self.scene, node)
 
         if node.type == MESH:
 
@@ -575,6 +568,8 @@ class Underworlds3DViewer:
                         #if ambient:
                         #    glUniform4f( shader.Material_ambient, *mat["ambient"] )
 
+
+                glUniformMatrix4fv( shader.u_modelMatrix, 1, GL_TRUE, m )
 
                 vbo = self.meshes[id]["vbo"]
                 vbo.bind()
@@ -609,8 +604,6 @@ class Underworlds3DViewer:
 
         for child in node.children:
             self.recursive_render(self.scene.nodes[child], shader, mode)
-
-        glPopMatrix()
 
     def switch_to_overlay(self):
         glPushMatrix()
