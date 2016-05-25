@@ -26,9 +26,9 @@ def get_scene_bounding_box(scene):
         logger.warning("rootnode has no children! The scene is probably empty.")
         return None, None
 
-    return get_bounding_box_for_node(scene.nodes, scene.rootnode, bb_min, bb_max, linalg.inv(scene.rootnode.transformation))
+    return _compute_bounding_box_for_node(scene.nodes, scene.rootnode, bb_min, bb_max, linalg.inv(scene.rootnode.transformation))
 
-def get_bounding_box_for_node(nodes, node, bb_min, bb_max, transformation):
+def _compute_bounding_box_for_node(nodes, node, bb_min, bb_max, transformation):
     
     transformation = numpy.dot(transformation, node.transformation)
     if node.type == MESH:
@@ -42,17 +42,29 @@ def get_bounding_box_for_node(nodes, node, bb_min, bb_max, transformation):
             bb_max[2] = max(bb_max[2], v[2])
 
     for child in node.children:
-        bb_min, bb_max = get_bounding_box_for_node(nodes, nodes[child], bb_min, bb_max, transformation)
+        bb_min, bb_max = _compute_bounding_box_for_node(nodes, nodes[child], bb_min, bb_max, transformation)
 
     return bb_min, bb_max
 
-def _get_parent_chain(scene, node, parents):
-    parents.append(node.parent)
+def get_bounding_box_for_node(scene, node):
+    bb_min = [1e10, 1e10, 1e10] # x,y,z
+    bb_max = [-1e10, -1e10, -1e10] # x,y,z
 
-    if node.parent == scene.rootnode:
+    parents = reversed(_get_parent_chain(scene, node, []))
+    global_transformation = reduce(numpy.dot, [p.transformation for p in parents])
+
+    return _compute_bounding_box_for_node(scene.nodes, node, bb_min, bb_max, global_transformation)
+
+def _get_parent_chain(scene, node, parents):
+
+    parent = scene.nodes[node.parent]
+
+    parents.append(parent)
+
+    if parent == scene.rootnode:
         return parents
 
-    return _get_parent_chain(scene, node.parent, parents)
+    return _get_parent_chain(scene, parent, parents)
 
 def transformed_aabb(scene, node):
     """ TODO: this computation is incorrect! To compute a transformed AABB, we need to
