@@ -53,7 +53,7 @@ COLORS = "COLORS"
 FLAT_VERTEX_SHADER="""
 #version 120
 
-//uniform mat4 u_viewProjectionMatrix;
+uniform mat4 u_viewProjectionMatrix;
 uniform mat4 u_modelMatrix;
 
 uniform vec4 u_materialDiffuse;
@@ -65,8 +65,7 @@ varying vec4 v_color;
 void main(void)
 {
     v_color = u_materialDiffuse;
-     //gl_Position = u_viewProjectionMatrix * u_modelMatrix * vec4(a_vertex, 1.0);
-     gl_Position = gl_ModelViewProjectionMatrix * u_modelMatrix * vec4(a_vertex,1.0);
+    gl_Position = u_viewProjectionMatrix * u_modelMatrix * vec4(a_vertex, 1.0);
 }
 """
 
@@ -74,7 +73,7 @@ void main(void)
 BASIC_VERTEX_SHADER="""
 #version 130
 
-//uniform mat4 u_viewProjectionMatrix;
+uniform mat4 u_viewProjectionMatrix;
 uniform mat4 u_modelMatrix;
 //uniform mat3 u_normalMatrix;
 uniform vec3 u_lightPos;
@@ -107,8 +106,7 @@ void main(void)
 
     v_color = u_materialDiffuse  * intensity;
 
-    //gl_Position = u_viewProjectionMatrix * u_modelMatrix * vec4(a_vertex, 1.0);
-    gl_Position = gl_ModelViewProjectionMatrix * u_modelMatrix * vec4(a_vertex, 1.0);
+    gl_Position = u_viewProjectionMatrix * u_modelMatrix * vec4(a_vertex, 1.0);
 }
 """
 
@@ -191,12 +189,14 @@ class Underworlds3DViewer:
         self.flatshader = shaders.compileProgram(flatvertex,fragment)
 
         self.set_shader_accessors( ('u_modelMatrix',
+                                    'u_viewProjectionMatrix',
                                     'u_materialDiffuse',), 
                                     ('a_vertex',), self.flatshader)
 
         self.shader = shaders.compileProgram(vertex,fragment)
 
         self.set_shader_accessors( ('u_modelMatrix',
+                                    'u_viewProjectionMatrix',
                                     'u_lightPos',
                                     'u_materialDiffuse'), 
                                     ('a_vertex',
@@ -372,6 +372,9 @@ class Underworlds3DViewer:
         glFrustum(-w, w, -h, h, znear, zfar)
         # equivalent to:
         #gluPerspective(fov * 180/math.pi, aspect, znear, zfar)
+
+        self.projection_matrix = glGetFloatv( GL_PROJECTION_MATRIX).transpose()
+
         glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
 
@@ -480,6 +483,9 @@ class Underworlds3DViewer:
         #glUniform4f( shader.Light_diffuse, 1,1,1,1 )
         #glUniform3f( shader.Light_location, 2,2,10 )
         glUniform3f( shader.u_lightPos, -.5,-.5,.5 )
+
+        glUniformMatrix4fv( shader.u_viewProjectionMatrix, 1, GL_TRUE,
+                            numpy.dot(self.projection_matrix,self.view_matrix))
 
         self.recursive_render(self.scene.rootnode, shader)
 
@@ -746,6 +752,7 @@ class Underworlds3DViewer:
                         at[0],      at[1],      at[2],
                             0,          0,           1)
 
+        self.view_matrix = glGetFloatv( GL_MODELVIEW_MATRIX).transpose()
 
     def move_selected_node(self, fwd, strafe):
         self.currently_selected.transformation[0][3] += strafe
