@@ -892,7 +892,7 @@ class Underworlds3DViewer:
                     self.moving_situation = Situation("motion of %s" % self.currently_selected.name, type = situations.MOTION)
                     self.world.timeline.start(self.moving_situation)
                 self.moving = True
-                self.move_selected_node(fwd, strafe)
+                self.move_selected_node(up, strafe)
         else:
             if self.moving:
                 self.world.timeline.end(self.moving_situation)
@@ -924,9 +924,9 @@ class Underworlds3DViewer:
         glLoadIdentity()
         glMultMatrixf(self.view_matrix.transpose())
 
-    def move_selected_node(self, fwd, strafe):
+    def move_selected_node(self, up, strafe):
         self.currently_selected.transformation[0][3] += strafe
-        self.currently_selected.transformation[2][3] += fwd
+        self.currently_selected.transformation[2][3] += up
 
         self.broadcast_node_transform(self.currently_selected)
 
