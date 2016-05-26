@@ -75,7 +75,7 @@ BASIC_VERTEX_SHADER="""
 
 uniform mat4 u_viewProjectionMatrix;
 uniform mat4 u_modelMatrix;
-//uniform mat3 u_normalMatrix;
+uniform mat3 u_normalMatrix;
 uniform vec3 u_lightPos;
 
 uniform vec4 u_materialDiffuse;
@@ -88,8 +88,7 @@ varying vec4 v_color;
 void main(void)
 {
     // Now the normal is in world space, as we pass the light in world space.
-    //vec3 normal = u_normalMatrix * a_normal;
-    vec3 normal = gl_NormalMatrix * a_normal;
+    vec3 normal = u_normalMatrix * a_normal;
 
     float dist = distance(a_vertex, u_lightPos);
 
@@ -197,6 +196,7 @@ class Underworlds3DViewer:
 
         self.set_shader_accessors( ('u_modelMatrix',
                                     'u_viewProjectionMatrix',
+                                    'u_normalMatrix',
                                     'u_lightPos',
                                     'u_materialDiffuse'), 
                                     ('a_vertex',
@@ -575,6 +575,10 @@ class Underworlds3DViewer:
                         #if ambient:
                         #    glUniform4f( shader.Material_ambient, *mat["ambient"] )
 
+
+                if normals:
+                    normal_matrix = linalg.inv(numpy.dot(self.view_matrix, m)[0:3,0:3]).transpose()
+                    glUniformMatrix3fv( shader.u_normalMatrix, 1, GL_TRUE, normal_matrix )
 
                 glUniformMatrix4fv( shader.u_modelMatrix, 1, GL_TRUE, m )
 
