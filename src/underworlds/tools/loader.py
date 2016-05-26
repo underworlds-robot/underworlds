@@ -57,7 +57,7 @@ class ModelLoader:
         for c in assimp_node.children:
             underworlds_node.children.append(self.node_map[c.name][1].id)
 
-        underworlds_node.transformation = assimp_node.transformation.tolist() # convert numpy array to plain python lists
+        underworlds_node.transformation = assimp_node.transformation.astype(numpy.float32)
 
         if assimp_node.meshes:
             underworlds_node.type = MESH

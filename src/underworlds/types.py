@@ -3,6 +3,8 @@ import copy
 import json
 import time
 
+import numpy
+
 from underworlds.errors import *
 from underworlds.situations import *
 
@@ -33,7 +35,7 @@ class Node(object):
         self.type = type #one of the node constant defined in types.py
         self.parent = None
         self.children = []
-        self.transformation = None # 4x4 transformation matrix, relative to parent. Stored as a list of lists.
+        self.transformation = None # 4x4 transformation matrix, relative to parent. Stored as a numpy 4x4 matrix.
         self.properties = {
                 "physics": False # no physics applied by default
             }
@@ -62,7 +64,14 @@ class Node(object):
     def serialize(self):
         """Outputs a dict-like view of the node
         """
-        return self.__dict__
+
+        view = self.__dict__
+
+        # Converts the transformation numpy array into a (serializable) list
+        if view["transformation"] is not None:
+            view["transformation"] = view["transformation"].tolist()
+
+        return view
 
     @staticmethod
     def deserialize(data):
@@ -72,7 +81,11 @@ class Node(object):
 
         for key, value in list(data.items()):
             setattr(n, str(key), value)
-        #n.__dict__ = data
+
+        # Convert the JSON transformation into a proper numpy array.
+        # The type (float32) ensures OpenGL compatibilty on 64bit platforms
+        n.transformation = numpy.array(n.transformation, dtype=numpy.float32)
+
         return n
 
 

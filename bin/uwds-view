@@ -419,7 +419,6 @@ class Underworlds3DViewer:
     def glize(self, node):
 
         node.selected = False
-        node.transformation = numpy.array(node.transformation, dtype=numpy.float32)
 
         if node.type == MESH:
             colorid = self.get_color_id()
@@ -933,13 +932,7 @@ class Underworlds3DViewer:
 
 
     def broadcast_node_transform(self, node):
-
-        # numpy array are not json-serializable. We need to convert them
-        # first to lists
-        t = node.transformation
-        node.transformation = t.tolist()
         self.scene.nodes.update(node)
-        node.transformation = t
 
 def main():
     with underworlds.Context("3D viewer") as ctx:
