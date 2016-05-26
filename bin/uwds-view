@@ -531,6 +531,10 @@ class Underworlds3DViewer:
 
         glUseProgram(self.flatshader)
 
+        glUniformMatrix4fv( self.flatshader.u_viewProjectionMatrix, 1, GL_TRUE,
+                            numpy.dot(self.projection_matrix,self.view_matrix))
+
+
         self.recursive_render(self.scene.rootnode, self.flatshader, mode=COLORS)
 
         glUseProgram( 0 )
