@@ -65,7 +65,8 @@ class Node(object):
         """Outputs a dict-like view of the node
         """
 
-        view = self.__dict__
+        import copy
+        view = copy.deepcopy(self.__dict__)
 
         # Converts the transformation numpy array into a (serializable) list
         if view["transformation"] is not None:

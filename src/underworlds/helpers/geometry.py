@@ -56,7 +56,7 @@ def get_bounding_box_for_node(scene, node):
 def get_world_transform(scene, node):
 
     if node == scene.rootnode:
-        return numpy.identity(4)
+        return numpy.identity(4, dtype=numpy.float32)
 
     parents = reversed(_get_parent_chain(scene, node, []))
     parent_transform = reduce(numpy.dot, [p.transformation for p in parents])

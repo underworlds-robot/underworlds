@@ -661,7 +661,7 @@ class Underworlds3DViewer:
 
         glUseProgram( 0 )
 
-    def render_axis(self, transformation = numpy.identity(4)):
+    def render_axis(self, transformation = numpy.identity(4, dtype=numpy.float32)):
         m = transformation.transpose() # OpenGL row major
 
         glPushMatrix()
