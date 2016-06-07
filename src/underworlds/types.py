@@ -18,9 +18,8 @@ FILTER = "FILTER"
 # Node types
 UNDEFINED = 0
 MESH = 1
-# Entities are group of nodes. They are either rigid bodies (ie, no
-# joints, and hence only one node) or complex bodies (ie, with a
-# kinematic chain and hence several nodes, one per joint).
+# Entities are abstract nodes. They can represent non-physical objects (like a
+# reference frame) or groups of other objects.
 ENTITY = 2
 CAMERA = 3
 
@@ -35,7 +34,10 @@ class Node(object):
         self.type = type #one of the node constant defined in types.py
         self.parent = None
         self.children = []
-        self.transformation = None # 4x4 transformation matrix, relative to parent. Stored as a numpy 4x4 matrix.
+
+        # 4x4 transformation matrix, relative to parent. Stored as a numpy 4x4
+        # matrix. Translation units are meters.
+        self.transformation = None
         self.properties = {
                 "physics": False # no physics applied by default
             }
