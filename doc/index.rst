@@ -169,7 +169,7 @@ API Reference
 .. toctree::
     :maxdepth: 2
     
-    api/modules.rst
+    api/underworlds.rst
 
 
 Indices and tables

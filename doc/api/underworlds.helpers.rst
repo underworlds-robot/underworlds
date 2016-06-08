@@ -20,6 +20,14 @@ underworlds.helpers.geometry module
     :undoc-members:
     :show-inheritance:
 
+underworlds.helpers.transformations module
+------------------------------------------
+
+.. automodule:: underworlds.helpers.transformations
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 
 Module contents
 ---------------
