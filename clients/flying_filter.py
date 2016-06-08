@@ -1,3 +1,8 @@
+#!/usr/bin/env python
+#-*- coding: UTF-8 -*-
+
+import logging; logger = logging.getLogger("underworlds.filter.flying")
+
 import sys, copy
 import underworlds
 from underworlds.types import *
@@ -97,30 +102,34 @@ def filter(in_scene, out_scene):
             print("No support for %s! Leaving it alone." % d.name)
 
 
+if __name__ == "__main__":
 
-if len(sys.argv) != 3:
-    print("Usage: flying_filter <in world> <out world>")
-    sys.exit(1)
+    # Manage command line options
+    import argparse
+    parser = argparse.ArgumentParser(description='Move flying objects to rest position'))
+    parser.add_argument("input", help="underworlds world to monitor")
+    parser.add_argument("output", help="resulting underworlds world")
+    args = parser.parse_args()
 
-with underworlds.Context("flying filter") as ctx:
+    with underworlds.Context("flying filter") as ctx:
 
-    in_world = ctx.worlds[sys.argv[1]]
-    setup_physics(in_world.scene)
+        in_world = ctx.worlds[args.input]
+        setup_physics(in_world.scene)
 
-    out_world = ctx.worlds[sys.argv[2]]
+        out_world = ctx.worlds[args.output]
 
 
-    out_world.copy_from(in_world) # override previous content
+        out_world.copy_from(in_world) # override previous content
 
-    filter(in_world.scene, out_world.scene)
+        filter(in_world.scene, out_world.scene)
 
-    try:
-        while True:
-            in_world.scene.waitforchanges()
-            filter(in_world.scene, out_world.scene)
+        try:
+            while True:
+                in_world.scene.waitforchanges()
+                filter(in_world.scene, out_world.scene)
 
-    except KeyboardInterrupt:
-        print("Bye bye")
+        except KeyboardInterrupt:
+            print("Bye bye")
 
 
 
