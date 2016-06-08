@@ -189,6 +189,14 @@ class NodesProxy(threading.Thread):
     def __len__(self):
         return self._len
 
+    def append(self, node):
+        """ Adds a new node to the node set.
+
+        It is actually an alias for NodesProxy.update: all the restrictions
+        regarding ordering or propagation time apply as well.
+        """
+        return self.update(node)
+
     def update(self, node):
         """ Update the value of a node in the node set.
         If the node does not exist yet, add it.
@@ -266,7 +274,7 @@ class NodesProxy(threading.Thread):
             if socks.get(invalidation_pub) == zmq.POLLIN:
                 msg = invalidation_pub.recv().decode()
 
-                world, req = msg.split("###")
+                _, req = msg.split("###")
                 action, id = req.strip().split()
                 if action == "update":
                     netlogger.debug("Request to update node: " + id)
