@@ -493,6 +493,9 @@ class WorldProxy:
         self.timeline = TimelineProxy(self._ctx, self._world)
 
     def copy_from(self, world):
+        """ Creates and/or replaces the content of the world with an exact copy
+        of the given `world`.
+        """
         req = {"client":self._ctx.id,
                "world": self._world.name,
                "req": "deepcopy %s" % (world.name)}
