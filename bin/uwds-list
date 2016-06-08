@@ -1,0 +1,27 @@
+#!/usr/bin/env python
+#-*- coding: UTF-8 -*-
+
+import logging; logger = logging.getLogger("underworlds.list")
+
+
+import underworlds
+
+def recursive_list(scene, node, level):
+
+    print("  " * level + "%s [%s]" % (node.name, node.type))
+
+    for child in node.children:
+        cnode = scene.nodes[child]
+        recursive_list(scene, cnode, level + 1)
+
+if __name__ == "__main__":
+
+    logging.basicConfig(level=logging.WARNING)
+
+    with underworlds.Context("uwds-list") as ctx:
+
+        for world in ctx.worlds:
+
+            print("WORLD %s" % world.name)
+
+            recursive_list(world.scene, world.scene.rootnode, 1)
