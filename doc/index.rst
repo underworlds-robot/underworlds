@@ -3,8 +3,12 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-underworlds: Cascading Social Situation Assessment
-==================================================
+underworlds: Cascading Social Situation Assessment for Robots
+=============================================================
+
+.. figure:: images/worlds-chains-1.svg
+   :width: 70%
+
 
 underworlds is a **distributed and lightweight framework** that facilitates
 **building and sharing models of the physical world** surrounding a robot
