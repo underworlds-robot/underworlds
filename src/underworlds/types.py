@@ -32,8 +32,10 @@ class Node(object):
         self.id = str(uuid.uuid4())
         self.name = name
         self.type = type #one of the node constant defined in types.py
-        self.parent = None
-        self.children = []
+        self.parent = None # the parent node id
+        #TODO: make children read-only with @property
+        self.children = [] # the children nodes id. READ-ONLY
+        
 
         # 4x4 transformation matrix, relative to parent. Stored as a numpy 4x4
         # matrix. Translation units are meters.

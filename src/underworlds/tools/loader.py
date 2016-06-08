@@ -56,8 +56,8 @@ class ModelLoader:
         if assimp_node is not assimp_model.rootnode:
             underworlds_node.parent = self.node_map[assimp_node.parent.name][1].id
 
-        for c in assimp_node.children:
-            underworlds_node.children.append(self.node_map[c.name][1].id)
+        # No need to specify the node's children: this is automatically done
+        # by underworlds
 
         underworlds_node.transformation = assimp_node.transformation.astype(numpy.float32)
 

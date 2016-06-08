@@ -49,18 +49,30 @@ class Server(Thread):
 
     def update_node(self, scene, node):
 
+        parent_has_changed = False
+
         node.last_update = time.time()
 
-        if scene.node(node.id): # the node already exist
+        oldnode = scene.node(node.id)
+
+        if oldnode: # the node already exist
+            parent_has_changed = oldnode.parent != node.parent
+
+            # update the list of children
+            node.children = [n.id for n in scene.nodes if n.parent == node.id]
+
             # replace the node
             scene.nodes = [node if old == node else old for old in scene.nodes]
+            
             action = "update"
 
         else: # new node
             scene.nodes.append(node)
+            if node.parent:
+                parent_has_changed = True
             action = "new"
         
-        return str(action + " " + node.id)
+        return str(action + " " + node.id), parent_has_changed
 
     def event(self, timeline, sit):
 
@@ -186,18 +198,51 @@ class Server(Thread):
                     self.update_current_links(client, world, PROVIDER)
                     node = Node.deserialize(json.loads(arg))
                     rpc.send(b"ack")
-                    action = self.update_node(scene, node)
+
+                    action, parent_has_changed = self.update_node(scene, node)
                     # tells everyone about the change
                     logger.debug("Sent invalidation action [" + action + "]")
                     invalidation.send(("%s?nodes### %s" % (world, action)).encode())
 
+                    ## If necessary, update the node hierarchy
+                    if parent_has_changed:
+                        parent = scene.node(node.parent)
+                        if parent is None:
+                            logger.warning("Node %s references a non-exisiting parent" % node)
+                        elif node.id not in parent.children:
+                            parent.children.append(node.id)
+                            # tells everyone about the change to the parent
+                            logger.debug("Sent invalidation action [update " + parent.id + "] due to hierarchy update")
+                            invalidation.send(("%s?nodes### update %s" % (world, parent.id)).encode())
+
+                            # As a node has only one parent, if the parent has changed we must
+                            # remove our node for its previous parent
+                            for othernode in scene.nodes:
+                                if othernode.id != parent.id and node.id in othernode.children:
+                                    othernode.children.remove(node.id)
+                                    # tells everyone about the change to the former parent
+                                    logger.debug("Sent invalidation action [update " + othernode.id + "] due to hierarchy update")
+                                    invalidation.send(("%s?nodes### update %s" % (world, othernode.id)).encode())
+                                    break
+
                 elif cmd == "delete_node":
                     self.update_current_links(client, world, PROVIDER)
                     rpc.send(b"ack")
+
+                    node = scene.node(arg)
+
                     action = self.delete_node(scene, arg)
                     # tells everyone about the change
                     logger.debug("Sent invalidation action [delete]")
                     invalidation.send(("%s?nodes### delete %s" % (world, arg)).encode())
+
+                    # Also remove the node for its parent's children
+                    parent = scene.node(node.parent)
+                    if parent:
+                        parent.children.remove(node.id)
+                        # tells everyone about the change to the parent
+                        logger.debug("Sent invalidation action [update " + parent.id + "] due to hierarchy update")
+                        invalidation.send(("%s?nodes### update %s" % (world, parent.id)).encode())
 
                 ###########################################################################
                 # TIMELINES
