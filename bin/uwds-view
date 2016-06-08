@@ -663,7 +663,8 @@ class Underworlds3DViewer:
 
     def render_axis(self,
                     transformation = numpy.identity(4, dtype=numpy.float32),
-                    label=None):
+                    label=None,
+                    size = 0.2):
         m = transformation.transpose() # OpenGL row major
 
         glPushMatrix()
@@ -675,17 +676,17 @@ class Underworlds3DViewer:
         # draw line for x axis
         glColor3f(1.0, 0.0, 0.0)
         glVertex3f(0.0, 0.0, 0.0)
-        glVertex3f(1.0, 0.0, 0.0)
+        glVertex3f(size, 0.0, 0.0)
 
         # draw line for y axis
         glColor3f(0.0, 1.0, 0.0)
         glVertex3f(0.0, 0.0, 0.0)
-        glVertex3f(0.0, 1.0, 0.0)
+        glVertex3f(0.0, size, 0.0)
 
         # draw line for Z axis
         glColor3f(0.0, 0.0, 1.0)
         glVertex3f(0.0, 0.0, 0.0)
-        glVertex3f(0.0, 0.0, 1.0)
+        glVertex3f(0.0, 0.0, size)
 
         glEnd()
 
