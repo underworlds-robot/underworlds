@@ -524,6 +524,15 @@ class WorldsProxy:
         logger.error("Can not set a world")
         pass
 
+    def __iter__(self):
+        """To iterate over the existing worlds, first ask the server
+        an up-to-date list of worlds, and yield worlds as much as needed.
+        Doing so, worlds are lazily created.
+        """
+        topo = self._ctx.topology()
+        for world in topo["worlds"]:
+            yield self.__getitem__(world)
+
     def finalize(self):
         for w in self._worlds:
             logger.debug("Context [%s]: Closing world <%s>" % (self._ctx.name, w.name))
