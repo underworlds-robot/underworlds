@@ -3,10 +3,16 @@
 
 import sys
 import uuid
-from pyassimp import core as pyassimp
-from pyassimp.postprocess import *
 
 import logging; logger = logging.getLogger("underworlds.model_loader")
+
+try:
+    from pyassimp import core as pyassimp
+    from pyassimp.postprocess import *
+except BaseException as ae:
+    logger.error("pyassimp could not be loaded: %s" % ae)
+    pass
+
 
 import underworlds
 from underworlds.types import *
