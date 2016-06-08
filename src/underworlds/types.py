@@ -101,6 +101,7 @@ class Scene(object):
     def __init__(self):
 
         self.rootnode = Node("root", ENTITY)
+        self.rootnode.transformation = numpy.identity(4, dtype=numpy.float32)
 
         self.nodes = []
 
