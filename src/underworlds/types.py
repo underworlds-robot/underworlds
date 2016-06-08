@@ -16,12 +16,12 @@ FILTER = "FILTER"
 
 
 # Node types
-UNDEFINED = 0
-MESH = 1
+UNDEFINED = "UNDEFINED"
+MESH = "MESH"
 # Entities are abstract nodes. They can represent non-physical objects (like a
 # reference frame) or groups of other objects.
-ENTITY = 2
-CAMERA = 3
+ENTITY = "ENTITY"
+CAMERA = "CAMERA"
 
 class Node(object):
     def __init__(self, name = "", type = UNDEFINED):
