@@ -16,6 +16,8 @@ DEFAULT_WORLD = "base"
 class ModelLoader:
 
     meshes = {}
+
+    # mapping {assimp name: (assimp node, underworld node)}
     node_map = {}
 
     def __init__(self, world = DEFAULT_WORLD):
@@ -89,7 +91,7 @@ class ModelLoader:
             underworlds_node.horizontalfov = cam.horizontalfov
             underworlds_node.lookat = [round(a, 5) for a in cam.lookat]
         else:
-            underworlds_node.type = UNDEFINED
+            underworlds_node.type = ENTITY
 
     def recur_node(self, assimp_node,level = 0):
         logger.info("  " + "\t" * level + "- " + str(assimp_node))
