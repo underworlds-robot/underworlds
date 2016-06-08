@@ -53,8 +53,7 @@ class Node(object):
     
     
     def __str__(self):
-        type = ["undefined", "mesh", "entity", "camera"][self.type]
-        return self.name if self.name else self.id + " (" + type + ")"
+        return self.name if self.name else self.id + " (" + self.type.lower() + ")"
 
     def __lt__(self, node):
         return self.id < node.id
