@@ -663,7 +663,9 @@ class Underworlds3DViewer:
         glUseProgram( 0 )
 
 
-    def render_axis(self, transformation = numpy.identity(4, dtype=numpy.float32)):
+    def render_axis(self,
+                    transformation = numpy.identity(4, dtype=numpy.float32),
+                    label=None):
         m = transformation.transpose() # OpenGL row major
 
         glPushMatrix()
@@ -689,6 +691,9 @@ class Underworlds3DViewer:
 
         glEnd()
 
+        if label:
+            self.showtext(label)
+
         glPopMatrix();
 
     def render_grid(self):
@@ -704,8 +709,6 @@ class Underworlds3DViewer:
             glVertex3f(-10.0, i, 0.0)
             glVertex3f(10.0, i, 0.0)
         glEnd()
-
-        #self.render_axis()
 
 
     def recursive_render(self, node, shader, mode = BASE, with_normals=True):
@@ -729,7 +732,8 @@ class Underworlds3DViewer:
         ###
         if mode == HELPERS:
             #if node.type == ENTITY:
-            self.render_axis(m)
+            self.render_axis(m,
+                             label=node.name if node != self.scene.rootnode else None)
 
             for child in node.children:
                 self.recursive_render(self.scene.nodes[child], shader, mode)
