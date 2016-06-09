@@ -116,7 +116,7 @@ class ModelLoader:
             self.recur_node(child, model, level + 1)
 
 
-    def load(self, filename, root=None):
+    def load(self, filename, ctx=None, root=None):
         """Loads a Collada (or any Assimp compatible model) file in the world.
 
         The kinematic chains are added to the world's geometric state.
@@ -125,63 +125,73 @@ class ModelLoader:
         A new 'load' event is also added the the world timeline.
 
         :param string path: the path (relative or absolute) to the Collada resource
+        :param Context ctx: an existing underworlds context. If not provided, a
+                            new one is created (named 'model loader')
         :param Node root: if given, the loaded nodes will be parented to this
                           node instead of the scene's root.
         :returns: the list of loaded underworlds nodes.
         """
 
-        # Create a context
-        with underworlds.Context("model loader") as ctx:
-            logger.info("Loading model <%s> with ASSIMP..." % filename)
-            model = pyassimp.load(filename, aiProcessPreset_TargetRealtime_MaxQuality)
-            logger.info("...done")
+        close_ctx_at_end = False
 
-            world = ctx.worlds[self.world]
-            nodes = world.scene.nodes
+        # Create a context if needed:
+        if ctx is None:
+            close_ctx_at_end = True
+            ctx = underworlds.Context("model loader")
 
-            if not root:
-                logger.info("Merging the root nodes")
-                self.node_map[model.rootnode.name] = (model.rootnode, world.scene.rootnode)
+        logger.info("Loading model <%s> with ASSIMP..." % filename)
+        model = pyassimp.load(filename, aiProcessPreset_TargetRealtime_MaxQuality)
+        logger.info("...done")
 
-            logger.info("Nodes found:")
-            self.recur_node(model.rootnode, model)
+        world = ctx.worlds[self.world]
+        nodes = world.scene.nodes
 
-            logger.info("%d nodes in the model" % len(self.node_map))
-            logger.info("Loading the nodes...")
-            for n, pair in list(self.node_map.items()):
-                self.fill_node_details(*pair,
-                                       assimp_model = model,
-                                       custom_root=root)
-            logger.info("...done")
+        if not root:
+            logger.info("Merging the root nodes")
+            self.node_map[model.rootnode.name] = (model.rootnode, world.scene.rootnode)
 
-            # Send the nodes to the server (only the nodes -- not yet their
-            # associated meshes)
-            logger.info("Sending the nodes to the server...")
-            for name, pair in list(self.node_map.items()):
-                nodes.update(pair[1])
+        logger.info("Nodes found:")
+        self.recur_node(model.rootnode, model)
 
-            # Now, send the meshes (but only if they do not already exist on the server)
-            logger.info("Sending meshes to the server...")
-            count_sent = 0
-            count_notsent = 0
-            for id, mesh in list(self.meshes.items()):
-                if ctx.has_mesh(id):
-                    logger.debug("Not resending mesh <%s>: already available on the server" % id)
-                    count_notsent += 1
-                else:
-                    logger.debug("Sending mesh <%s>" % id)
-                    ctx.push_mesh(id, 
-                                mesh.vertices.tolist(), 
-                                mesh.faces.tolist(), 
-                                mesh.normals.tolist(),
-                                mesh.colors.tolist(),
-                                mesh.material.properties)
-                    count_sent += 1
+        logger.info("%d nodes in the model" % len(self.node_map))
+        logger.info("Loading the nodes...")
+        for n, pair in list(self.node_map.items()):
+            self.fill_node_details(*pair,
+                                    assimp_model = model,
+                                    custom_root=root)
+        logger.info("...done")
 
-            logger.info("Sent %d meshes (%d were already available on the server)" % (count_sent, count_notsent))
-            pyassimp.release(model)
+        # Send the nodes to the server (only the nodes -- not yet their
+        # associated meshes)
+        logger.info("Sending the nodes to the server...")
+        for name, pair in list(self.node_map.items()):
+            nodes.update(pair[1])
 
-            return [nodes[1] for _,nodes in self.node_map.items()]
+        # Now, send the meshes (but only if they do not already exist on the server)
+        logger.info("Sending meshes to the server...")
+        count_sent = 0
+        count_notsent = 0
+        for id, mesh in list(self.meshes.items()):
+            if ctx.has_mesh(id):
+                logger.debug("Not resending mesh <%s>: already available on the server" % id)
+                count_notsent += 1
+            else:
+                logger.debug("Sending mesh <%s>" % id)
+                ctx.push_mesh(id, 
+                            mesh.vertices.tolist(), 
+                            mesh.faces.tolist(), 
+                            mesh.normals.tolist(),
+                            mesh.colors.tolist(),
+                            mesh.material.properties)
+                count_sent += 1
+
+        logger.info("Sent %d meshes (%d were already available on the server)" % (count_sent, count_notsent))
+        pyassimp.release(model)
+
+        if close_ctx_at_end:
+            ctx.close()
+
+        return [nodes[1] for _,nodes in self.node_map.items()]
 
 
 if __name__ == "__main__":
