@@ -137,12 +137,12 @@ same world called for instance ``raw perception``.
 Scenes and nodes
 ~~~~~~~~~~~~~~~~
 
-A scene represents a 3D environment, made of a set of *nodes*: a node
-can represent either a physical object (or part thereof), or a camera
-(more types of nodes may be added in the future, like *fields*). 
-:py:class:`underworlds.types.Node` itself has several properties
-like a unique identifier, a name, possibly a list of children nodes, a
-3D transformation matrix relative to its parent, etc.
+A scene represents a 3D environment, made of a set of *nodes*: a node can
+represent either a abstract entity (or frame), a physical object (or part
+thereof), or a camera (more types of nodes may be added in the future, like
+*fields*).  `Node` itself has several properties like a unique identifier, a
+name, possibly a list of children nodes, a 3D transformation matrix relative to
+its parent, etc.
 
 .. figure:: images/worlds-chains-3.svg
    :width: 50%
