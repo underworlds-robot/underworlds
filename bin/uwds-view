@@ -370,8 +370,13 @@ class Underworlds3DViewer:
         meshes[id] = {}
 
         # leave some time for new nodes to push their meshes
-        while not self.ctx.has_mesh(id):
-            time.sleep(0.01)
+        if not self.ctx.has_mesh(id):
+            logger.warning("Mesh ID %s is not available on the server... "
+                           "waiting for it..." % id)
+            while not self.ctx.has_mesh(id):
+                time.sleep(0.01)
+
+            logger.info("Mesh ID %s is now available. Getting it..." % id)
 
         mesh = self.ctx.mesh(id) # retrieve the mesh from the server
 
@@ -741,6 +746,11 @@ class Underworlds3DViewer:
         # Mesh rendering modes
         ###
         if node.type == MESH:
+
+            # if the node has been recently turned into a mesh, we might not
+            # have the mesh data yet.
+            if not hasattr(node, "glmeshes"):
+                self.glize(node)
 
             for id in node.glmeshes:
 
