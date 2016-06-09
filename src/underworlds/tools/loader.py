@@ -117,8 +117,7 @@ class ModelLoader:
         A new 'load' event is also added the the world timeline.
 
         :param string path: the path (relative or absolute) to the Collada resource
-        :todo: everything :-)
-
+        :returns: the list of loaded underworlds nodes.
         """
 
         # Create a context
@@ -168,6 +167,8 @@ class ModelLoader:
 
             logger.info("Sent %d meshes (%d were already available on the server)" % (count_sent, count_notsent))
             pyassimp.release(model)
+
+            return [nodes[1] for _,nodes in self.node_map.items()]
 
 
 if __name__ == "__main__":
