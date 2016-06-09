@@ -1,0 +1,36 @@
+#!/usr/bin/env python
+#-*- coding: UTF-8 -*-
+
+import logging; logger = logging.getLogger("underworlds.list")
+
+from pprint import pprint
+
+import underworlds
+
+def recursive_list(scene, node, level):
+
+    print("  " * level + "%s [%s]" % (node.name, node.type))
+
+    for child in node.children:
+        cnode = scene.nodes[child]
+        recursive_list(scene, cnode, level + 1)
+
+if __name__ == "__main__":
+
+    logging.basicConfig(level=logging.WARNING)
+
+    import argparse
+    parser = argparse.ArgumentParser(description=("Print out details of a given node"))
+    parser.add_argument("world", help="Underworlds world to use")
+    parser.add_argument("node", help="Node ID or name")
+    args = parser.parse_args()
+
+
+    with underworlds.Context("uwds-show") as ctx:
+
+        world = ctx.worlds[args.world]
+
+        for node in world.scene.nodes:
+            if node.id == args.node or \
+               node.name == args.node:
+                pprint(node.__dict__)
