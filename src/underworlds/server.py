@@ -24,6 +24,9 @@ class Server(Thread):
         #   - normals
         self.meshes = {}
 
+    def clientname(self, id):
+        return self._clientnames.get(id, id)
+
     def new_client(self, id, name):
         self._clients[id] = {}
         self._clientnames[id] = name
@@ -39,7 +42,6 @@ class Server(Thread):
 
     def new_world(self, name):
         self._worlds[name] = World(name)
-        logger.info("New world %s has been created." % name)
 
     def get_current_topology(self):
         return {"clientnames": self._clientnames, "clients": self._clients, "worlds": list(self._worlds.keys())}
@@ -140,6 +142,7 @@ class Server(Thread):
 
                 req = rpc.recv_json()
                 client = req["client"]
+                clientname = self.clientname(client)
                 world = None
                 scene = None
                 timeline = None
@@ -150,6 +153,7 @@ class Server(Thread):
 
                     if world not in self._worlds:
                         self.new_world(world)
+                        logger.info("<%s> created a new world %s" % (clientname, world))
 
                     scene = self._worlds[world].scene
                     timeline = self._worlds[world].timeline
@@ -160,7 +164,11 @@ class Server(Thread):
                 if len(req) == 2:
                     arg = req[1]
 
-                logger.debug("Received request: <%s(%s)> from <%s> on world <%s>" % (cmd, arg, self._clientnames.get(client, client), world))
+                logger.debug("Received request: <%s(%s)> from <%s> on world <%s>" % \
+                                (cmd, 
+                                 arg,
+                                 clientname,
+                                 world))
 
                 if cmd == "helo":
                     self.new_client(client, arg)
@@ -172,7 +180,8 @@ class Server(Thread):
                 ###########################################################################
                 elif cmd == "deepcopy":
                     self.update_current_links(client, world, PROVIDER)
-                    logger.info("Running a deep copy of world <%s> into world <%s>" % (arg, world))
+                    logger.info("<%s> made a deep copy of world %s "
+                                "into world %s" % (clientname, arg, world))
                     self._worlds[world].deepcopy(self._worlds[arg])
                     rpc.send(b"ack")
 
@@ -189,7 +198,7 @@ class Server(Thread):
                     self.update_current_links(client, world, READER)
                     node = scene.node(arg)
                     if not node:
-                        logger.warning("Client %s has required a inexistant node %s" % (client, arg))
+                        logger.warning("%s has required a inexistant node %s" % (client, arg))
                         rpc.send(b"")
                     else:
                         rpc.send_json(scene.node(arg).serialize())
@@ -198,6 +207,8 @@ class Server(Thread):
                     self.update_current_links(client, world, PROVIDER)
                     node = Node.deserialize(json.loads(arg))
                     rpc.send(b"ack")
+
+                    logger.info("<%s> updated node %s in world %s" % (clientname, node, world))
 
                     action, parent_has_changed = self.update_node(scene, node)
                     # tells everyone about the change
@@ -230,6 +241,8 @@ class Server(Thread):
                     rpc.send(b"ack")
 
                     node = scene.node(arg)
+                    logger.info("%s deleted node %s in world %s" % \
+                                    (clientname, node, world))
 
                     action = self.delete_node(scene, arg)
                     # tells everyone about the change
@@ -293,6 +306,10 @@ class Server(Thread):
                 elif cmd == "push_mesh":
                     mesh_id, data = arg.split(" ",1)
                     self.meshes[mesh_id] = json.loads(data)
+                    logger.info("<%s> added a new mesh ID %s (%d faces)" % \
+                                           (clientname,
+                                            mesh_id, 
+                                            len(self.meshes[mesh_id]['faces'])))
                     rpc.send(b"ack")
 
                 elif cmd == "get_mesh":

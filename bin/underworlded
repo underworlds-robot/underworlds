@@ -9,7 +9,7 @@ import logging.handlers
 
 logger = logging.getLogger("underworlds")
 
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 #syslog = logging.handlers.SysLogHandler(address='/dev/log')
 #logger.addHandler(syslog)
 filelog = logging.FileHandler(LOGFILE)
