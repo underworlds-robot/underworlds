@@ -54,13 +54,21 @@ class ModelLoader:
                 bb_max[2] = round(max(bb_max[2], v[2]), 5)
         return (bb_min, bb_max)
 
-    def fill_node_details(self, assimp_node, underworlds_node, assimp_model):
+    def fill_node_details(self, 
+                          assimp_node, 
+                          underworlds_node, 
+                          assimp_model,
+                          custom_root=None):
 
         logger.debug("Parsing node " + str(assimp_node))
         underworlds_node.name = assimp_node.name
 
         if assimp_node is not assimp_model.rootnode:
-            underworlds_node.parent = self.node_map[assimp_node.parent.name][1].id
+            parent = assimp_node.parent
+            if parent == assimp_model.rootnode and custom_root:
+                underworlds_node.parent = custom_root.id
+            else:
+                underworlds_node.parent = self.node_map[assimp_node.parent.name][1].id
 
         # No need to specify the node's children: this is automatically done
         # by underworlds
@@ -99,16 +107,16 @@ class ModelLoader:
         else:
             underworlds_node.type = ENTITY
 
-    def recur_node(self, assimp_node,level = 0):
+    def recur_node(self, assimp_node, model, level = 0):
         logger.info("  " + "\t" * level + "- " + str(assimp_node))
 
-        if assimp_node.name not in self.node_map: # the rootnode will already be there
+        if assimp_node != model.rootnode: # the rootnode is already there
             self.node_map[assimp_node.name] = (assimp_node, Node()) # cannot use assimp_node as key: it is unhashable
         for child in assimp_node.children:
-            self.recur_node(child, level + 1)
+            self.recur_node(child, model, level + 1)
 
 
-    def load(self, filename):
+    def load(self, filename, root=None):
         """Loads a Collada (or any Assimp compatible model) file in the world.
 
         The kinematic chains are added to the world's geometric state.
@@ -117,6 +125,8 @@ class ModelLoader:
         A new 'load' event is also added the the world timeline.
 
         :param string path: the path (relative or absolute) to the Collada resource
+        :param Node root: if given, the loaded nodes will be parented to this
+                          node instead of the scene's root.
         :returns: the list of loaded underworlds nodes.
         """
 
@@ -129,16 +139,19 @@ class ModelLoader:
             world = ctx.worlds[self.world]
             nodes = world.scene.nodes
 
-            logger.info("Merging the root nodes")
-            self.node_map[model.rootnode.name] = (model.rootnode, world.scene.rootnode)
+            if not root:
+                logger.info("Merging the root nodes")
+                self.node_map[model.rootnode.name] = (model.rootnode, world.scene.rootnode)
 
             logger.info("Nodes found:")
-            self.recur_node(model.rootnode)
+            self.recur_node(model.rootnode, model)
 
             logger.info("%d nodes in the model" % len(self.node_map))
             logger.info("Loading the nodes...")
             for n, pair in list(self.node_map.items()):
-                self.fill_node_details(*pair, assimp_model = model)
+                self.fill_node_details(*pair,
+                                       assimp_model = model,
+                                       custom_root=root)
             logger.info("...done")
 
             # Send the nodes to the server (only the nodes -- not yet their
