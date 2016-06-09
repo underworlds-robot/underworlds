@@ -544,6 +544,10 @@ class Underworlds3DViewer:
         """
         Attention: The performances of this method relies heavily on the size of the display!
         """
+        
+        # mouse out of the window?
+        if mousex < 0 or mousex >= self.w or mousey < 0 or mousey >= self.h:
+            return None
 
         self.render_colors()
         # Capture image from the OpenGL buffer
