@@ -744,7 +744,11 @@ class Underworlds3DViewer:
                              label=node.name if node != self.scene.rootnode else None)
 
             for child in node.children:
-                self.recursive_render(self.scene.nodes[child], shader, mode)
+                try:
+                    self.recursive_render(self.scene.nodes[child], shader, mode)
+                except KeyError as ke:
+                    logger.warning("Node ID %s listed as child of %s, but it"
+                                   " does not exist! Skipping it" % (child, repr(node)))
             return
 
         # Mesh rendering modes
@@ -816,7 +820,11 @@ class Underworlds3DViewer:
                 glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0)
 
         for child in node.children:
-            self.recursive_render(self.scene.nodes[child], shader, mode)
+            try:
+                self.recursive_render(self.scene.nodes[child], shader, mode)
+            except KeyError as ke:
+                logger.warning("Node ID %s listed as child of %s, but it"
+                                " does not exist! Skipping it" % (child, repr(node)))
 
 
     def switch_to_overlay(self):
