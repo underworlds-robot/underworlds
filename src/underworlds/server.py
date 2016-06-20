@@ -208,7 +208,10 @@ class Server(Thread):
                     node = Node.deserialize(json.loads(arg))
                     rpc.send(b"ack")
 
-                    logger.info("<%s> updated node %s in world %s" % (clientname, node, world))
+                    logger.info("<%s> updated node %s in world %s" % \
+                                        (clientname, 
+                                         repr(node), 
+                                         world))
 
                     action, parent_has_changed = self.update_node(scene, node)
                     # tells everyone about the change
@@ -241,8 +244,8 @@ class Server(Thread):
                     rpc.send(b"ack")
 
                     node = scene.node(arg)
-                    logger.info("%s deleted node %s in world %s" % \
-                                    (clientname, node, world))
+                    logger.info("<%s> deleted node %s in world %s" % \
+                                    (clientname, repr(node), world))
 
                     action = self.delete_node(scene, arg)
                     # tells everyone about the change
