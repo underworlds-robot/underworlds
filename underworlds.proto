@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+package underworlds;
+
+service Underworlds {
+
+    // Establish the connection to the server, setting a human-friendly name for
+    // the client.
+    // The server returns a unique client ID that must be used in every subsequent
+    // request to the server.
+    rpc Helo(Name) returns (Client) {}
+
+    // Returns the number of nodes in a given world.
+    // 
+    // Accepts a context (client ID and world) and returns the number of existing nodes.
+    rpc GetNodesLen(Context) returns (Size) {}
+
+    // Returns the list of node IDs present in the given world
+    rpc GetNodesIds(Context) returns (Nodes) {}
+
+    // Returns the root node ID of the given world
+    rpc GetRootNode(Context) returns (Node) {}
+
+
+}
+
+message Client {
+    string id = 1;
+}
+
+message Node {
+    string id = 1;
+}
+
+message Nodes {
+    repeated string ids = 1;
+}
+
+
+message Context {
+    string id = 1;
+    string world = 2;
+}
+
+message Name {
+    string name = 1;
+}
+
+message Size {
+    int32 size = 1;
+}

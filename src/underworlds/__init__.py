@@ -1,20 +1,21 @@
 
-import zmq
 
 import time
-import json
 import copy
-import uuid
-
 import threading
+
 from collections import deque
 
 import logging
 netlogger = logging.getLogger("underworlds.network")
 logger = logging.getLogger("underworlds.client")
 
+from grpc.beta import implementations
+import underworlds_pb2 as server
+
 from underworlds.types import World, Node, Situation
 
+_TIMEOUT_SECONDS = 300
 
 #TODO: inherit for a collections.MutableSequence? what is the benefit?
 class NodesProxy(threading.Thread):
@@ -25,9 +26,11 @@ class NodesProxy(threading.Thread):
         self._ctx = context # current underworlds context (useful to know the client name)
         self._world = world
 
+        # This contains the tuple (id, world) and is used for identification
+        # when communicating with the server
+        self._server_ctx = server.Context(id=self._ctx.id, world=self._world.name)
 
-        self.send("get_nodes_len")
-        self._len = self._ctx.rpc.recv_json()
+        self._len = self._ctx.rpc.GetNodesLen(self._server_ctx, _TIMEOUT_SECONDS)
 
         self._nodes = {} # node store
 
@@ -42,14 +45,12 @@ class NodesProxy(threading.Thread):
 
         # list of invalid ids (ie, nodes that have remotely changed).
         # This list is updated asynchronously from a server publisher
-        self.send("get_nodes_ids")
-        self._updated_ids = deque(self._ctx.rpc.recv_json())
+        self._updated_ids = deque(self._ctx.rpc.GetNodesIds(self._server_ctx, _TIMEOUT_SECONDS).ids)
 
         self._deleted_ids = deque()
 
         # Get the root node
-        self.send("get_root_node")
-        self.rootnode = self._ctx.rpc.recv_json()
+        self.rootnode = self._ctx.rpc.GetRootNode(self._server_ctx, _TIMEOUT_SECONDS).id
         self._update_node_from_remote(self.rootnode)
         self._ids.append(self.rootnode)
  
@@ -74,7 +75,7 @@ class NodesProxy(threading.Thread):
                "world": self._world.name,
                "req": msg}
 
-        self._ctx.rpc.send_json(req)
+        raise NotImplementedError(str(req))
 
 
     def _on_remotely_updated_node(self, id):
@@ -545,23 +546,14 @@ class Context(object):
 
     def __init__(self, name):
 
-        self.id = str(uuid.uuid4())
         self.name = name
 
-        self.zmq_context = zmq.Context()
-        self.rpc = self.zmq_context.socket(zmq.REQ)
-        self.rpc.connect ("tcp://localhost:5555")
+        channel = implementations.insecure_channel('localhost', 50051)
+        self.rpc = server.beta_create_Underworlds_stub(channel)
 
         logger.info("Connecting to the underworlds server...")
-        self.send("helo %s" % name)
-        try:
-            self.rpc.recv()
-        except zmq.ZMQError as e:
-            # It's likely we got a EINTR signal.
-            # Not clear what to do here.
-            logger.warning("Got a EINTR in 'helo'. Trying again...")
-            self.rpc.recv()
-            
+        self.id = self.rpc.Helo(server.Name(name=name), _TIMEOUT_SECONDS).id
+
         logger.info("...done.")
 
         self.worlds = WorldsProxy(self)
@@ -571,7 +563,7 @@ class Context(object):
         req = {"client":self.id,
                "req": msg}
 
-        self.rpc.send_json(req)
+        raise NotImplementedError(str(req))
 
     def topology(self):
         """Returns the current topology to the underworlds environment.
