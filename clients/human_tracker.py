@@ -9,23 +9,25 @@ import numpy
 
 from openni import openni2, nite2, utils
 
+
 import underworlds
 from underworlds.helpers import transformations
 from underworlds.types import Node, ENTITY
+from underworlds.tools.loader import ModelLoader
 
 # Attention!! The labels for the right and left sides are inverted so that when
 # the user move the left hand, it also moves the left hand of the 'avatar'
 # See page 13 of http://www.openni.ru/wp-content/uploads/2013/02/NITE-Algorithms.pdf
 # for the details.
-joints = {"head":          nite2.JointType.NITE_JOINT_HEAD,
-          "neck":          nite2.JointType.NITE_JOINT_NECK,
-          "torso":         nite2.JointType.NITE_JOINT_TORSO,
-          "right_shoulder":nite2.JointType.NITE_JOINT_LEFT_SHOULDER,
-          "left_shoulder": nite2.JointType.NITE_JOINT_RIGHT_SHOULDER,
-          "right_elbow":   nite2.JointType.NITE_JOINT_LEFT_ELBOW,
-          "left_elbow":    nite2.JointType.NITE_JOINT_RIGHT_ELBOW,
-          "right_hand":    nite2.JointType.NITE_JOINT_LEFT_HAND,
-          "left_hand":     nite2.JointType.NITE_JOINT_RIGHT_HAND
+joints = {"head":       nite2.JointType.NITE_JOINT_HEAD,
+          "neck":       nite2.JointType.NITE_JOINT_NECK,
+          "torso":      nite2.JointType.NITE_JOINT_TORSO,
+          "r_shoulder": nite2.JointType.NITE_JOINT_LEFT_SHOULDER,
+          "l_shoulder": nite2.JointType.NITE_JOINT_RIGHT_SHOULDER,
+          "r_elbow":    nite2.JointType.NITE_JOINT_LEFT_ELBOW,
+          "l_elbow":    nite2.JointType.NITE_JOINT_RIGHT_ELBOW,
+          "r_hand":     nite2.JointType.NITE_JOINT_LEFT_HAND,
+          "l_hand":     nite2.JointType.NITE_JOINT_RIGHT_HAND
           }
 
 
@@ -120,13 +122,13 @@ if __name__ == "__main__":
         camera.parent = world.scene.rootnode.id
         nodes.append(camera)
 
+        # Load the mannequin mesh into underworlds and get back the list of
+        # underworlds nodes
+        bodypartslist = ModelLoader(args.world).load("../share/mannequin.blend",
+                                                     ctx=ctx,
+                                                     root=camera)
 
-        # Create and append nodes for every body part
-        human_nodes = {name: Node(name, ENTITY) for name in joints.keys()}
-
-        for _, node in human_nodes.items():
-            node.parent = camera.id
-            nodes.append(node)
+        human_nodes = {node.name:node for node in bodypartslist}
 
         try:
             while True:
@@ -137,8 +139,10 @@ if __name__ == "__main__":
                 humanparts = process_frame(frame)
 
                 if humanparts is not None:
-                    for name, node in human_nodes.items():
-                        node.transformation = humanparts[name]
+                    for name, transformation in humanparts.items():
+                        
+                        node = human_nodes[name]
+                        node.transformation = transformation
                         nodes.update(node)
 
 
