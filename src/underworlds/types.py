@@ -5,6 +5,8 @@ import time
 
 import numpy
 
+import underworlds_pb2 as gRPC
+
 from underworlds.errors import *
 from underworlds.situations import *
 
@@ -16,12 +18,12 @@ FILTER = "FILTER"
 
 
 # Node types
-UNDEFINED = "UNDEFINED"
-MESH = "MESH"
+UNDEFINED = gRPC.UNDEFINED
+MESH = gRPC.MESH
 # Entities are abstract nodes. They can represent non-physical objects (like a
 # reference frame) or groups of other objects.
-ENTITY = "ENTITY"
-CAMERA = "CAMERA"
+ENTITY = gRPC.ENTITY
+CAMERA = gRPC.CAMERA
 
 class Node(object):
     def __init__(self, name = "", type = UNDEFINED):
@@ -65,32 +67,53 @@ class Node(object):
         return hash(self.id)
 
     def serialize(self):
-        """Outputs a dict-like view of the node
+        """Outputs a protobuf encoding of the node
         """
 
-        import copy
-        view = copy.deepcopy(self.__dict__)
+        node = gRPC.Node()
+        node.id = self.id
+        node.name = self.name
+        node.type = self.type
+        node.parent = self.parent if self.parent is not None else ""
 
-        # Converts the transformation numpy array into a (serializable) list
-        if view["transformation"] is not None:
-            view["transformation"] = view["transformation"].tolist()
+        for c in self.children:
+            node.children.append(c)
 
-        return view
+        for v in self.transformation.flatten().tolist():
+            node.transformation.append(v)
+
+        node.last_update = self.last_update
+
+        node.physics = self.properties["physics"]
+
+        return node
 
     @staticmethod
     def deserialize(data):
-        """Creates a node from a dict-like description.
+        """Creates a node from a protobuf encoding.
         """
-        n = Node()
+        node = Node()
 
-        for key, value in list(data.items()):
-            setattr(n, str(key), value)
+        node.id = data.id
+        node.name = data.name
+        node.type = data.type
+        node.parent = data.parent if data.parent else None # convert empty string to None if needed
 
-        # Convert the JSON transformation into a proper numpy array.
+        for c in data.children:
+            node.children.append(c)
+
+        node.transformation = [v for v in data.transformation]
+
+        # Convert the transformation into a proper numpy array.
         # The type (float32) ensures OpenGL compatibilty on 64bit platforms
-        n.transformation = numpy.array(n.transformation, dtype=numpy.float32)
+        node.transformation = numpy.array(node.transformation, dtype=numpy.float32).reshape(4,4)
 
-        return n
+        node.last_update = data.last_update
+
+        node.properties["physics"] = data.physics
+
+
+        return node
 
 
 

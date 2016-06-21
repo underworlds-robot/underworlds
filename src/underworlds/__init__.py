@@ -11,7 +11,7 @@ netlogger = logging.getLogger("underworlds.network")
 logger = logging.getLogger("underworlds.client")
 
 from grpc.beta import implementations
-import underworlds_pb2 as server
+import underworlds_pb2 as gRPC
 
 from underworlds.types import World, Node, Situation
 
@@ -28,7 +28,7 @@ class NodesProxy(threading.Thread):
 
         # This contains the tuple (id, world) and is used for identification
         # when communicating with the server
-        self._server_ctx = server.Context(id=self._ctx.id, world=self._world.name)
+        self._server_ctx = gRPC.Context(client=self._ctx.id, world=self._world.name)
 
         self._len = self._ctx.rpc.GetNodesLen(self._server_ctx, _TIMEOUT_SECONDS)
 
@@ -117,20 +117,19 @@ class NodesProxy(threading.Thread):
 
     def _get_node_from_remote(self, id):
 
-        self.send("get_node " + id)
-        
+        nodeInCtxt = gRPC.NodeInContext(context=self._server_ctx, id=id)
+        gRPCNode = self._ctx.rpc.GetNode(nodeInCtxt, _TIMEOUT_SECONDS)
+
         self._ids.append(id)
-        data = self._ctx.rpc.recv_json()
-        self._nodes[id] = Node.deserialize(data)
+        self._nodes[id] = Node.deserialize(gRPCNode)
 
 
     def _update_node_from_remote(self, id):
 
-        self.send("get_node " + id)
+        nodeInCtxt = gRPC.NodeInContext(context=self._server_ctx, id=id)
+        gRPCNode = self._ctx.rpc.GetNode(nodeInCtxt, _TIMEOUT_SECONDS)
 
-        data = self._ctx.rpc.recv_json()
-
-        updated_node = Node.deserialize(data)
+        updated_node = Node.deserialize(gRPCNode)
         self._nodes[id] = updated_node
 
         try:
@@ -549,10 +548,10 @@ class Context(object):
         self.name = name
 
         channel = implementations.insecure_channel('localhost', 50051)
-        self.rpc = server.beta_create_Underworlds_stub(channel)
+        self.rpc = gRPC.beta_create_Underworlds_stub(channel)
 
         logger.info("Connecting to the underworlds server...")
-        self.id = self.rpc.Helo(server.Name(name=name), _TIMEOUT_SECONDS).id
+        self.id = self.rpc.Helo(gRPC.Name(name=name), _TIMEOUT_SECONDS).id
 
         logger.info("...done.")
 

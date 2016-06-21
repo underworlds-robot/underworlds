@@ -3,10 +3,10 @@ import time
 import logging;logger = logging.getLogger("underworlds.server")
 
 from underworlds.types import *
-import underworlds_pb2 as uwds 
+import underworlds_pb2 as gRPC 
 
 
-class Server(uwds.BetaUnderworldsServicer):
+class Server(gRPC.BetaUnderworldsServicer):
 
     def __init__(self):
         self._running = True
@@ -40,7 +40,7 @@ class Server(uwds.BetaUnderworldsServicer):
 
         if world not in self._worlds:
             self._new_world(world)
-            logger.info("<%s> created a new world %s" % (self._clientname(ctxt.id), 
+            logger.info("<%s> created a new world %s" % (self._clientname(ctxt.client), 
                                                          world))
 
         scene = self._worlds[world].scene
@@ -48,21 +48,53 @@ class Server(uwds.BetaUnderworldsServicer):
 
         return scene, timeline
 
+    def _update_current_links(self, client, world, type):
+        if world in self._clients[client]:
+            current_type = self._clients[client][world][0]
+            # update only if the current link is 'READER' (we do not 
+            # want a 'READER' to overwrite a 'PROVIDER' for instance)
+            type = type if current_type == READER else current_type
+        self._clients[client][world] = (type, time.time())
+
+    def _serialize(self, n):
+        """Outputs a protobuf encoding of the node
+        """
+
+        node = gRPC.Node()
+        node.id = n.id
+        node.name = n.name
+        node.type = n.type
+        node.parent = n.parent if n.parent is not None else ""
+
+        for c in n.children:
+            node.children.append(c)
+
+        for v in n.transformation.flatten().tolist():
+            node.transformation.append(v)
+
+        node.last_update = n.last_update
+
+        node.physics = n.properties["physics"]
+
+        return node
+
+    #############################################
+    ############ Underworlds API ################
+
     def Helo(self, client, context):
         client_id = str(uuid.uuid4())
         self._new_client(client_id, client.name)
-        return uwds.Client(id=client_id)
+        return gRPC.Client(id=client_id)
 
 
     def GetNodesLen(self, ctxt, context):
-        import pdb;pdb.set_trace()
         scene,_ = self._get_scene_timeline(ctxt)
-        return uwds.Size(size=len(scene.nodes))
+        return gRPC.Size(size=len(scene.nodes))
 
     def GetNodesIds(self, ctxt, context):
         scene,_ = self._get_scene_timeline(ctxt)
 
-        nodes = uwds.Nodes()
+        nodes = gRPC.Nodes()
         for n in scene.nodes:
             nodes.ids.append(n.id)
 
@@ -70,16 +102,23 @@ class Server(uwds.BetaUnderworldsServicer):
 
     def GetRootNode(self, ctxt, context):
         scene,_ = self._get_scene_timeline(ctxt)
-        return uwds.Node(id=scene.rootnode.id)
+        return gRPC.Node(id=scene.rootnode.id)
 
-#    def update_current_links(self, client, world, type):
-#        if world in self._clients[client]:
-#            current_type = self._clients[client][world][0]
-#            # update only if the current link is 'READER' (we do not 
-#            # want a 'READER' to overwrite a 'PROVIDER' for instance)
-#            type = type if current_type == READER else current_type
-#        self._clients[client][world] = (type, time.time())
-#
+    def GetNode(self, nodeInCtxt, context):
+
+        clientid, world = nodeInCtxt.context.client, nodeInCtxt.context.world
+
+        scene,_ = self._get_scene_timeline(nodeInCtxt.context)
+
+        self._update_current_links(clientid, world, READER)
+
+        node = scene.node(nodeInCtxt.id)
+
+        if not node:
+            logger.warning("%s has required an non-existant"
+                           "node %s" % (self._clientname(clientid), nodeInCtxt.id))
+        else:
+            return self._serialize(node)
 #
 #    def get_current_topology(self):
 #        return {"clientnames": self._clientnames, "clients": self._clients, "worlds": list(self._worlds.keys())}
@@ -185,16 +224,6 @@ class Server(uwds.BetaUnderworldsServicer):
 #                scene = None
 #                timeline = None
 #
-#                if "world" in req:
-#
-#                    world = req["world"]
-#
-#                    if world not in self._worlds:
-#                        self.new_world(world)
-#                        logger.info("<%s> created a new world %s" % (clientname, world))
-#
-#                    scene = self._worlds[world].scene
-#                    timeline = self._worlds[world].timeline
 #
 #                req = req["req"].split(" ",1)
 #                cmd = req[0]
@@ -220,14 +249,6 @@ class Server(uwds.BetaUnderworldsServicer):
 #                    rpc.send(b"ack")
 #
 #
-#                elif cmd == "get_node":
-#                    self.update_current_links(client, world, READER)
-#                    node = scene.node(arg)
-#                    if not node:
-#                        logger.warning("%s has required a inexistant node %s" % (client, arg))
-#                        rpc.send(b"")
-#                    else:
-#                        rpc.send_json(scene.node(arg).serialize())
 #
 #                elif cmd == "update_node":
 #                    self.update_current_links(client, world, PROVIDER)
@@ -369,9 +390,10 @@ class Server(uwds.BetaUnderworldsServicer):
 
 def start():
 
-    server = uwds.beta_create_Underworlds_server(Server())
+    server = gRPC.beta_create_Underworlds_server(Server())
     server.add_insecure_port('[::]:50051')
 
+    logger.info("Starting the server.")
     server.start()
 
     return server
@@ -388,6 +410,7 @@ if __name__ == "__main__":
         while True:
             time.sleep(1000)
     except KeyboardInterrupt:
+        logger.info("Closing the server.")
         server.stop(0)
 
-    logger.info("The server process terminates now.")
+    logger.info("Bye bye.")

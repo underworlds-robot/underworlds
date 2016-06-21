@@ -21,7 +21,19 @@ service Underworlds {
     // Returns the root node ID of the given world
     rpc GetRootNode(Context) returns (Node) {}
 
+    // Returns a node from its ID in the given world
+    rpc GetNode(NodeInContext) returns (Node) {}
 
+}
+
+enum NodeType {
+    UNDEFINED = 0;
+    // Entities are abstract nodes. They can represent non-physical objects
+    // (like a reference frame) or groups of other objects.
+    ENTITY = 1; 
+    // a physical object, with an associated 3D mesh
+    MESH = 2;
+    CAMERA = 3;
 }
 
 message Client {
@@ -29,16 +41,40 @@ message Client {
 }
 
 message Node {
+    // an unique ID
     string id = 1;
+
+    // a human-friendly name
+    string name = 2;
+
+    // the type of node
+    NodeType type = 3;
+
+    string parent = 4; // the parent node ID. Always non-empty, except for the root node
+
+    // the children of this node, if any
+    repeated string children = 5;
+
+    // 4x4 transformation matrix, relative to parent. Translation units are
+    // meters. Stored as a list of 16 floats, row-major.
+    repeated float transformation = 6;
+
+    // a float representing the date/time of the last node's update (in sec
+    // since the epoch)
+    float last_update = 8;
+
+    // PROPERTIES
+
+    // if set to true, physics-related computation are expected to be run on this node
+    bool physics = 16;
 }
 
 message Nodes {
     repeated string ids = 1;
 }
 
-
 message Context {
-    string id = 1;
+    string client = 1;
     string world = 2;
 }
 
@@ -48,4 +84,9 @@ message Name {
 
 message Size {
     int32 size = 1;
+}
+
+message NodeInContext {
+    Context context = 1;
+    string id = 2;
 }
