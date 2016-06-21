@@ -10,6 +10,8 @@ service Underworlds {
     // request to the server.
     rpc helo(Name) returns (Client) {}
 
+    // NODES
+
     // Returns the number of nodes in a given world.
     // 
     // Accepts a context (client ID and world) and returns the number of existing nodes.
@@ -21,10 +23,32 @@ service Underworlds {
     // Returns the root node ID of the given world
     rpc getRootNode(Context) returns (Node) {}
 
-    // Returns a node from its ID in the given world
+    // Returns a node from its ID in the given world.
+    // Note that only the node ID is used (and thus, required).
     rpc getNode(NodeInContext) returns (Node) {}
 
-    rpc getInvalidations(Context) returns (stream Invalidation) {}
+    // Updates (and broadcasts to all client) a node in a given world
+    rpc updateNode(NodeInContext) returns (Empty) {}
+
+    // Deletes (and broadcasts to all client) a node in a given world
+    rpc deleteNode(NodeInContext) returns (Empty) {}
+
+    // Returns a (stream of) 'invalidated' nodes that need to be updated.
+    // Invalidated nodes can be new nodes, nodes that have changed, or nodes
+    // that have been removed (see Invalidation.type).
+    rpc getNodeInvalidations(Context) returns (stream NodeInvalidation) {}
+
+
+    // TIMELINE
+
+    rpc timelineOrigin(Context) returns (Time) {}
+
+    // Returns a (stream of) 'invalidated' nodes that need to be updated.
+    // Invalidated nodes can be new nodes, nodes that have changed, or nodes
+    // that have been removed (see Invalidation.type).
+    rpc getTimelineInvalidations(Context) returns (stream TimelineInvalidation) {}
+
+
 }
 
 enum NodeType {
@@ -37,11 +61,16 @@ enum NodeType {
     CAMERA = 3;
 }
 
-enum InvalidationType {
-    NOP = 0;
-    NEW = 1;
-    UPDATE = 2;
-    DELETE = 3;
+enum NodeInvalidationType {
+    NEW = 0;
+    UPDATE = 1;
+    DELETE = 2;
+}
+
+enum TimelineInvalidationType {
+    EVENT = 0;
+    START = 1;
+    END = 2;
 }
 
 message Client {
@@ -96,12 +125,26 @@ message Size {
 
 message NodeInContext {
     Context context = 1;
-    string id = 2;
+    Node node = 2;
 }
 
-message Invalidation {
-    InvalidationType type = 1;
+message NodeInvalidation {
+    NodeInvalidationType type = 1;
 
     // the ID of the node which is being invalidated
     string id = 2;
 }
+
+message Time {
+    // Time (in second) elapsed since the begining of epoch.
+    float time = 1;
+}
+
+message TimelineInvalidation {
+    TimelineInvalidationType type = 1;
+
+    // the ID of the situation which is being invalidated
+    string id = 2;
+}
+
+message Empty {}

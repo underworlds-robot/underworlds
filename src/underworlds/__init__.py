@@ -7,7 +7,6 @@ import threading
 from collections import deque
 
 import logging
-netlogger = logging.getLogger("underworlds.network")
 logger = logging.getLogger("underworlds.client")
 
 from grpc.beta import implementations
@@ -113,7 +112,8 @@ class NodesProxy(threading.Thread):
 
     def _get_node_from_remote(self, id):
 
-        nodeInCtxt = gRPC.NodeInContext(context=self._server_ctx, id=id)
+        nodeInCtxt = gRPC.NodeInContext(context=self._server_ctx,
+                                        node=gRPC.Node(id=id))
         gRPCNode = self._ctx.rpc.getNode(nodeInCtxt, _TIMEOUT_SECONDS)
 
         self._ids.append(id)
@@ -122,7 +122,8 @@ class NodesProxy(threading.Thread):
 
     def _update_node_from_remote(self, id):
 
-        nodeInCtxt = gRPC.NodeInContext(context=self._server_ctx, id=id)
+        nodeInCtxt = gRPC.NodeInContext(context=self._server_ctx,
+                                        node=gRPC.Node(id=id))
         gRPCNode = self._ctx.rpc.getNode(nodeInCtxt, _TIMEOUT_SECONDS)
 
         updated_node = Node.deserialize(gRPCNode)
@@ -221,8 +222,9 @@ class NodesProxy(threading.Thread):
         node with a smaller index is removed).
 
         """
-        self.send("update_node " + json.dumps(node.serialize()))
-        self._ctx.rpc.recv() # server send a "ack"
+        self._ctx.rpc.updateNode(gRPC.NodeInContext(context=self._server_ctx,
+                                                    node=node.serialize(gRPC.Node)),
+                                 _TIMEOUT_SECONDS)
 
     def remove(self, node):
         """ Deletes a node from the node set.
@@ -237,9 +239,9 @@ class NodesProxy(threading.Thread):
         take some time (a couple of milliseconds) to propagate
         the change.
         """
-        self.send("delete_node " + str(node.id))
-        self._ctx.rpc.recv() # server send a "ack"
-
+        self._ctx.rpc.deleteNode(gRPC.NodeInContext(context=self._server_ctx,
+                                                    node=node.serialize(gRPC.Node)),
+                                 _TIMEOUT_SECONDS)
 
 
     def run(self):
@@ -247,26 +249,19 @@ class NodesProxy(threading.Thread):
         while self._running:
             time.sleep(_INVALIDATION_PERIOD)
 
-            for invalidation in self._ctx.rpc.getInvalidations(self._server_ctx, _TIMEOUT_SECONDS):
+            for invalidation in self._ctx.rpc.getNodeInvalidations(self._server_ctx, _TIMEOUT_SECONDS):
                 action, id = invalidation.type, invalidation.id
 
                 if action == gRPC.UPDATE:
-                    netlogger.debug("Request to update node: " + id)
+                    logger.debug("Server notification: update node: " + id)
                     self._on_remotely_updated_node(id)
                 elif action == gRPC.NEW:
-                    netlogger.debug("Request to add node: " + id)
+                    logger.debug("Server notification: add node: " + id)
                     self._len += 1 # not atomic, but still fine since I'm the only one to write it
                     self._on_remotely_updated_node(id)
                 elif action == gRPC.DELETE:
-                    netlogger.debug("Request to delete node: " + id)
+                    logger.debug("Server notification: delete node: " + id)
                     self._on_remotely_deleted_node(id)
-                elif action == gRPC.NOP:
-                    logger.info("Received invalidation NOP")
-                    pass
-                else:
-                    raise RuntimeError("Received invalid message on the invalidation "
-                                        "channel: <%s>" % action)
-
 
 
 class SceneProxy(object):
@@ -307,8 +302,11 @@ class TimelineProxy(threading.Thread):
         self._ctx = ctx # context
         self._world = world
 
-        self._send("timeline_origin")
-        self.origin = self._ctx.rpc.recv_json()
+        # This contains the tuple (id, world) and is used for identification
+        # when communicating with the server
+        self._server_ctx = gRPC.Context(client=self._ctx.id, world=self._world.name)
+
+        self.origin = self._ctx.rpc.timelineOrigin(self._server_ctx, _TIMEOUT_SECONDS).time
         logger.info("The world <%s> has been created %s"%(self._world.name, time.asctime(time.localtime(self.origin))))
 
         self.situations = []
@@ -320,12 +318,6 @@ class TimelineProxy(threading.Thread):
         super(TimelineProxy, self).start()
 
         self._onchange_callbacks = []
-
-        # wait for the 'invalidation' thread to notify it is ready
-        self.cv.acquire()
-        self.cv.wait()
-        self.cv.release()
-
 
     def __del__(self):
         self._running = False
@@ -403,47 +395,22 @@ class TimelineProxy(threading.Thread):
         self.waitforchanges.release()
 
     def run(self):
-        #implement here the listener for model updates
-        invalidation_pub = self._ctx.zmq_context.socket(zmq.SUB)
-        invalidation_pub.connect ("tcp://localhost:5556")
-        invalidation_pub.setsockopt(zmq.SUBSCRIBE, b"") # no filter
-
-        # wait until we receive something on the 'invalidation'
-        # channel. This makes sure we wont miss any following
-        # message
-        time.sleep(0.01) #leave some time to make sure the main thread is already waiting on the condition variable
-        self.cv.acquire()
-        invalidation_pub.recv()
-        self.cv.notify_all()
-        self.cv.release()
-    
-        # receive only invalidation requests for my current world
-        invalidation_pub.setsockopt(zmq.UNSUBSCRIBE, b"")
-        invalidation_pub.setsockopt(zmq.SUBSCRIBE, (self._world.name + "?timeline").encode())
-
-        poller = zmq.Poller()
-        poller.register(invalidation_pub, zmq.POLLIN)
 
         while self._running:
-            socks = dict(poller.poll(200))
-            
-            if socks.get(invalidation_pub) == zmq.POLLIN:
-                msg = invalidation_pub.recv().decode()
-                world, req = msg.split("###")
-                action, arg = req.strip().split(" ", 1)
-                if action == "event":
-                    sit = Situation.deserialize(json.loads(arg))
-                    netlogger.debug("Notification of an event: " + sit.id)
-                    self._on_remotely_started_situation(sit, isevent = True)
-                if action == "start":
-                    sit = Situation.deserialize(json.loads(arg))
-                    netlogger.debug("Request to start situation: " + sit.id)
-                    self._on_remotely_started_situation(sit, isevent = False)
-                elif action == "end":
-                    netlogger.debug("Request to end situation: " + arg)
-                    self._on_remotely_ended_situation(arg)
-                elif action == "nop":
-                    pass
+            time.sleep(_INVALIDATION_PERIOD)
+
+            for invalidation in self._ctx.rpc.getTimelineInvalidations(self._server_ctx, _TIMEOUT_SECONDS):
+                action, id = invalidation.type, invalidation.id
+
+                if action == gRPC.EVENT:
+                    logger.debug("Server notification: event: " + sit.id)
+                    self._on_remotely_started_situation(id, isevent = True)
+                if action == gRPC.START:
+                    logger.debug("Server notification: situation start: " + sit.id)
+                    self._on_remotely_started_situation(id, isevent = False)
+                elif action == gRPC.END:
+                    logger.debug("Server notification: situation end: " + arg)
+                    self._on_remotely_ended_situation(id)
 
 
     def finalize(self):
@@ -465,7 +432,7 @@ class WorldProxy:
 
         self.name = name
         self.scene = SceneProxy(self._ctx, self._world)
-        #TODO self.timeline = TimelineProxy(self._ctx, self._world)
+        self.timeline = TimelineProxy(self._ctx, self._world)
 
     def copy_from(self, world):
         """ Creates and/or replaces the content of the world with an exact copy

@@ -41,7 +41,7 @@ class Node(object):
 
         # 4x4 transformation matrix, relative to parent. Stored as a numpy 4x4
         # matrix. Translation units are meters.
-        self.transformation = None
+        self.transformation = numpy.identity(4, dtype=numpy.float32)
         self.properties = {
                 "physics": False # no physics applied by default
             }

@@ -8,12 +8,12 @@ import underworlds
 import underworlds.server
 from underworlds.types import Node
 
-PROPAGATION_TIME=0.001 # time to wait for node update notification propagation (in sec)
+PROPAGATION_TIME=0.1 # time to wait for node update notification propagation (in sec)
 
 class TestSingleUser(unittest.TestCase):
 
     def setUp(self):
-        #self.server = underworlds.server.start()
+        self.server = underworlds.server.start()
         time.sleep(0.1) # leave some time to the server to start
 
         self.ctx = underworlds.Context("unittest - single user")
@@ -21,33 +21,26 @@ class TestSingleUser(unittest.TestCase):
 
     def test_initial_access(self):
 
-        print("blak")
         world = self.ctx.worlds["base"]
         self.assertIsNotNone(world)
 
-        print("blak")
         self.assertIsNotNone(world.scene)
         self.assertIsNotNone(world.timeline)
 
-        print("blak")
         nodes = world.scene.nodes
         self.assertEquals(len(nodes), 1) # the root node is always present
-        print("blak")
 
     def test_adding_nodes(self):
 
-        print("blik")
         world = self.ctx.worlds["base"]
         nodes = world.scene.nodes
-        print("blik")
         
         self.assertEquals(len(nodes), 1)
         self.assertEquals(nodes[0].name, "root")
-        print("blik")
 
         n = Node()
         n.name = "test"
-        nodes.update(n)
+        nodes.append(n)
 
         time.sleep(PROPAGATION_TIME) # wait for propagation
         self.assertEquals(len(nodes), 2)
@@ -68,9 +61,10 @@ class TestSingleUser(unittest.TestCase):
         # Add a second node and check it is available to all references
         n2 = Node()
         n2.name = "test2"
-        nodes.update(n2)
+        nodes.update(n2) # 'update' and 'append' are actually aliases
 
         time.sleep(PROPAGATION_TIME) # wait for propagation
+        self.assertEquals(len(nodes), 3)
         self.assertEquals(len(nodes2), 3)
 
         names2 = [n.name for n in nodes2]
@@ -144,7 +138,7 @@ class TestSingleUser(unittest.TestCase):
 
     def tearDown(self):
         self.ctx.close()
-        #self.server.stop(0)
+        self.server.stop(0)
 
 def test_suite():
      suite = unittest.TestLoader().loadTestsFromTestCase(TestSingleUser)
@@ -152,4 +146,4 @@ def test_suite():
 
 
 if __name__ == '__main__':
-    unittest.main(verbosity=2,failfast=True)
+    unittest.main(verbosity=2,failfast=False)
