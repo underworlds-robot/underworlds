@@ -15,7 +15,7 @@ import underworlds_pb2 as gRPC
 from underworlds.types import World, Node, Situation
 
 _TIMEOUT_SECONDS = 1
-_INVALIDATION_PERIOD = 0.01 # 10 ms
+_INVALIDATION_PERIOD = 0.02 # 10 ms
 
 #TODO: inherit for a collections.MutableSequence? what is the benefit?
 class NodesProxy(threading.Thread):
@@ -60,6 +60,9 @@ class NodesProxy(threading.Thread):
         self.cv = threading.Condition()
 
         self.start()
+        # leave a bit of time for the invalidation monitoring thread to start
+        # and register with the server (otherwise updates may be missed)
+        time.sleep(0.1)
 
     def __del__(self):
         self._running = False
@@ -96,7 +99,7 @@ class NodesProxy(threading.Thread):
         
         if not self._updated_ids:
             logger.warning("Slow propagation? Waiting for new/updated nodes notifications...")
-            time.sleep(0.01) #leave some time for propagation
+            time.sleep(0.05) #leave some time for propagation
 
             # still empty? we have a problem!
             if not self._updated_ids:
@@ -466,6 +469,10 @@ class WorldsProxy:
         self._worlds = []
 
     def __getitem__(self, key):
+        for world in self._worlds:
+            if world.name == key:
+                return world
+
         world = WorldProxy(self._ctx, key)
         self._worlds.append(world)
         return world

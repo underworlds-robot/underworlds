@@ -98,8 +98,8 @@ class Server(gRPC.BetaUnderworldsServicer):
  
     def _add_node_invalidation(self, world, node_id, invalidation_type):
 
-        for client_id in self._clients.keys():
-            self._node_invalidations[world].setdefault(client_id,[]).append(gRPC.NodeInvalidation(type=invalidation_type, id=node_id))
+        for client_id in self._node_invalidations[world].keys():
+            self._node_invalidations[world][client_id].append(gRPC.NodeInvalidation(type=invalidation_type, id=node_id))
 
     #############################################
     ############ Underworlds API ################
@@ -254,8 +254,8 @@ class Server(gRPC.BetaUnderworldsServicer):
 
         world, client = ctxt.world, ctxt.client
 
-
-        if client in self._node_invalidations[world] and self._node_invalidations[world][client]:
+        # (if this client is not yet monitoring this world, add it as a side effect of the test)
+        if self._node_invalidations[world].setdefault(client,[]):
             for invalidation in self._node_invalidations[world][client]:
                 yield invalidation
             self._node_invalidations[world][client] = []

@@ -17,6 +17,7 @@ class TestSingleUser(unittest.TestCase):
         time.sleep(0.1) # leave some time to the server to start
 
         self.ctx = underworlds.Context("unittest - single user")
+        self.ctx2 = underworlds.Context("unittest - single user 2")
 
 
     def test_initial_access(self):
@@ -42,17 +43,29 @@ class TestSingleUser(unittest.TestCase):
         n.name = "test"
         nodes.append(n)
 
+        self.assertEquals(len(nodes), 1) # the effective length of nodes takes a few ms to be updated
         time.sleep(PROPAGATION_TIME) # wait for propagation
         self.assertEquals(len(nodes), 2)
 
         # Get another reference to the 'base' world, and check
         # our node is still here.
-        world2 = self.ctx.worlds["base"]
+        world1bis = self.ctx.worlds["base"]
+        nodes1bis = world1bis.scene.nodes
+
+        self.assertTrue(world is world1bis)
+        self.assertTrue(nodes is nodes1bis)
+
+
+        # Get another reference to the 'base' world, via another context.
+        # The 2 worlds are not the same python object anymore but
+        # should remain consistent
+        world2 = self.ctx2.worlds["base"]
         nodes2 = world2.scene.nodes
 
         self.assertFalse(world is world2)
         self.assertFalse(nodes is nodes2)
 
+        self.assertEquals(len(nodes2), 2)
         self.assertEquals(len(nodes2), 2)
 
         names = [n.name for n in nodes2]
@@ -102,7 +115,7 @@ class TestSingleUser(unittest.TestCase):
 
         # Get another reference to the 'base' world, and check
         # our nodes are here.
-        world2 = self.ctx.worlds["base"]
+        world2 = self.ctx2.worlds["base"]
         nodes2 = world2.scene.nodes
         self.assertEquals(len(nodes2), 4)
 
@@ -138,6 +151,7 @@ class TestSingleUser(unittest.TestCase):
 
     def tearDown(self):
         self.ctx.close()
+        self.ctx2.close()
         self.server.stop(0)
 
 def test_suite():
