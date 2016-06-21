@@ -8,22 +8,23 @@ service Underworlds {
     // the client.
     // The server returns a unique client ID that must be used in every subsequent
     // request to the server.
-    rpc Helo(Name) returns (Client) {}
+    rpc helo(Name) returns (Client) {}
 
     // Returns the number of nodes in a given world.
     // 
     // Accepts a context (client ID and world) and returns the number of existing nodes.
-    rpc GetNodesLen(Context) returns (Size) {}
+    rpc getNodesLen(Context) returns (Size) {}
 
     // Returns the list of node IDs present in the given world
-    rpc GetNodesIds(Context) returns (Nodes) {}
+    rpc getNodesIds(Context) returns (Nodes) {}
 
     // Returns the root node ID of the given world
-    rpc GetRootNode(Context) returns (Node) {}
+    rpc getRootNode(Context) returns (Node) {}
 
     // Returns a node from its ID in the given world
-    rpc GetNode(NodeInContext) returns (Node) {}
+    rpc getNode(NodeInContext) returns (Node) {}
 
+    rpc getInvalidations(Context) returns (stream Invalidation) {}
 }
 
 enum NodeType {
@@ -34,6 +35,13 @@ enum NodeType {
     // a physical object, with an associated 3D mesh
     MESH = 2;
     CAMERA = 3;
+}
+
+enum InvalidationType {
+    NOP = 0;
+    NEW = 1;
+    UPDATE = 2;
+    DELETE = 3;
 }
 
 message Client {
@@ -88,5 +96,12 @@ message Size {
 
 message NodeInContext {
     Context context = 1;
+    string id = 2;
+}
+
+message Invalidation {
+    InvalidationType type = 1;
+
+    // the ID of the node which is being invalidated
     string id = 2;
 }

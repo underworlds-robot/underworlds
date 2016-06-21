@@ -5,7 +5,7 @@ import logging; logger = logging.getLogger("underworlds")
 logging.basicConfig(level=logging.DEBUG)
 
 import underworlds
-from underworlds.server import Server
+import underworlds.server
 from underworlds.types import Node
 
 PROPAGATION_TIME=0.001 # time to wait for node update notification propagation (in sec)
@@ -13,8 +13,7 @@ PROPAGATION_TIME=0.001 # time to wait for node update notification propagation (
 class TestSingleUser(unittest.TestCase):
 
     def setUp(self):
-        self.server = Server()
-        self.server.start()
+        #self.server = underworlds.server.start()
         time.sleep(0.1) # leave some time to the server to start
 
         self.ctx = underworlds.Context("unittest - single user")
@@ -22,21 +21,29 @@ class TestSingleUser(unittest.TestCase):
 
     def test_initial_access(self):
 
+        print("blak")
         world = self.ctx.worlds["base"]
         self.assertIsNotNone(world)
 
+        print("blak")
         self.assertIsNotNone(world.scene)
         self.assertIsNotNone(world.timeline)
 
+        print("blak")
         nodes = world.scene.nodes
         self.assertEquals(len(nodes), 1) # the root node is always present
+        print("blak")
 
     def test_adding_nodes(self):
+
+        print("blik")
         world = self.ctx.worlds["base"]
         nodes = world.scene.nodes
+        print("blik")
         
         self.assertEquals(len(nodes), 1)
         self.assertEquals(nodes[0].name, "root")
+        print("blik")
 
         n = Node()
         n.name = "test"
@@ -137,8 +144,7 @@ class TestSingleUser(unittest.TestCase):
 
     def tearDown(self):
         self.ctx.close()
-        self.server.stop()
-        self.server.join()
+        #self.server.stop(0)
 
 def test_suite():
      suite = unittest.TestLoader().loadTestsFromTestCase(TestSingleUser)
@@ -146,4 +152,4 @@ def test_suite():
 
 
 if __name__ == '__main__':
-    unittest.main()
+    unittest.main(verbosity=2,failfast=True)

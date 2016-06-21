@@ -66,11 +66,16 @@ class Node(object):
     def __hash__(self):
         return hash(self.id)
 
-    def serialize(self):
+    def serialize(self, NodeType):
         """Outputs a protobuf encoding of the node
+
+        The NodeType (underworlds_pb2.Node) needs to be passed as parameter
+        to prevent the creation of a 2nd instance of the underworlds_pb2 that
+        crashes the gRPC. Not sure why...
+        Similar to http://stackoverflow.com/questions/32010905/unbound-method-must-be-called-with-x-instance-as-first-argument-got-x-instance
         """
 
-        node = gRPC.Node()
+        node = NodeType()
         node.id = self.id
         node.name = self.name
         node.type = self.type

@@ -15,7 +15,7 @@ import underworlds_pb2 as gRPC
 
 from underworlds.types import World, Node, Situation
 
-_TIMEOUT_SECONDS = 300
+_TIMEOUT_SECONDS = 3
 
 #TODO: inherit for a collections.MutableSequence? what is the benefit?
 class NodesProxy(threading.Thread):
@@ -30,7 +30,7 @@ class NodesProxy(threading.Thread):
         # when communicating with the server
         self._server_ctx = gRPC.Context(client=self._ctx.id, world=self._world.name)
 
-        self._len = self._ctx.rpc.GetNodesLen(self._server_ctx, _TIMEOUT_SECONDS)
+        self._len = self._ctx.rpc.getNodesLen(self._server_ctx, _TIMEOUT_SECONDS).size
 
         self._nodes = {} # node store
 
@@ -45,12 +45,12 @@ class NodesProxy(threading.Thread):
 
         # list of invalid ids (ie, nodes that have remotely changed).
         # This list is updated asynchronously from a server publisher
-        self._updated_ids = deque(self._ctx.rpc.GetNodesIds(self._server_ctx, _TIMEOUT_SECONDS).ids)
+        self._updated_ids = deque(self._ctx.rpc.getNodesIds(self._server_ctx, _TIMEOUT_SECONDS).ids)
 
         self._deleted_ids = deque()
 
         # Get the root node
-        self.rootnode = self._ctx.rpc.GetRootNode(self._server_ctx, _TIMEOUT_SECONDS).id
+        self.rootnode = self._ctx.rpc.getRootNode(self._server_ctx, _TIMEOUT_SECONDS).id
         self._update_node_from_remote(self.rootnode)
         self._ids.append(self.rootnode)
  
@@ -60,11 +60,6 @@ class NodesProxy(threading.Thread):
         self.cv = threading.Condition()
 
         self.start()
-
-        # wait for the 'invalidation' thread to notify it is ready
-        self.cv.acquire()
-        self.cv.wait()
-        self.cv.release()
 
     def __del__(self):
         self._running = False
@@ -118,7 +113,7 @@ class NodesProxy(threading.Thread):
     def _get_node_from_remote(self, id):
 
         nodeInCtxt = gRPC.NodeInContext(context=self._server_ctx, id=id)
-        gRPCNode = self._ctx.rpc.GetNode(nodeInCtxt, _TIMEOUT_SECONDS)
+        gRPCNode = self._ctx.rpc.getNode(nodeInCtxt, _TIMEOUT_SECONDS)
 
         self._ids.append(id)
         self._nodes[id] = Node.deserialize(gRPCNode)
@@ -127,7 +122,7 @@ class NodesProxy(threading.Thread):
     def _update_node_from_remote(self, id):
 
         nodeInCtxt = gRPC.NodeInContext(context=self._server_ctx, id=id)
-        gRPCNode = self._ctx.rpc.GetNode(nodeInCtxt, _TIMEOUT_SECONDS)
+        gRPCNode = self._ctx.rpc.getNode(nodeInCtxt, _TIMEOUT_SECONDS)
 
         updated_node = Node.deserialize(gRPCNode)
         self._nodes[id] = updated_node
@@ -247,50 +242,25 @@ class NodesProxy(threading.Thread):
 
 
     def run(self):
-        #implement here the listener for model updates
-        invalidation_pub = self._ctx.zmq_context.socket(zmq.SUB)
-        invalidation_pub.connect ("tcp://localhost:5556")
-        invalidation_pub.setsockopt(zmq.SUBSCRIBE, b"") # no filter
 
-        # wait until we receive something on the 'invalidation'
-        # channel. This makes sure we wont miss any following
-        # message
-        time.sleep(0.01) #leave some time to make sure the main thread is already waiting on the condition variable
-        self.cv.acquire()
-        invalidation_pub.recv()
-        self.cv.notify_all()
-        self.cv.release()
-    
-        # receive only invalidation requests for my current world
-        invalidation_pub.setsockopt(zmq.UNSUBSCRIBE, b"")
-        invalidation_pub.setsockopt(zmq.SUBSCRIBE, (self._world.name + "?nodes").encode())
+        for invalidation in self._ctx.rpc.getInvalidations(self._server_ctx, _TIMEOUT_SECONDS):
+            action, id = invalidation.action, invalidation.id
 
-        poller = zmq.Poller()
-        poller.register(invalidation_pub, zmq.POLLIN)
-
-        while self._running:
-            socks = dict(poller.poll(200))
-            
-            if socks.get(invalidation_pub) == zmq.POLLIN:
-                msg = invalidation_pub.recv().decode()
-
-                _, req = msg.split("###")
-                action, id = req.strip().split()
-                if action == "update":
-                    netlogger.debug("Request to update node: " + id)
-                    self._on_remotely_updated_node(id)
-                elif action == "new":
-                    netlogger.debug("Request to add node: " + id)
-                    self._len += 1 # not atomic, but still fine since I'm the only one to write it
-                    self._on_remotely_updated_node(id)
-                elif action == "delete":
-                    netlogger.debug("Request to delete node: " + id)
-                    self._on_remotely_deleted_node(id)
-                elif action == "nop":
-                    pass
-                else:
-                    raise RuntimeError("Received invalid message on the invalidation "
-                                       "channel: <%s>" % req)
+            if action == gRPC.UPDATE:
+                netlogger.debug("Request to update node: " + id)
+                self._on_remotely_updated_node(id)
+            elif action == gRPC.NEW:
+                netlogger.debug("Request to add node: " + id)
+                self._len += 1 # not atomic, but still fine since I'm the only one to write it
+                self._on_remotely_updated_node(id)
+            elif action == gRPC.DELETE:
+                netlogger.debug("Request to delete node: " + id)
+                self._on_remotely_deleted_node(id)
+            elif action == gRPC.NOP:
+                pass
+            else:
+                raise RuntimeError("Received invalid message on the invalidation "
+                                    "channel: <%s>" % action)
 
 
 
@@ -490,7 +460,7 @@ class WorldProxy:
 
         self.name = name
         self.scene = SceneProxy(self._ctx, self._world)
-        self.timeline = TimelineProxy(self._ctx, self._world)
+        #TODO self.timeline = TimelineProxy(self._ctx, self._world)
 
     def copy_from(self, world):
         """ Creates and/or replaces the content of the world with an exact copy
@@ -551,7 +521,7 @@ class Context(object):
         self.rpc = gRPC.beta_create_Underworlds_stub(channel)
 
         logger.info("Connecting to the underworlds server...")
-        self.id = self.rpc.Helo(gRPC.Name(name=name), _TIMEOUT_SECONDS).id
+        self.id = self.rpc.helo(gRPC.Name(name=name), _TIMEOUT_SECONDS).id
 
         logger.info("...done.")
 
