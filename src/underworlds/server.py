@@ -4,6 +4,8 @@ import logging;logger = logging.getLogger("underworlds.server")
 
 from underworlds.types import *
 import underworlds_pb2 as gRPC 
+from grpc.beta import interfaces as beta_interfaces
+
 
 class Server(gRPC.BetaUnderworldsServicer):
 
@@ -11,6 +13,11 @@ class Server(gRPC.BetaUnderworldsServicer):
 
         self._running = True
         self._worlds = {}
+
+        # for each world (key), stores a mapping {client: list of node IDs that
+        # are to be invalidated}
+        self._invalidations = {}
+
         self._clients = {} # for each client, stored the links (cf clients' types) with the various worlds.
         self._clientnames = {}
         
@@ -32,6 +39,7 @@ class Server(gRPC.BetaUnderworldsServicer):
 
     def _new_world(self, name):
         self._worlds[name] = World(name)
+        self._invalidations[name] = {}
 
 
     def _get_scene_timeline(self, ctxt):
@@ -40,7 +48,7 @@ class Server(gRPC.BetaUnderworldsServicer):
 
         if world not in self._worlds:
             self._new_world(world)
-            logger.info("<%s> created a new world %s" % (self._clientname(ctxt.client), 
+            logger.info("<%s> created a new world <%s>" % (self._clientname(ctxt.client), 
                                                          world))
 
         scene = self._worlds[world].scene
@@ -114,6 +122,26 @@ class Server(gRPC.BetaUnderworldsServicer):
             res = node.serialize(gRPC.Node)
             logger.debug("<getNode> completed")
             return res
+
+    ##############################
+    #### Invalidation streams
+    def getInvalidations(self, ctxt, context):
+        """ For each pair (world, client), check if nodes need to be
+        invalidated, and yield accordingly the invalidation messages.
+        """
+
+        world, client = ctxt.world, ctxt.client
+
+
+        if client in self._invalidations[world] and self._invalidations[world][client]:
+            for invalidation in self._invalidations[world][client]:
+                yield invalidation
+            self._invalidations[world][client] = []
+
+        #try:
+        #except Exception as e:
+        #    context.details("Exception in getInvalidations: %s" %repr(e))
+        #    context.code(beta_interfaces.StatusCode.UNKNOWN)
 #
 #    def get_current_topology(self):
 #        return {"clientnames": self._clientnames, "clients": self._clients, "worlds": list(self._worlds.keys())}
@@ -183,8 +211,9 @@ class Server(gRPC.BetaUnderworldsServicer):
 #        return str(action + " " + id)
 #
 #
-#    def stop(self):
-#        self._running = False
+    def stop(self, grace):
+        self._running = False
+        super(Server,self).stop(grace)
 #
 #    def uptime(self):
 #        return time.time() - self.starttime

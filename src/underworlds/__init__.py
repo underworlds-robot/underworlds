@@ -15,7 +15,8 @@ import underworlds_pb2 as gRPC
 
 from underworlds.types import World, Node, Situation
 
-_TIMEOUT_SECONDS = 3
+_TIMEOUT_SECONDS = 1
+_INVALIDATION_PERIOD = 0.01 # 10 ms
 
 #TODO: inherit for a collections.MutableSequence? what is the benefit?
 class NodesProxy(threading.Thread):
@@ -243,24 +244,28 @@ class NodesProxy(threading.Thread):
 
     def run(self):
 
-        for invalidation in self._ctx.rpc.getInvalidations(self._server_ctx, _TIMEOUT_SECONDS):
-            action, id = invalidation.action, invalidation.id
+        while self._running:
+            time.sleep(_INVALIDATION_PERIOD)
 
-            if action == gRPC.UPDATE:
-                netlogger.debug("Request to update node: " + id)
-                self._on_remotely_updated_node(id)
-            elif action == gRPC.NEW:
-                netlogger.debug("Request to add node: " + id)
-                self._len += 1 # not atomic, but still fine since I'm the only one to write it
-                self._on_remotely_updated_node(id)
-            elif action == gRPC.DELETE:
-                netlogger.debug("Request to delete node: " + id)
-                self._on_remotely_deleted_node(id)
-            elif action == gRPC.NOP:
-                pass
-            else:
-                raise RuntimeError("Received invalid message on the invalidation "
-                                    "channel: <%s>" % action)
+            for invalidation in self._ctx.rpc.getInvalidations(self._server_ctx, _TIMEOUT_SECONDS):
+                action, id = invalidation.type, invalidation.id
+
+                if action == gRPC.UPDATE:
+                    netlogger.debug("Request to update node: " + id)
+                    self._on_remotely_updated_node(id)
+                elif action == gRPC.NEW:
+                    netlogger.debug("Request to add node: " + id)
+                    self._len += 1 # not atomic, but still fine since I'm the only one to write it
+                    self._on_remotely_updated_node(id)
+                elif action == gRPC.DELETE:
+                    netlogger.debug("Request to delete node: " + id)
+                    self._on_remotely_deleted_node(id)
+                elif action == gRPC.NOP:
+                    logger.info("Received invalidation NOP")
+                    pass
+                else:
+                    raise RuntimeError("Received invalid message on the invalidation "
+                                        "channel: <%s>" % action)
 
 
 
