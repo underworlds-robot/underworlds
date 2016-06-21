@@ -179,12 +179,14 @@ class Server(gRPC.BetaUnderworldsServicer):
 
         node = Node.deserialize(nodeInCtxt.node)
 
-        logger.info("<%s> updated node <%s> in world <%s>" % \
+        invalidation_type, parent_has_changed = self._update_node(scene, node)
+
+        logger.info("<%s> %s node <%s> in world <%s>" % \
                             (self._clientname(client_id), 
+                             "updated" if invalidation_type==gRPC.UPDATE else ("created" if invalidation_type==gRPC.NEW else "deleted"),
                              repr(node), 
                              world))
 
-        invalidation_type, parent_has_changed = self._update_node(scene, node)
 
         logger.debug("Adding invalidation action [" + str(invalidation_type) + "]")
         self._add_node_invalidation(world, node.id, invalidation_type)

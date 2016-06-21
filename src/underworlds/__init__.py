@@ -262,6 +262,8 @@ class NodesProxy(threading.Thread):
                 elif action == gRPC.DELETE:
                     logger.debug("Server notification: delete node: " + id)
                     self._on_remotely_deleted_node(id)
+                else:
+                    raise RuntimeError("Unexpected invalidation action")
 
 
 class SceneProxy(object):
@@ -307,7 +309,7 @@ class TimelineProxy(threading.Thread):
         self._server_ctx = gRPC.Context(client=self._ctx.id, world=self._world.name)
 
         self.origin = self._ctx.rpc.timelineOrigin(self._server_ctx, _TIMEOUT_SECONDS).time
-        logger.info("The world <%s> has been created %s"%(self._world.name, time.asctime(time.localtime(self.origin))))
+        logger.info("Accessing world <%s> (initially created on  %s)"%(self._world.name, time.asctime(time.localtime(self.origin))))
 
         self.situations = []
 
@@ -411,6 +413,9 @@ class TimelineProxy(threading.Thread):
                 elif action == gRPC.END:
                     logger.debug("Server notification: situation end: " + arg)
                     self._on_remotely_ended_situation(id)
+                else:
+                    raise RuntimeError("Unexpected invalidation action")
+
 
 
     def finalize(self):
@@ -495,7 +500,7 @@ class Context(object):
         logger.info("Connecting to the underworlds server...")
         self.id = self.rpc.helo(gRPC.Name(name=name), _TIMEOUT_SECONDS).id
 
-        logger.info("...done.")
+        logger.info("<%s> connected to the underworlds server." % self.name)
 
         self.worlds = WorldsProxy(self)
 
