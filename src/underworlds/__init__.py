@@ -536,8 +536,7 @@ class Context(object):
     def uptime(self):
         """Returns the server uptime in seconds.
         """
-        self.send("uptime")
-        return self.rpc.recv_json()
+        return self.rpc.uptime(gRPC.Client(id=self.id),_TIMEOUT_SECONDS).time
 
     def push_mesh(self, id, vertices, faces, normals, colors = None, material = None):
 

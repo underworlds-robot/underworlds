@@ -29,6 +29,8 @@ class Server(gRPC.BetaUnderworldsServicer):
         #   - normals
         self.meshes = {}
 
+        self.starttime = time.time()
+
     def _new_client(self, id, name):
         self._clients[id] = {}
         self._clientnames[id] = name
@@ -111,6 +113,12 @@ class Server(gRPC.BetaUnderworldsServicer):
 
         res = gRPC.Client(id=client_id)
         logger.debug("<helo> completed")
+        return res
+
+    def uptime(self, client, context):
+        logger.debug("Got <uptime> from %s" % client.id)
+        res = gRPC.Time(time=time.time() - self.starttime)
+        logger.debug("<uptime> completed")
         return res
 
 
@@ -337,24 +345,8 @@ class Server(gRPC.BetaUnderworldsServicer):
 #
 #
 #
-#    def uptime(self):
-#        return time.time() - self.starttime
 #
 #    def run(self):
-#
-#        logger.info("Starting the server.")
-#
-#        self.starttime = time.time()
-#
-#        context = zmq.Context()
-#        rpc = context.socket(zmq.REP)
-#        rpc.bind("tcp://*:5555")
-#
-#        invalidation = context.socket(zmq.PUB)
-#        invalidation.bind ("tcp://*:5556")
-#
-#        poller = zmq.Poller()
-#        poller.register(rpc, zmq.POLLIN)
 #
 #
 #
@@ -459,8 +451,6 @@ class Server(gRPC.BetaUnderworldsServicer):
 #                # MISC
 #                ###########################################################################
 #
-#                elif cmd == "uptime":
-#                    rpc.send_json(self.uptime())
 #
 #                elif cmd == "get_topology":
 #                    rpc.send_json(self.get_current_topology())

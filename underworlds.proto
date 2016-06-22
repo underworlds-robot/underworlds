@@ -10,6 +10,9 @@ service Underworlds {
     // request to the server.
     rpc helo(Name) returns (Client) {}
 
+    //
+    rpc uptime(Client) returns (Time) {}
+
     // NODES
 
     // Returns the number of nodes in a given world.
@@ -77,6 +80,19 @@ message Client {
     string id = 1;
 }
 
+message Context {
+    string client = 1;
+    string world = 2;
+}
+
+message Name {
+    string name = 1;
+}
+
+message Size {
+    int32 size = 1;
+}
+
 message Node {
     // an unique ID
     string id = 1;
@@ -108,19 +124,6 @@ message Node {
 
 message Nodes {
     repeated string ids = 1;
-}
-
-message Context {
-    string client = 1;
-    string world = 2;
-}
-
-message Name {
-    string name = 1;
-}
-
-message Size {
-    int32 size = 1;
 }
 
 message NodeInContext {

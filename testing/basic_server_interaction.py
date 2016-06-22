@@ -5,7 +5,7 @@ import logging; logger = logging.getLogger("underworlds")
 logging.basicConfig(level=logging.DEBUG)
 
 import underworlds
-from underworlds.server import Server
+import underworlds.server
 from underworlds.types import Node
 
 PROPAGATION_TIME=0.001 # time to wait for node update notification propagation (in sec)
@@ -13,8 +13,7 @@ PROPAGATION_TIME=0.001 # time to wait for node update notification propagation (
 class TestSingleUser(unittest.TestCase):
 
     def setUp(self):
-        self.server = Server()
-        self.server.start()
+        self.server = underworlds.server.start()
         time.sleep(0.1) # leave some time to the server to start
 
         self.ctx = underworlds.Context("unittest - basic server interaction")
@@ -33,8 +32,7 @@ class TestSingleUser(unittest.TestCase):
 
     def tearDown(self):
         self.ctx.close()
-        self.server.stop()
-        self.server.join()
+        self.server.stop(0)
 
 def test_suite():
      suite = unittest.TestLoader().loadTestsFromTestCase(TestSingleUser)
