@@ -10,7 +10,7 @@ import logging
 logger = logging.getLogger("underworlds.client")
 
 from grpc.beta import implementations
-from grpc.framework.interfaces.face.face import ExpirationError
+from grpc.framework.interfaces.face.face import ExpirationError,NetworkError
 import underworlds_pb2 as gRPC
 
 from underworlds.types import World, Node, Situation, Mesh
@@ -517,7 +517,10 @@ class Context(object):
         self.rpc = gRPC.beta_create_Underworlds_stub(channel)
 
         logger.info("Connecting to the underworlds server...")
-        self.id = self.rpc.helo(gRPC.Name(name=name), _TIMEOUT_SECONDS).id
+        try:
+            self.id = self.rpc.helo(gRPC.Name(name=name), _TIMEOUT_SECONDS).id
+        except NetworkError:
+            raise RuntimeError("Underworld server unreachable! Is it started?")
 
         logger.info("<%s> connected to the underworlds server." % self.name)
 
