@@ -167,13 +167,14 @@ class Mesh(object):
 
     def __init__(self, vertices, faces, normals, diffuse=(1,1,1,1)):
 
+        self.id = ""
         self.vertices = vertices
         self.faces = faces
         self.normals = normals
         self.diffuse = tuple(diffuse) # diffuse color, white by default
         if len(self.diffuse) == 3: self.diffuse += (1,)
 
-        self.id = str(hash(self))
+        self.id = str(hash(str(self.serialize(gRPC.Mesh))))
 
     def __hash__(self):
         m = (self.vertices, \

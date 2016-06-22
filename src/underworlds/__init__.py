@@ -13,7 +13,7 @@ from grpc.beta import implementations
 from grpc.framework.interfaces.face.face import ExpirationError
 import underworlds_pb2 as gRPC
 
-from underworlds.types import World, Node, Situation
+from underworlds.types import World, Node, Situation, Mesh
 
 _TIMEOUT_SECONDS = 1
 _TIMEOUT_SECONDS_MESH_LOADING = 20
@@ -561,7 +561,7 @@ class Context(object):
     def mesh(self, id):
         mesh = self.rpc.getMesh(gRPC.MeshInContext(client=gRPC.Client(id=self.id),
                                                    mesh=gRPC.Mesh(id=id)),
-                              _TIMEOUT_SECONDS)
+                              _TIMEOUT_SECONDS_MESH_LOADING)
         return Mesh.deserialize(mesh)
 
     def push_mesh(self, mesh):
