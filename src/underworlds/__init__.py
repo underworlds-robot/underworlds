@@ -248,6 +248,7 @@ class NodesProxy(threading.Thread):
 
 
     def run(self):
+        threading.current_thread().name = "node monitor thread"
 
         while self._running:
             time.sleep(_INVALIDATION_PERIOD)
@@ -400,6 +401,7 @@ class TimelineProxy(threading.Thread):
         self.waitforchanges.release()
 
     def run(self):
+        threading.current_thread().name = "timeline monitor thread"
 
         while self._running:
             time.sleep(_INVALIDATION_PERIOD)

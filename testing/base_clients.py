@@ -8,9 +8,6 @@ logging.basicConfig(level=logging.DEBUG)
 import underworlds
 from underworlds.types import Node
 
-PROPAGATION_TIME=0.001 # time to wait for node update notification propagation (in sec)
-
-
 # Add a PROVIDER client
 with underworlds.Context("provider") as provider_ctx:
     world = provider_ctx.worlds["base"]
