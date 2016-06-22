@@ -442,7 +442,7 @@ class WorldProxy:
 
     def __init__(self, ctx, name):
     
-        if not isinstance(name, str):
+        if not (isinstance(name, str) or isinstance(name, unicode)):
             raise TypeError("A world proxy must be initialized "
                             "with a string as name. Got %s instead." % type(name))
 

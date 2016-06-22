@@ -5,10 +5,11 @@ import logging; logger = logging.getLogger("underworlds.list")
 
 
 import underworlds
+from underworlds.types import NODETYPE_NAMES
 
 def recursive_list(scene, node, level):
 
-    print("  " * level + "%s [%s]" % (node.name, node.type))
+    print("  " * level + "%s [%s] -- id:%s" % (node.name, NODETYPE_NAMES[node.type],node.id))
 
     for child in node.children:
         cnode = scene.nodes[child]
@@ -18,7 +19,7 @@ if __name__ == "__main__":
 
     logging.basicConfig(level=logging.WARNING)
 
-    with underworlds.Context("uwds-list") as ctx:
+    with underworlds.Context("uwds-ls") as ctx:
 
         for world in ctx.worlds:
 
