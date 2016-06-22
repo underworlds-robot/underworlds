@@ -84,13 +84,13 @@ class Server(gRPC.BetaUnderworldsServicer):
             # replace the node
             scene.nodes = [node if old == node else old for old in scene.nodes]
             
-            action = gRPC.UPDATE
+            action = gRPC.NodeInvalidation.UPDATE
 
         else: # new node
             scene.nodes.append(node)
             if node.parent:
                 parent_has_changed = True
-            action = gRPC.NEW
+            action = gRPC.NodeInvalidation.NEW
 
         return action, parent_has_changed
 
@@ -218,7 +218,7 @@ class Server(gRPC.BetaUnderworldsServicer):
 
         logger.info("<%s> %s node <%s> in world <%s>" % \
                             (self._clientname(client_id), 
-                             "updated" if invalidation_type==gRPC.UPDATE else ("created" if invalidation_type==gRPC.NEW else "deleted"),
+                             "updated" if invalidation_type==gRPC.NodeInvalidation.UPDATE else ("created" if invalidation_type==gRPC.NodeInvalidation.NEW else "deleted"),
                              repr(node), 
                              world))
 
@@ -235,7 +235,7 @@ class Server(gRPC.BetaUnderworldsServicer):
                 parent.children.append(node.id)
                 # tells everyone about the change to the parent
                 logger.debug("Adding invalidation action [update " + parent.id + "] due to hierarchy update")
-                self._add_node_invalidation(world, parent.id, gRPC.UPDATE)
+                self._add_node_invalidation(world, parent.id, gRPC.NodeInvalidation.UPDATE)
 
                 # As a node has only one parent, if the parent has changed we must
                 # remove our node for its previous parent
@@ -244,7 +244,7 @@ class Server(gRPC.BetaUnderworldsServicer):
                         othernode.children.remove(node.id)
                         # tells everyone about the change to the former parent
                         logger.debug("Adding invalidation action [update " + othernode.id + "] due to hierarchy update")
-                        self._add_node_invalidation(world, othernode.id, gRPC.UPDATE)
+                        self._add_node_invalidation(world, othernode.id, gRPC.NodeInvalidation.UPDATE)
                         break
 
         logger.debug("<updateNode> completed")
@@ -276,7 +276,7 @@ class Server(gRPC.BetaUnderworldsServicer):
             parent.children.remove(node.id)
             # tells everyone about the change to the parent
             logger.debug("Sent invalidation action [update " + parent.id + "] due to hierarchy update")
-            self._add_node_invalidation(world, parent.id, gRPC.UPDATE)
+            self._add_node_invalidation(world, parent.id, gRPC.NodeInvalidation.UPDATE)
 
         logger.debug("<updateNode> completed")
         return gRPC.Empty()

@@ -3,6 +3,9 @@ import copy
 import json
 import time
 
+import logging
+logger = logging.getLogger("underworlds.core")
+
 import numpy
 
 import underworlds_pb2 as gRPC
@@ -11,10 +14,10 @@ from underworlds.errors import *
 from underworlds.situations import *
 
 # Clients types
-READER = gRPC.READER
-PROVIDER = gRPC.PROVIDER
-MONITOR = gRPC.MONITOR
-FILTER = gRPC.FILTER
+READER = gRPC.ClientInteraction.READER
+PROVIDER = gRPC.ClientInteraction.PROVIDER
+MONITOR = gRPC.ClientInteraction.MONITOR
+FILTER = gRPC.ClientInteraction.FILTER
 
 CLIENTTYPE_NAMES = {READER:'reader',
                     PROVIDER:'provider',
@@ -23,12 +26,12 @@ CLIENTTYPE_NAMES = {READER:'reader',
                    }
 
 # Node types
-UNDEFINED = gRPC.UNDEFINED
+UNDEFINED = gRPC.Node.UNDEFINED
 # Entities are abstract nodes. They can represent non-physical objects (like a
 # reference frame) or groups of other objects.
-ENTITY = gRPC.ENTITY
-MESH = gRPC.MESH
-CAMERA = gRPC.CAMERA
+ENTITY = gRPC.Node.ENTITY
+MESH = gRPC.Node.MESH
+CAMERA = gRPC.Node.CAMERA
 
 NODETYPE_NAMES = {UNDEFINED:'undefined',
                   ENTITY:'entity',
@@ -54,10 +57,18 @@ class Node(object):
         # 4x4 transformation matrix, relative to parent. Stored as a numpy 4x4
         # matrix. Translation units are meters.
         self.transformation = numpy.identity(4, dtype=numpy.float32)
+
+        self.last_update = time.time()
+
+        self.lowres = []
+        self.hires = []
+        self.cad = []
+        self.aabb = []
+
         self.properties = {
                 "physics": False # no physics applied by default
             }
-        self.last_update = time.time()
+
         ################################################################
         ##                     END OF THE API                         ##
         ################################################################
@@ -87,6 +98,7 @@ class Node(object):
         Similar to http://stackoverflow.com/questions/32010905/unbound-method-must-be-called-with-x-instance-as-first-argument-got-x-instance
         """
 
+
         node = NodeType()
         node.id = self.id
         node.name = self.name
@@ -101,7 +113,17 @@ class Node(object):
 
         node.last_update = self.last_update
 
+
+        for m in self.lowres: node.lowres.append(m)
+        for m in self.hires: node.hires.append(m)
+        for m in self.cad: node.cad.append(m)
+
+        for p in self.aabb:
+            point = node.aabb.add()
+            point.x, point.y, point.z = p
+
         node.physics = self.properties["physics"]
+
 
         return node
 
@@ -127,12 +149,83 @@ class Node(object):
 
         node.last_update = data.last_update
 
+
+        node.lowres = [m for m in data.lowres]
+        node.hires = [m for m in data.hires]
+        node.cad = [m for m in data.cad]
+
+        node.aabb = [(p.x,p.y,p.z) for p in data.aabb]
+        if node.aabb and len(node.aabb) != 2:
+            raise RuntimeError("Received a node with an invalid bounding-box!")
+
         node.properties["physics"] = data.physics
 
 
         return node
 
+class Mesh(object):
 
+    def __init__(self, vertices, faces, normals, diffuse=(1,1,1,1)):
+
+        self.vertices = vertices
+        self.faces = faces
+        self.normals = normals
+        self.diffuse = diffuse # diffuse color, white by default
+
+        self.id = str(hash(self))
+
+    def __hash__(self):
+        m = (self.vertices, \
+             self.faces, \
+             self.normals, \
+             self.diffuse)
+        return hash(str(m))
+
+    def serialize(self, MeshType):
+        """Outputs a protobuf encoding of the mesh
+
+        The MeshType (underworlds_pb2.Mesh) needs to be passed as parameter
+        to prevent the creation of a 2nd instance of the underworlds_pb2 that
+        crashes the gRPC. Not sure why...
+        Similar to http://stackoverflow.com/questions/32010905/unbound-method-must-be-called-with-x-instance-as-first-argument-got-x-instance
+        """
+        starttime = time.time()
+
+        mesh = MeshType()
+        mesh.id = self.id
+
+        for vertex in self.vertices:
+            point = mesh.vertices.add()
+            point.x, point.y, point.z = vertex
+
+        for f in self.faces:
+            face = mesh.faces.add()
+            face.x, face.y, face.z = f
+
+        for normal in self.normals:
+            point = mesh.normals.add()
+            point.x, point.y, point.z = normal
+
+        mesh.diffuse.r, mesh.diffuse.g, mesh.diffuse.b, mesh.diffuse.a = self.diffuse
+
+        logger.info("Serialized mesh %s in %.2fsec" % (self.id, time.time()-starttime))
+        return mesh
+
+
+    @staticmethod
+    def deserialize(data):
+        """Creates a Python mesh object from a protobuf encoding.
+        """
+
+        mesh = Mesh(vertices=[(p.x,p.y,p.z) for p in data.vertices],
+                    faces = [(f.x,f.y,f.z) for f in data.faces],
+                    normals = [(n.x,n.y,n.z) for n in data.normals],
+                    diffuse = (data.diffuse.r, data.diffuse.g, data.diffuse.b, data.diffuse.a))
+
+        if mesh.id != data.id:
+            raise RuntimeError("Can not verify mesh integrity!")
+
+        return mesh
 
 class Scene(object):
     """An Underworlds scene

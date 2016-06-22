@@ -29,13 +29,6 @@ class ModelLoader:
     def __init__(self, world = DEFAULT_WORLD):
         self.world = world
 
-    def mesh_hash(self, mesh):
-        m = (mesh.vertices, \
-            mesh.faces, \
-            mesh.normals, \
-            mesh.colors, \
-            mesh.material.properties)
-        return hash(str(m))
 
     def node_boundingbox(self, node):
         """ Returns the AABB bounding box of an ASSIMP node.
@@ -81,9 +74,15 @@ class ModelLoader:
             underworlds_node.hires = []
 
             for m in assimp_node.meshes:
-                id = self.mesh_hash(m)
+                
+                mesh = Mesh(m.vertices.tolist(), 
+                            m.faces.tolist(), 
+                            m.normals.tolist(),
+                            m.material.properties["diffuse"])
+
+                id = mesh.id
                 logger.debug("\tLoading mesh %s" % id)
-                self.meshes[id] = m
+                self.meshes[id] = mesh
                 underworlds_node.cad.append(id)
                 underworlds_node.hires.append(id)
 
@@ -177,12 +176,7 @@ class ModelLoader:
                 count_notsent += 1
             else:
                 logger.debug("Sending mesh <%s>" % id)
-                ctx.push_mesh(id, 
-                            mesh.vertices.tolist(), 
-                            mesh.faces.tolist(), 
-                            mesh.normals.tolist(),
-                            mesh.colors.tolist(),
-                            mesh.material.properties)
+                ctx.push_mesh(mesh)
                 count_sent += 1
 
         logger.info("Sent %d meshes (%d were already available on the server)" % (count_sent, count_notsent))

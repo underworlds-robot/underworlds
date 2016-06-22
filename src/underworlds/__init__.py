@@ -10,11 +10,13 @@ import logging
 logger = logging.getLogger("underworlds.client")
 
 from grpc.beta import implementations
+from grpc.framework.interfaces.face.face import ExpirationError
 import underworlds_pb2 as gRPC
 
 from underworlds.types import World, Node, Situation
 
 _TIMEOUT_SECONDS = 1
+_TIMEOUT_SECONDS_MESH_LOADING = 20
 _INVALIDATION_PERIOD = 0.02 # 10 ms
 
 #TODO: inherit for a collections.MutableSequence? what is the benefit?
@@ -253,21 +255,25 @@ class NodesProxy(threading.Thread):
         while self._running:
             time.sleep(_INVALIDATION_PERIOD)
 
-            for invalidation in self._ctx.rpc.getNodeInvalidations(self._server_ctx, _TIMEOUT_SECONDS):
-                action, id = invalidation.type, invalidation.id
+            try:
+                for invalidation in self._ctx.rpc.getNodeInvalidations(self._server_ctx, _TIMEOUT_SECONDS):
+                    action, id = invalidation.type, invalidation.id
 
-                if action == gRPC.UPDATE:
-                    logger.debug("Server notification: update node: " + id)
-                    self._on_remotely_updated_node(id)
-                elif action == gRPC.NEW:
-                    logger.debug("Server notification: add node: " + id)
-                    self._len += 1 # not atomic, but still fine since I'm the only one to write it
-                    self._on_remotely_updated_node(id)
-                elif action == gRPC.DELETE:
-                    logger.debug("Server notification: delete node: " + id)
-                    self._on_remotely_deleted_node(id)
-                else:
-                    raise RuntimeError("Unexpected invalidation action")
+                    if action == gRPC.NodeInvalidation.UPDATE:
+                        logger.debug("Server notification: update node: " + id)
+                        self._on_remotely_updated_node(id)
+                    elif action == gRPC.NodeInvalidation.NEW:
+                        logger.debug("Server notification: add node: " + id)
+                        self._len += 1 # not atomic, but still fine since I'm the only one to write it
+                        self._on_remotely_updated_node(id)
+                    elif action == gRPC.NodeInvalidation.DELETE:
+                        logger.debug("Server notification: delete node: " + id)
+                        self._on_remotely_deleted_node(id)
+                    else:
+                        raise RuntimeError("Unexpected invalidation action")
+            except ExpirationError:
+                logger.warning("The server timed out while trying to update node"
+                               " invalidations")
 
 
 class SceneProxy(object):
@@ -406,20 +412,24 @@ class TimelineProxy(threading.Thread):
         while self._running:
             time.sleep(_INVALIDATION_PERIOD)
 
-            for invalidation in self._ctx.rpc.getTimelineInvalidations(self._server_ctx, _TIMEOUT_SECONDS):
-                action, id = invalidation.type, invalidation.id
+            try:
+                for invalidation in self._ctx.rpc.getTimelineInvalidations(self._server_ctx, _TIMEOUT_SECONDS):
+                    action, id = invalidation.type, invalidation.id
 
-                if action == gRPC.EVENT:
-                    logger.debug("Server notification: event: " + sit.id)
-                    self._on_remotely_started_situation(id, isevent = True)
-                if action == gRPC.START:
-                    logger.debug("Server notification: situation start: " + sit.id)
-                    self._on_remotely_started_situation(id, isevent = False)
-                elif action == gRPC.END:
-                    logger.debug("Server notification: situation end: " + arg)
-                    self._on_remotely_ended_situation(id)
-                else:
-                    raise RuntimeError("Unexpected invalidation action")
+                    if action == gRPC.TimelineInvalidation.EVENT:
+                        logger.debug("Server notification: event: " + sit.id)
+                        self._on_remotely_started_situation(id, isevent = True)
+                    if action == gRPC.TimelineInvalidation.START:
+                        logger.debug("Server notification: situation start: " + sit.id)
+                        self._on_remotely_started_situation(id, isevent = False)
+                    elif action == gRPC.TimelineInvalidation.END:
+                        logger.debug("Server notification: situation end: " + arg)
+                        self._on_remotely_ended_situation(id)
+                    else:
+                        raise RuntimeError("Unexpected invalidation action")
+            except ExpirationError:
+                logger.warning("The server timed out while trying to update timeline"
+                               " invalidations")
 
 
 
@@ -542,25 +552,29 @@ class Context(object):
         """
         return self.rpc.uptime(gRPC.Client(id=self.id),_TIMEOUT_SECONDS).time
 
-    def push_mesh(self, id, vertices, faces, normals, colors = None, material = None):
-
-        data = json.dumps(
-            {"vertices": vertices,
-             "faces": faces,
-             "normals": normals,
-             "colors": colors,
-             "material": material})
-
-        self.send("push_mesh %s %s" % (id, data))
-        self.rpc.recv() # ack
+    def has_mesh(self, id):
+        ok = self.rpc.hasMesh(gRPC.MeshInContext(client=gRPC.Client(id=self.id),
+                                                   mesh=gRPC.Mesh(id=id)),
+                              _TIMEOUT_SECONDS)
+        return ok.value
 
     def mesh(self, id):
-        self.send("get_mesh %s" % id)
-        return self.rpc.recv_json()
+        mesh = self.rpc.getMesh(gRPC.MeshInContext(client=gRPC.Client(id=self.id),
+                                                   mesh=gRPC.Mesh(id=id)),
+                              _TIMEOUT_SECONDS)
+        return Mesh.deserialize(mesh)
 
-    def has_mesh(self, id):
-        self.send("has_mesh %s" % id)
-        return self.rpc.recv_json()
+    def push_mesh(self, mesh):
+
+        starttime = time.time()
+        try:
+            self.rpc.pushMesh(gRPC.MeshInContext(client=gRPC.Client(id=self.id),
+                                             mesh=mesh.serialize(gRPC.Mesh)),
+                              _TIMEOUT_SECONDS_MESH_LOADING)
+        except ExpirationError:
+            logger.error("Timeout while trying to push a mesh to the server!")
+
+        logger.info("Pushed mesh <%s> in %.2fsec" % (mesh.id, time.time() - starttime))
 
     def __enter__(self):
         return self

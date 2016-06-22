@@ -107,6 +107,15 @@ message Point {
     sint32 z = 3;
 }
 
+// A RGBA color, each component is in [0,1]
+message Color {
+    float r = 1;
+    float g = 2;
+    float b = 3;
+    float a = 4;
+}
+
+
 /////////////////////////////////////////////
 // CLIENT-RELATED MESSAGE
 
@@ -182,12 +191,15 @@ message Node {
 
     // PROPERTIES
 
-    // For nodes of type MESH, the mesh ID of a low-resolution mesh (may be null)
-    string lowres = 16;
-    // For nodes of type MESH, the mesh ID of a high-resolution mesh (may be null)
-    string hires = 17;
-    // For nodes of type MESH, the mesh ID of a CAD model (may be null)
-    string cad = 18;
+    // For nodes of type MESH, the mesh IDs of the low-resolution meshes
+    // representing this object (may be empty)
+    repeated string lowres = 16;
+    // For nodes of type MESH, the mesh IDs of the high-resolution meshes
+    // representing this object (may be empty)
+    repeated string hires = 17;
+    // For nodes of type MESH, the mesh IDs of the CAD models 
+    // representing this object (may be empty)
+    repeated string cad = 18;
 
     // When meaningful, the axis-aligned bounding-box of the node as 2 points (P1, P2).
     // The order of the points is not guaranteed.
@@ -251,8 +263,8 @@ message Mesh {
     repeated Point faces = 3;
     repeated Pointf normals = 4;
     repeated uint32 colors = 5;
-    map<string, string> material = 6;
 
+    Color diffuse = 6;
 }
 
 message MeshInContext {
