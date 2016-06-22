@@ -5,16 +5,15 @@ import logging; logger = logging.getLogger("underworlds")
 logging.basicConfig(level=logging.DEBUG)
 
 import underworlds
-from underworlds.server import Server
+import underworlds.server
 from underworlds.types import Node
 
-PROPAGATION_TIME=0.001 # time to wait for node update notification propagation (in sec)
+PROPAGATION_TIME=0.02 # time to wait for node update notification propagation (in sec)
 
 class TestNodes(unittest.TestCase):
 
     def setUp(self):
-        self.server = Server()
-        self.server.start()
+        self.server = underworlds.server.start()
         time.sleep(0.1) # leave some time to the server to start
 
         self.ctx = underworlds.Context("unittest - nodes")
@@ -28,6 +27,7 @@ class TestNodes(unittest.TestCase):
         root = world.scene.rootnode
         self.assertIsNotNone(root)
 
+        root2 = None
         for n in nodes:
             if n.name == "root":
                 root2 = n
@@ -48,8 +48,7 @@ class TestNodes(unittest.TestCase):
     def tearDown(self):
         self.ctx.close()
         self.ctx2.close()
-        self.server.stop()
-        self.server.join()
+        self.server.stop(0)
 
 def test_suite():
      suite = unittest.TestLoader().loadTestsFromTestCase(TestNodes)
