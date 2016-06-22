@@ -18,13 +18,17 @@ filelog.setFormatter(formatter)
 logger.addHandler(filelog)
 
 from underworlds.helpers.daemon import Daemon
-from underworlds.server import Server
+import underworlds.server
 
 
 class UnderworldsServer(Daemon):
         def run(self):
-            server = Server()
-            server.start()
+            server = underworlds.server.start()
+            try:
+                while True:
+                    time.sleep(1000)
+            except KeyboardInterrupt:
+                server.stop(0)
 
 if __name__ == "__main__":
         daemon = UnderworldsServer('/tmp/underworlds-server.pid')
@@ -46,8 +50,13 @@ if __name__ == "__main__":
                         print("Starting underworlds server in foreground. Use 'underworlded start' to start as a daemon.")
                         consolelog = logging.StreamHandler()
                         logger.addHandler(consolelog)
-                        server = Server()
-                        server.start()
+                        server = underworlds.server.start()
+                        try:
+                            while True:
+                                time.sleep(1000)
+                        except KeyboardInterrupt:
+                            server.stop(0)
+
                 else:
                         print "Unknown command"
                         sys.exit(2)
