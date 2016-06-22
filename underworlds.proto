@@ -53,16 +53,19 @@ service Underworlds {
     // Returns the timeline origin: time of the timeline creation
     rpc timelineOrigin(Context) returns (Time) {}
 
+    // Notifies the server that an event occured
+    rpc event(SituationInContext) returns (Empty) {}
+
+    // Notifies the server that a specific situation has started
+    rpc startSituation(SituationInContext) returns (Empty) {}
+
+    // Notifies the server that a specific situation has ended
+    rpc endSituation(SituationInContext) returns (Empty) {}
+
     // Returns a (stream of) 'invalidated' nodes that need to be updated.
     // Invalidated nodes can be new nodes, nodes that have changed, or nodes
     // that have been removed (see Invalidation.type).
     rpc getTimelineInvalidations(Context) returns (stream TimelineInvalidation) {}
-
-    rpc event(SituationInContext) returns (Empty) {}
-
-    rpc startSituation(SituationInContext) returns (Empty) {}
-
-    rpc endSituation(SituationInContext) returns (Empty) {}
 
     // MESHES
 
