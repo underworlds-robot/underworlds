@@ -925,7 +925,7 @@ class Underworlds3DViewer:
                 update_camera = True
             else:
                 if not self.moving:
-                    self.moving_situation = Situation("motion of %s" % self.currently_selected.name, type = situations.MOTION)
+                    self.moving_situation = Situation("motion of %s" % self.currently_selected.name, type = MOTION)
                     self.world.timeline.start(self.moving_situation)
                 self.moving = True
                 self.move_selected_node(up, strafe)

@@ -69,15 +69,6 @@ class NodesProxy(threading.Thread):
     def __del__(self):
         self._running = False
 
-    def send(self, msg):
-
-        req = {"client":self._ctx.id,
-               "world": self._world.name,
-               "req": msg}
-
-        raise NotImplementedError(str(req))
-
-
     def _on_remotely_updated_node(self, id):
 
         if id not in self._updated_ids:
@@ -525,13 +516,6 @@ class Context(object):
         logger.info("<%s> connected to the underworlds server." % self.name)
 
         self.worlds = WorldsProxy(self)
-
-    def send(self, msg):
-
-        req = {"client":self.id,
-               "req": msg}
-
-        raise NotImplementedError(str(req))
 
     def topology(self):
         """Returns the current topology to the underworlds environment.

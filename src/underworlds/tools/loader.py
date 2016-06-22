@@ -160,13 +160,10 @@ class ModelLoader:
                                     custom_root=root)
         logger.info("...done")
 
-        # Send the nodes to the server (only the nodes -- not yet their
-        # associated meshes)
-        logger.info("Sending the nodes to the server...")
-        for name, pair in list(self.node_map.items()):
-            nodes.update(pair[1])
 
-        # Now, send the meshes (but only if they do not already exist on the server)
+        # Send first the meshes to make sure they are available on the server
+        # when needed by clients.  (but only if they do not already exist on
+        # the server)
         logger.info("Sending meshes to the server...")
         count_sent = 0
         count_notsent = 0
@@ -180,7 +177,16 @@ class ModelLoader:
                 count_sent += 1
 
         logger.info("Sent %d meshes (%d were already available on the server)" % (count_sent, count_notsent))
+
+        # Send the nodes to the server (only the nodes)
+        logger.info("Sending the nodes to the server...")
+        for name, pair in list(self.node_map.items()):
+            nodes.update(pair[1])
+
+
         pyassimp.release(model)
+
+
 
         if close_ctx_at_end:
             ctx.close()
