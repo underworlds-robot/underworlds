@@ -381,8 +381,8 @@ class Underworlds3DViewer:
         mesh = self.ctx.mesh(id) # retrieve the mesh from the server
 
         # Fill the buffer for vertex and normals positions
-        v = numpy.array(mesh["vertices"], 'f')
-        n = numpy.array(mesh["normals"], 'f')
+        v = numpy.array(mesh.vertices, 'f')
+        n = numpy.array(mesh.normals, 'f')
 
         #meshes[id]["vbo"] = glGenBuffers(1)
         #glBindBuffer(GL_ARRAY_BUFFER, meshes[id]["vbo"])
@@ -396,11 +396,12 @@ class Underworlds3DViewer:
         meshes[id]["faces"] = glGenBuffers(1)
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, meshes[id]["faces"])
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, 
-                    numpy.array(mesh["faces"], dtype=numpy.int32),
+                    numpy.array(mesh.faces, dtype=numpy.int32),
                     GL_STATIC_DRAW)
 
-        meshes[id]["nbfaces"] = len(mesh["faces"])
-        meshes[id]["material"] = mesh["material"]
+        meshes[id]["nbfaces"] = len(mesh.faces)
+        meshes[id]["material"] = {}
+        meshes[id]["material"]["diffuse"] = mesh.diffuse
 
         # Unbind buffers
         glBindBuffer(GL_ARRAY_BUFFER,0)
