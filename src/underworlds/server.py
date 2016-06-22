@@ -102,6 +102,11 @@ class Server(gRPC.BetaUnderworldsServicer):
         for client_id in self._node_invalidations[world].keys():
             self._node_invalidations[world][client_id].append(gRPC.NodeInvalidation(type=invalidation_type, id=node_id))
 
+    def _add_timeline_invalidation(self, world, sit_id, invalidation_type):
+
+        for client_id in self._timeline_invalidations[world].keys():
+            self._timeline_invalidations[world][client_id].append(gRPC.TimelineInvalidation(type=invalidation_type, id=sit_id))
+
     #############################################
     ############ Underworlds API ################
 
@@ -312,6 +317,65 @@ class Server(gRPC.BetaUnderworldsServicer):
         logger.debug("<timelineOrigin> completed")
         return res
 
+    def event(self, sitInCtxt, context):
+
+        client, world = sitInCtxt.context.client, sitInCtxt.context.world
+
+        logger.debug("Got <event> from %s" % client)
+
+        self._update_current_links(client, world, PROVIDER)
+
+        _, timeline = self._get_scene_timeline(sitInCtxt.context)
+        sit = Situation.deserialize(sitInCtxt.situation)
+
+        if timeline.situation(sit.id): # the situation already exist. Error!
+            raise Exception("Attempting to add twice the same situation!")
+
+        timeline.event(sit)
+        self._add_timeline_invalidation(world, sit.id, gRPC.TimelineInvalidation.EVENT)
+
+        logger.debug("<event> completed")
+        return gRPC.Empty()
+
+    def startSituation(self, sitInCtxt, context):
+
+        client, world = sitInCtxt.context.client, sitInCtxt.context.world
+
+        logger.debug("Got <startSituation> from %s" % client)
+
+        self._update_current_links(client, world, PROVIDER)
+
+        _, timeline = self._get_scene_timeline(sitInCtxt.context)
+        sit = Situation.deserialize(sitInCtxt.situation)
+
+        if timeline.situation(sit.id): # the situation already exist. Error!
+            raise Exception("Attempting to add twice the same situation!")
+
+        timeline.start(sit)
+        self._add_timeline_invalidation(world, sit.id, gRPC.TimelineInvalidation.START)
+
+        logger.debug("<startSituation> completed")
+        return gRPC.Empty()
+
+    def endSituation(self, sitInCtxt, context):
+
+        client, world = sitInCtxt.context.client, sitInCtxt.context.world
+
+        logger.debug("Got <endSituation> from %s" % client)
+
+        self._update_current_links(client, world, PROVIDER)
+
+        _, timeline = self._get_scene_timeline(sitInCtxt.context)
+
+        sit = timeline.situation(sitInCtxt.situation.id)
+        if not sit:
+            raise Exception("Attempting to end a non-existant situation!")
+
+        timeline.end(sit)
+        self._add_timeline_invalidation(world, sit.id, gRPC.TimelineInvalidation.END)
+
+        logger.debug("<endSituation> completed")
+        return gRPC.Empty()
 
     #### Timeline invalidation streams
     def getTimelineInvalidations(self, ctxt, context):
@@ -321,8 +385,8 @@ class Server(gRPC.BetaUnderworldsServicer):
 
         world, client = ctxt.world, ctxt.client
 
-
-        if client in self._timeline_invalidations[world] and self._timeline_invalidations[world][client]:
+        # (if this client is not yet monitoring this world, add it as a side effect of the test)
+        if self._timeline_invalidations[world].setdefault(client,[]):
             for invalidation in self._timeline_invalidations[world][client]:
                 yield invalidation
             self._timeline_invalidations[world][client] = []
@@ -356,72 +420,6 @@ class Server(gRPC.BetaUnderworldsServicer):
         return gRPC.Empty()
 
 
-#    def event(self, timeline, sit):
-#
-#        if timeline.situation(sit.id): # the situation already exist. Error!
-#            raise Exception("Attempting to add twice the same situation!")
-#
-#        else: # new situation
-#            timeline.event(sit)
-#            action = "event"
-#
-#        return str(action + " " + sit.serialize())
-#
-#    def new_situation(self, timeline, sit):
-#
-#        if timeline.situation(sit.id): # the situation already exist. Error!
-#            raise Exception("Attempting to add twice the same situation!")
-#
-#        else: # new situation
-#            timeline.start(sit)
-#            action = "start"
-#        
-#        return action + " " + json.dumps(sit.serialize())
-#
-#    def end_situation(self, timeline, id):
-#
-#        sit = timeline.situation(id)
-#
-#        if not sit:
-#            raise Exception("Attempting to end a non-existant situation!")
-#
-#        timeline.end(sit)
-#        action = "end"
-#        
-#        return str(action + " " + id)
-#
-#
-#
-#
-#    def run(self):
-#
-#
-#
-#        while self._running:
-#            socks = dict(poller.poll(200))
-#            
-#            if socks.get(rpc) == zmq.POLLIN:
-#
-#                req = rpc.recv_json()
-#                client = req["client"]
-#                clientname = self._clientname(client)
-#                world = None
-#                scene = None
-#                timeline = None
-#
-#
-#                req = req["req"].split(" ",1)
-#                cmd = req[0]
-#                arg = ""
-#                if len(req) == 2:
-#                    arg = req[1]
-#
-#                logger.debug("Received request: <%s(%s)> from <%s> on world <%s>" % \
-#                                (cmd, 
-#                                 arg,
-#                                 clientname,
-#                                 world))
-#
 #
 #                ###########################################################################
 #                # SCENES
@@ -449,44 +447,6 @@ class Server(gRPC.BetaUnderworldsServicer):
 #                    #invalidation.send(("%s?timeline### %s" % (world, action)).encode())
 #                    pass #TODO
 #
-#                elif cmd == "event":
-#                    self.update_current_links(client, world, PROVIDER)
-#                    situation = Situation.deserialize(arg)
-#                    rpc.send(b"ack")
-#                    action = self.event(timeline, situation)
-#                    # tells everyone about the change
-#                    logger.debug("Sent invalidation action [" + action + "]")
-#                    invalidation.send("%s?timeline### %s" % (world, action).encode())
-#                elif cmd == "new_situation":
-#                    self.update_current_links(client, world, PROVIDER)
-#                    situation = Situation.deserialize(json.loads(arg))
-#                    rpc.send(b"ack")
-#                    action = self.new_situation(timeline, situation)
-#                    # tells everyone about the change
-#                    logger.debug("Sent invalidation action [" + action + "]")
-#                    invalidation.send(("%s?timeline### %s" % (world, action)).encode())
-#
-#                elif cmd == "end_situation":
-#                    self.update_current_links(client, world, PROVIDER)
-#                    rpc.send(b"ack")
-#                    action = self.end_situation(timeline, arg)
-#                    # tells everyone about the change
-#                    logger.debug("Sent invalidation action [" + action + "]")
-#                    invalidation.send(("%s?timeline### %s" % (world, action)).encode())
-#
-#
-#
-#                ###########################################################################
-#                # MESHES
-#                ###########################################################################
-
-#                else:
-#                    logger.warning("Unknown request <%s>" % cmd)
-#                    rpc.send(b"unknown request")
-#            else:
-#                invalidation.send(b"nop")
-#
-#        logger.info("Closing the server.")
 
 def start():
 

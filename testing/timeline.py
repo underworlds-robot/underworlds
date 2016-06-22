@@ -6,7 +6,7 @@ logging.basicConfig(level=logging.DEBUG)
 
 import underworlds
 from underworlds.errors import *
-from underworlds.server import Server
+import underworlds.server
 from underworlds.tools.loader import ModelLoader
 
 from underworlds.types import Situation, createevent
@@ -17,8 +17,7 @@ PROPAGATION_TIME=0.001 # time to wait for node update notification propagation (
 class TestTimeline(unittest.TestCase):
 
     def setUp(self):
-        self.server = Server()
-        self.server.start()
+        self.server = underworlds.server.start()
         time.sleep(0.1) # leave some time to the server to start
 
         self.t0 = time.time()
@@ -135,8 +134,7 @@ class TestTimeline(unittest.TestCase):
     def tearDown(self):
         self.ctx.close()
         self.ctx2.close()
-        self.server.stop()
-        self.server.join()
+        self.server.stop(0)
 
 def test_suite():
      suite = unittest.TestLoader().loadTestsFromTestCase(TestTimeline)

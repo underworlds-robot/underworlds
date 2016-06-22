@@ -4,6 +4,8 @@ package underworlds;
 
 service Underworlds {
 
+    // GENERAL
+
     // Establish the connection to the server, setting a human-friendly name for
     // the client.
     // The server returns a unique client ID that must be used in every subsequent
@@ -48,6 +50,7 @@ service Underworlds {
 
     // TIMELINE
 
+    // Returns the timeline origin: time of the timeline creation
     rpc timelineOrigin(Context) returns (Time) {}
 
     // Returns a (stream of) 'invalidated' nodes that need to be updated.
@@ -55,6 +58,11 @@ service Underworlds {
     // that have been removed (see Invalidation.type).
     rpc getTimelineInvalidations(Context) returns (stream TimelineInvalidation) {}
 
+    rpc event(SituationInContext) returns (Empty) {}
+
+    rpc startSituation(SituationInContext) returns (Empty) {}
+
+    rpc endSituation(SituationInContext) returns (Empty) {}
 
     // MESHES
 
@@ -244,6 +252,31 @@ message NodeInvalidation {
 
 /////////////////////////////////////////////
 // TIMELINE-RELATED MESSAGES
+
+
+message Situation {
+
+    enum SituationType {
+        GENERIC = 0;
+        MOTION = 1;
+        EVT_MODELLOAD = 2;
+    }
+
+    string id = 1;
+    SituationType type = 2;
+    string description = 3;
+
+    // start time of the situation. 0 means that the situation has not started yet
+    Time start = 4;
+    // end time of the situation. 0 means that the situation has not finnished yet
+    // For events, start == end
+    Time end = 5;
+}
+
+message SituationInContext {
+    Context context = 1;
+    Situation situation = 2;
+}
 
 message TimelineInvalidation {
 

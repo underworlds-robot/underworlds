@@ -11,7 +11,6 @@ import numpy
 import underworlds_pb2 as gRPC
 
 from underworlds.errors import *
-from underworlds.situations import *
 
 # Clients types
 READER = gRPC.ClientInteraction.READER
@@ -37,8 +36,16 @@ NODETYPE_NAMES = {UNDEFINED:'undefined',
                   ENTITY:'entity',
                   MESH:'mesh',
                   CAMERA:'camera'
-                   }
+                 }
+# Situation types
+GENERIC = gRPC.Situation.GENERIC
+MOTION = gRPC.Situation.MOTION
+EVT_MODELLOAD = gRPC.Situation.EVT_MODELLOAD
 
+SITUATIONTYPE_NAMES = {GENERIC: "generic situation",
+                       MOTION: "motion",
+                       EVT_MODELLOAD: "model loading"
+                      }
 
 class Node(object):
     def __init__(self, name = "", type = UNDEFINED):
@@ -369,22 +376,17 @@ class Situation(object):
      - events, which are instantaneous situations (null duration)
      - static situations, that have a duration.
 
-    :sees: situations.py for a set of standard situation types
      """
 
-    # Default owner
-    DEFAULT_OWNER = "SYSTEM"
-
-    def __init__(self, desc="", type = GENERIC, owner = DEFAULT_OWNER):
+    def __init__(self, desc="", type = GENERIC):
 
         self.id = str(uuid.uuid4())
         self.type = type
-        self.owner = owner
         self.desc = desc
 
         # Start|Endtime are in seconds (float)
-        self.starttime = None # convention for situations that are not yet started
-        self.endtime = None # convention for situations that are not terminated
+        self.starttime = 0 # convention for situations that are not yet started
+        self.endtime = 0 # convention for situations that are not terminated
 
     def isevent(self):
         return self.endtime == self.starttime
@@ -405,19 +407,37 @@ class Situation(object):
     def __hash__(self):
         return hash(self.id)
 
-    def serialize(self):
-        """Outputs a dict-like view of the situation
+    def serialize(self, SituationType):
+        """Outputs a protobuf encoding of the situation
+
+        The SituationType (underworlds_pb2.Node) needs to be passed as parameter
+        to prevent the creation of a 2nd instance of the underworlds_pb2 that
+        crashes the gRPC. Not sure why...
+        Similar to http://stackoverflow.com/questions/32010905/unbound-method-must-be-called-with-x-instance-as-first-argument-got-x-instance
         """
-        return self.__dict__
+        sit = gRPC.Situation()
+
+        sit.id = self.id
+        sit.type = self.type
+        sit.description = self.desc
+        sit.start.time = self.starttime
+        sit.end.time = self.endtime
+
+
+        return sit
+
 
     @staticmethod
     def deserialize(data):
-        """Creates a situation from a dict-like description.
+        """Creates a situation from a protobuf encoding.
         """
         sit = Situation()
 
-        for key, value in list(data.items()):
-            setattr(sit, str(key), value)
+        sit.id = data.id
+        sit.type = data.type
+        sit.desc = data.description
+        sit.starttime = data.start.time
+        sit.endtime = data.end.time
 
         return sit
 
@@ -432,7 +452,7 @@ def createevent():
     """
 
 
-    sit = Situation(type = GENERIC, owner = Situation.DEFAULT_OWNER, pattern = None)
+    sit = Situation(type = GENERIC, pattern = None)
 
     return sit
 

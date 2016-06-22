@@ -334,18 +334,20 @@ class TimelineProxy(threading.Thread):
     def __del__(self):
         self._running = False
 
-    def _on_remotely_started_situation(self, sit, isevent = False):
+    def _on_remotely_started_situation(self, sit_id, isevent = False):
 
-        self.situations.append(sit)
+        # TODO: append the situation, not just the ID!
+        self.situations.append(sit_id)
 
         self._notifychange()
 
     def _on_remotely_ended_situation(self, id):
 
-        for sit in self.situations:
-            if sit.id == id:
-                sit.endtime = time.time()
-                break
+        # TODO!!
+        #for sit in self.situations:
+        #    if sit.id == id:
+        #        sit.endtime = time.time()
+        #        break
 
         self._notifychange()
 
@@ -360,24 +362,22 @@ class TimelineProxy(threading.Thread):
 
 
     def start(self, situation):
-        self._send("new_situation " + json.dumps(situation.serialize()))
-        self._ctx.rpc.recv() # server send a "ack"
+        self._ctx.rpc.startSituation(
+                gRPC.SituationInContext(context=self._server_ctx,
+                                        situation=situation.serialize(gRPC.Situation)),
+                _TIMEOUT_SECONDS)
 
     def event(self, situation):
-        self._send("event " + json.dumps(situation.serialize()))
-        self._ctx.rpc.recv() # server send a "ack"
+        self._ctx.rpc.event(
+                gRPC.SituationInContext(context=self._server_ctx,
+                                        situation=situation.serialize(gRPC.Situation)),
+                _TIMEOUT_SECONDS)
 
     def end(self, situation):
-        self._send("end_situation " + situation.id)
-        self._ctx.rpc.recv() # server send a "ack"
-
-    def _send(self, msg):
-
-        req = {"client":self._ctx.id,
-               "world": self._world.name,
-               "req": msg}
-
-        self._ctx.rpc.send_json(req)
+        self._ctx.rpc.endSituation(
+                gRPC.SituationInContext(context=self._server_ctx,
+                                        situation=situation.serialize(gRPC.Situation)),
+                _TIMEOUT_SECONDS)
 
     def onchange(self, cb, remove = False):
         """ Register a callback to be invoked when the timeline is updated.
@@ -417,13 +417,13 @@ class TimelineProxy(threading.Thread):
                     action, id = invalidation.type, invalidation.id
 
                     if action == gRPC.TimelineInvalidation.EVENT:
-                        logger.debug("Server notification: event: " + sit.id)
+                        logger.debug("Server notification: event: " + id)
                         self._on_remotely_started_situation(id, isevent = True)
                     if action == gRPC.TimelineInvalidation.START:
-                        logger.debug("Server notification: situation start: " + sit.id)
+                        logger.debug("Server notification: situation start: " + id)
                         self._on_remotely_started_situation(id, isevent = False)
                     elif action == gRPC.TimelineInvalidation.END:
-                        logger.debug("Server notification: situation end: " + arg)
+                        logger.debug("Server notification: situation end: " + id)
                         self._on_remotely_ended_situation(id)
                     else:
                         raise RuntimeError("Unexpected invalidation action")
