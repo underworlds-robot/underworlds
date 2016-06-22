@@ -170,7 +170,8 @@ class Mesh(object):
         self.vertices = vertices
         self.faces = faces
         self.normals = normals
-        self.diffuse = diffuse # diffuse color, white by default
+        self.diffuse = tuple(diffuse) # diffuse color, white by default
+        if len(self.diffuse) == 3: self.diffuse += (1,)
 
         self.id = str(hash(self))
 
