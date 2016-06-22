@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='underworlds.proto',
   package='underworlds',
   syntax='proto3',
-  serialized_pb=_b('\n\x11underworlds.proto\x12\x0bunderworlds\"\x07\n\x05\x45mpty\"\x15\n\x04\x42ool\x12\r\n\x05value\x18\x01 \x01(\x08\"\x14\n\x04Time\x12\x0c\n\x04time\x18\x01 \x01(\x01\"\x14\n\x04Name\x12\x0c\n\x04name\x18\x01 \x01(\t\"\x14\n\x04Size\x12\x0c\n\x04size\x18\x01 \x01(\x05\")\n\x06Pointf\x12\t\n\x01x\x18\x01 \x01(\x02\x12\t\n\x01y\x18\x02 \x01(\x02\x12\t\n\x01z\x18\x03 \x01(\x02\"(\n\x05Point\x12\t\n\x01x\x18\x01 \x01(\x11\x12\t\n\x01y\x18\x02 \x01(\x11\x12\t\n\x01z\x18\x03 \x01(\x11\"3\n\x05\x43olor\x12\t\n\x01r\x18\x01 \x01(\x02\x12\t\n\x01g\x18\x02 \x01(\x02\x12\t\n\x01\x62\x18\x03 \x01(\x02\x12\t\n\x01\x61\x18\x04 \x01(\x02\"Q\n\x06\x43lient\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0c\n\x04name\x18\x02 \x01(\t\x12-\n\x05links\x18\x03 \x03(\x0b\x32\x1e.underworlds.ClientInteraction\"\xd0\x01\n\x11\x43lientInteraction\x12\r\n\x05world\x18\x01 \x01(\t\x12<\n\x04type\x18\x02 \x01(\x0e\x32..underworlds.ClientInteraction.InteractionType\x12(\n\rlast_activity\x18\x03 \x01(\x0b\x32\x11.underworlds.Time\"D\n\x0fInteractionType\x12\n\n\x06READER\x10\x00\x12\x0c\n\x08PROVIDER\x10\x01\x12\x0b\n\x07MONITOR\x10\x02\x12\n\n\x06\x46ILTER\x10\x03\"(\n\x07\x43ontext\x12\x0e\n\x06\x63lient\x18\x01 \x01(\t\x12\r\n\x05world\x18\x02 \x01(\t\"@\n\x08Topology\x12\x0e\n\x06worlds\x18\x01 \x03(\t\x12$\n\x07\x63lients\x18\x02 \x03(\x0b\x32\x13.underworlds.Client\"\xb6\x02\n\x04Node\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0c\n\x04name\x18\x02 \x01(\t\x12(\n\x04type\x18\x03 \x01(\x0e\x32\x1a.underworlds.Node.NodeType\x12\x0e\n\x06parent\x18\x04 \x01(\t\x12\x10\n\x08\x63hildren\x18\x05 \x03(\t\x12\x16\n\x0etransformation\x18\x06 \x03(\x02\x12\x13\n\x0blast_update\x18\x08 \x01(\x01\x12\x0e\n\x06lowres\x18\x10 \x03(\t\x12\r\n\x05hires\x18\x11 \x03(\t\x12\x0b\n\x03\x63\x61\x64\x18\x12 \x03(\t\x12!\n\x04\x61\x61\x62\x62\x18\x13 \x03(\x0b\x32\x13.underworlds.Pointf\x12\x0f\n\x07physics\x18\x1e \x01(\x08\";\n\x08NodeType\x12\r\n\tUNDEFINED\x10\x00\x12\n\n\x06\x45NTITY\x10\x01\x12\x08\n\x04MESH\x10\x02\x12\n\n\x06\x43\x41MERA\x10\x03\"\x14\n\x05Nodes\x12\x0b\n\x03ids\x18\x01 \x03(\t\"W\n\rNodeInContext\x12%\n\x07\x63ontext\x18\x01 \x01(\x0b\x32\x14.underworlds.Context\x12\x1f\n\x04node\x18\x02 \x01(\x0b\x32\x11.underworlds.Node\"\x99\x01\n\x10NodeInvalidation\x12@\n\x04type\x18\x01 \x01(\x0e\x32\x32.underworlds.NodeInvalidation.NodeInvalidationType\x12\n\n\x02id\x18\x02 \x01(\t\"7\n\x14NodeInvalidationType\x12\x07\n\x03NEW\x10\x00\x12\n\n\x06UPDATE\x10\x01\x12\n\n\x06\x44\x45LETE\x10\x02\"\xa7\x01\n\x14TimelineInvalidation\x12H\n\x04type\x18\x01 \x01(\x0e\x32:.underworlds.TimelineInvalidation.TimelineInvalidationType\x12\n\n\x02id\x18\x02 \x01(\t\"9\n\x18TimelineInvalidationType\x12\t\n\x05\x45VENT\x10\x00\x12\t\n\x05START\x10\x01\x12\x07\n\x03\x45ND\x10\x02\"\xb7\x01\n\x04Mesh\x12\n\n\x02id\x18\x01 \x01(\t\x12%\n\x08vertices\x18\x02 \x03(\x0b\x32\x13.underworlds.Pointf\x12!\n\x05\x66\x61\x63\x65s\x18\x03 \x03(\x0b\x32\x12.underworlds.Point\x12$\n\x07normals\x18\x04 \x03(\x0b\x32\x13.underworlds.Pointf\x12\x0e\n\x06\x63olors\x18\x05 \x03(\r\x12#\n\x07\x64iffuse\x18\x06 \x01(\x0b\x32\x12.underworlds.Color\"U\n\rMeshInContext\x12#\n\x06\x63lient\x18\x01 \x01(\x0b\x32\x13.underworlds.Client\x12\x1f\n\x04mesh\x18\x02 \x01(\x0b\x32\x11.underworlds.Mesh2\xb5\x07\n\x0bUnderworlds\x12\x30\n\x04helo\x12\x11.underworlds.Name\x1a\x13.underworlds.Client\"\x00\x12\x32\n\x06uptime\x12\x13.underworlds.Client\x1a\x11.underworlds.Time\"\x00\x12\x38\n\x08topology\x12\x13.underworlds.Client\x1a\x15.underworlds.Topology\"\x00\x12\x38\n\x0bgetNodesLen\x12\x14.underworlds.Context\x1a\x11.underworlds.Size\"\x00\x12\x39\n\x0bgetNodesIds\x12\x14.underworlds.Context\x1a\x12.underworlds.Nodes\"\x00\x12\x38\n\x0bgetRootNode\x12\x14.underworlds.Context\x1a\x11.underworlds.Node\"\x00\x12:\n\x07getNode\x12\x1a.underworlds.NodeInContext\x1a\x11.underworlds.Node\"\x00\x12>\n\nupdateNode\x12\x1a.underworlds.NodeInContext\x1a\x12.underworlds.Empty\"\x00\x12>\n\ndeleteNode\x12\x1a.underworlds.NodeInContext\x1a\x12.underworlds.Empty\"\x00\x12O\n\x14getNodeInvalidations\x12\x14.underworlds.Context\x1a\x1d.underworlds.NodeInvalidation\"\x00\x30\x01\x12;\n\x0etimelineOrigin\x12\x14.underworlds.Context\x1a\x11.underworlds.Time\"\x00\x12W\n\x18getTimelineInvalidations\x12\x14.underworlds.Context\x1a!.underworlds.TimelineInvalidation\"\x00\x30\x01\x12:\n\x07hasMesh\x12\x1a.underworlds.MeshInContext\x1a\x11.underworlds.Bool\"\x00\x12:\n\x07getMesh\x12\x1a.underworlds.MeshInContext\x1a\x11.underworlds.Mesh\"\x00\x12<\n\x08pushMesh\x12\x1a.underworlds.MeshInContext\x1a\x12.underworlds.Empty\"\x00\x62\x06proto3')
+  serialized_pb=_b('\n\x11underworlds.proto\x12\x0bunderworlds\"\x07\n\x05\x45mpty\"\x15\n\x04\x42ool\x12\r\n\x05value\x18\x01 \x01(\x08\"\x14\n\x04Time\x12\x0c\n\x04time\x18\x01 \x01(\x01\"\x14\n\x04Name\x12\x0c\n\x04name\x18\x01 \x01(\t\"\x14\n\x04Size\x12\x0c\n\x04size\x18\x01 \x01(\x05\")\n\x06Pointf\x12\t\n\x01x\x18\x01 \x01(\x02\x12\t\n\x01y\x18\x02 \x01(\x02\x12\t\n\x01z\x18\x03 \x01(\x02\"(\n\x05Point\x12\t\n\x01x\x18\x01 \x01(\x11\x12\t\n\x01y\x18\x02 \x01(\x11\x12\t\n\x01z\x18\x03 \x01(\x11\"3\n\x05\x43olor\x12\t\n\x01r\x18\x01 \x01(\x02\x12\t\n\x01g\x18\x02 \x01(\x02\x12\t\n\x01\x62\x18\x03 \x01(\x02\x12\t\n\x01\x61\x18\x04 \x01(\x02\"Q\n\x06\x43lient\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0c\n\x04name\x18\x02 \x01(\t\x12-\n\x05links\x18\x03 \x03(\x0b\x32\x1e.underworlds.ClientInteraction\"\xd0\x01\n\x11\x43lientInteraction\x12\r\n\x05world\x18\x01 \x01(\t\x12<\n\x04type\x18\x02 \x01(\x0e\x32..underworlds.ClientInteraction.InteractionType\x12(\n\rlast_activity\x18\x03 \x01(\x0b\x32\x11.underworlds.Time\"D\n\x0fInteractionType\x12\n\n\x06READER\x10\x00\x12\x0c\n\x08PROVIDER\x10\x01\x12\x0b\n\x07MONITOR\x10\x02\x12\n\n\x06\x46ILTER\x10\x03\"(\n\x07\x43ontext\x12\x0e\n\x06\x63lient\x18\x01 \x01(\t\x12\r\n\x05world\x18\x02 \x01(\t\"@\n\x08Topology\x12\x0e\n\x06worlds\x18\x01 \x03(\t\x12$\n\x07\x63lients\x18\x02 \x03(\x0b\x32\x13.underworlds.Client\"\x8a\x03\n\x04Node\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0c\n\x04name\x18\x02 \x01(\t\x12(\n\x04type\x18\x03 \x01(\x0e\x32\x1a.underworlds.Node.NodeType\x12\x0e\n\x06parent\x18\x04 \x01(\t\x12\x10\n\x08\x63hildren\x18\x05 \x03(\t\x12\x16\n\x0etransformation\x18\x06 \x03(\x02\x12\x13\n\x0blast_update\x18\x08 \x01(\x01\x12\x0e\n\x06lowres\x18\x10 \x03(\t\x12\r\n\x05hires\x18\x11 \x03(\t\x12\x0b\n\x03\x63\x61\x64\x18\x12 \x03(\t\x12!\n\x04\x61\x61\x62\x62\x18\x13 \x03(\x0b\x32\x13.underworlds.Pointf\x12\x0f\n\x07physics\x18\x1e \x01(\x08\x12\x15\n\rclipplanenear\x18( \x01(\x02\x12\x14\n\x0c\x63lipplanefar\x18) \x01(\x02\x12\x0e\n\x06\x61spect\x18* \x01(\x02\x12\x15\n\rhorizontalfov\x18+ \x01(\x02\";\n\x08NodeType\x12\r\n\tUNDEFINED\x10\x00\x12\n\n\x06\x45NTITY\x10\x01\x12\x08\n\x04MESH\x10\x02\x12\n\n\x06\x43\x41MERA\x10\x03\"\x14\n\x05Nodes\x12\x0b\n\x03ids\x18\x01 \x03(\t\"W\n\rNodeInContext\x12%\n\x07\x63ontext\x18\x01 \x01(\x0b\x32\x14.underworlds.Context\x12\x1f\n\x04node\x18\x02 \x01(\x0b\x32\x11.underworlds.Node\"\x99\x01\n\x10NodeInvalidation\x12@\n\x04type\x18\x01 \x01(\x0e\x32\x32.underworlds.NodeInvalidation.NodeInvalidationType\x12\n\n\x02id\x18\x02 \x01(\t\"7\n\x14NodeInvalidationType\x12\x07\n\x03NEW\x10\x00\x12\n\n\x06UPDATE\x10\x01\x12\n\n\x06\x44\x45LETE\x10\x02\"\xa7\x01\n\x14TimelineInvalidation\x12H\n\x04type\x18\x01 \x01(\x0e\x32:.underworlds.TimelineInvalidation.TimelineInvalidationType\x12\n\n\x02id\x18\x02 \x01(\t\"9\n\x18TimelineInvalidationType\x12\t\n\x05\x45VENT\x10\x00\x12\t\n\x05START\x10\x01\x12\x07\n\x03\x45ND\x10\x02\"\xb7\x01\n\x04Mesh\x12\n\n\x02id\x18\x01 \x01(\t\x12%\n\x08vertices\x18\x02 \x03(\x0b\x32\x13.underworlds.Pointf\x12!\n\x05\x66\x61\x63\x65s\x18\x03 \x03(\x0b\x32\x12.underworlds.Point\x12$\n\x07normals\x18\x04 \x03(\x0b\x32\x13.underworlds.Pointf\x12\x0e\n\x06\x63olors\x18\x05 \x03(\r\x12#\n\x07\x64iffuse\x18\x06 \x01(\x0b\x32\x12.underworlds.Color\"U\n\rMeshInContext\x12#\n\x06\x63lient\x18\x01 \x01(\x0b\x32\x13.underworlds.Client\x12\x1f\n\x04mesh\x18\x02 \x01(\x0b\x32\x11.underworlds.Mesh2\xb5\x07\n\x0bUnderworlds\x12\x30\n\x04helo\x12\x11.underworlds.Name\x1a\x13.underworlds.Client\"\x00\x12\x32\n\x06uptime\x12\x13.underworlds.Client\x1a\x11.underworlds.Time\"\x00\x12\x38\n\x08topology\x12\x13.underworlds.Client\x1a\x15.underworlds.Topology\"\x00\x12\x38\n\x0bgetNodesLen\x12\x14.underworlds.Context\x1a\x11.underworlds.Size\"\x00\x12\x39\n\x0bgetNodesIds\x12\x14.underworlds.Context\x1a\x12.underworlds.Nodes\"\x00\x12\x38\n\x0bgetRootNode\x12\x14.underworlds.Context\x1a\x11.underworlds.Node\"\x00\x12:\n\x07getNode\x12\x1a.underworlds.NodeInContext\x1a\x11.underworlds.Node\"\x00\x12>\n\nupdateNode\x12\x1a.underworlds.NodeInContext\x1a\x12.underworlds.Empty\"\x00\x12>\n\ndeleteNode\x12\x1a.underworlds.NodeInContext\x1a\x12.underworlds.Empty\"\x00\x12O\n\x14getNodeInvalidations\x12\x14.underworlds.Context\x1a\x1d.underworlds.NodeInvalidation\"\x00\x30\x01\x12;\n\x0etimelineOrigin\x12\x14.underworlds.Context\x1a\x11.underworlds.Time\"\x00\x12W\n\x18getTimelineInvalidations\x12\x14.underworlds.Context\x1a!.underworlds.TimelineInvalidation\"\x00\x30\x01\x12:\n\x07hasMesh\x12\x1a.underworlds.MeshInContext\x1a\x11.underworlds.Bool\"\x00\x12:\n\x07getMesh\x12\x1a.underworlds.MeshInContext\x1a\x11.underworlds.Mesh\"\x00\x12<\n\x08pushMesh\x12\x1a.underworlds.MeshInContext\x1a\x12.underworlds.Empty\"\x00\x62\x06proto3')
 )
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
@@ -80,8 +80,8 @@ _NODE_NODETYPE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   options=None,
-  serialized_start=924,
-  serialized_end=983,
+  serialized_start=1008,
+  serialized_end=1067,
 )
 _sym_db.RegisterEnumDescriptor(_NODE_NODETYPE)
 
@@ -106,8 +106,8 @@ _NODEINVALIDATION_NODEINVALIDATIONTYPE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   options=None,
-  serialized_start=1195,
-  serialized_end=1250,
+  serialized_start=1279,
+  serialized_end=1334,
 )
 _sym_db.RegisterEnumDescriptor(_NODEINVALIDATION_NODEINVALIDATIONTYPE)
 
@@ -132,8 +132,8 @@ _TIMELINEINVALIDATION_TIMELINEINVALIDATIONTYPE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   options=None,
-  serialized_start=1363,
-  serialized_end=1420,
+  serialized_start=1447,
+  serialized_end=1504,
 )
 _sym_db.RegisterEnumDescriptor(_TIMELINEINVALIDATION_TIMELINEINVALIDATIONTYPE)
 
@@ -686,6 +686,34 @@ _NODE = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
+    _descriptor.FieldDescriptor(
+      name='clipplanenear', full_name='underworlds.Node.clipplanenear', index=12,
+      number=40, type=2, cpp_type=6, label=1,
+      has_default_value=False, default_value=float(0),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='clipplanefar', full_name='underworlds.Node.clipplanefar', index=13,
+      number=41, type=2, cpp_type=6, label=1,
+      has_default_value=False, default_value=float(0),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='aspect', full_name='underworlds.Node.aspect', index=14,
+      number=42, type=2, cpp_type=6, label=1,
+      has_default_value=False, default_value=float(0),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='horizontalfov', full_name='underworlds.Node.horizontalfov', index=15,
+      number=43, type=2, cpp_type=6, label=1,
+      has_default_value=False, default_value=float(0),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
   ],
   extensions=[
   ],
@@ -700,7 +728,7 @@ _NODE = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=673,
-  serialized_end=983,
+  serialized_end=1067,
 )
 
 
@@ -730,8 +758,8 @@ _NODES = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=985,
-  serialized_end=1005,
+  serialized_start=1069,
+  serialized_end=1089,
 )
 
 
@@ -768,8 +796,8 @@ _NODEINCONTEXT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1007,
-  serialized_end=1094,
+  serialized_start=1091,
+  serialized_end=1178,
 )
 
 
@@ -807,8 +835,8 @@ _NODEINVALIDATION = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1097,
-  serialized_end=1250,
+  serialized_start=1181,
+  serialized_end=1334,
 )
 
 
@@ -846,8 +874,8 @@ _TIMELINEINVALIDATION = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1253,
-  serialized_end=1420,
+  serialized_start=1337,
+  serialized_end=1504,
 )
 
 
@@ -912,8 +940,8 @@ _MESH = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1423,
-  serialized_end=1606,
+  serialized_start=1507,
+  serialized_end=1690,
 )
 
 
@@ -950,8 +978,8 @@ _MESHINCONTEXT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1608,
-  serialized_end=1693,
+  serialized_start=1692,
+  serialized_end=1777,
 )
 
 _CLIENT.fields_by_name['links'].message_type = _CLIENTINTERACTION

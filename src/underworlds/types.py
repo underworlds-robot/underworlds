@@ -69,6 +69,11 @@ class Node(object):
                 "physics": False # no physics applied by default
             }
 
+        self.clipplanenear = 0
+        self.clipplanefar = 0
+        self.aspect = 0
+        self.horizontalfov = 0
+
         ################################################################
         ##                     END OF THE API                         ##
         ################################################################
@@ -124,6 +129,10 @@ class Node(object):
 
         node.physics = self.properties["physics"]
 
+        node.clipplanenear = self.clipplanenear
+        node.clipplanefar =  self.clipplanefar
+        node.aspect =        self.aspect
+        node.horizontalfov = self.horizontalfov
 
         return node
 
@@ -160,6 +169,10 @@ class Node(object):
 
         node.properties["physics"] = data.physics
 
+        node.clipplanenear = data.clipplanenear
+        node.clipplanefar =  data.clipplanefar
+        node.aspect =        data.aspect
+        node.horizontalfov = data.horizontalfov
 
         return node
 

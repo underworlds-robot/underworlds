@@ -189,7 +189,11 @@ message Node {
     // date/time of the last node's update (in sec since the epoch)
     double last_update = 8;
 
-    // PROPERTIES
+    ////// PROPERTIES
+    // Note that most of these properties are only meaningful for certain type of node
+    // Other type should simply ignore them.
+
+    // MESH node properties
 
     // For nodes of type MESH, the mesh IDs of the low-resolution meshes
     // representing this object (may be empty)
@@ -207,6 +211,12 @@ message Node {
 
     // if set to true, physics-related computation are expected to be run on this node
     bool physics = 30;
+
+    // Cameras properties
+    float clipplanenear = 40;
+    float clipplanefar = 41;
+    float aspect = 42;
+    float horizontalfov = 43;
 }
 
 message Nodes {
