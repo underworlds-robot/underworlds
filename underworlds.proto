@@ -56,52 +56,33 @@ service Underworlds {
     rpc getTimelineInvalidations(Context) returns (stream TimelineInvalidation) {}
 
 
+    // MESHES
+
+    // Returns whether the given mesh is already available on the server.
+    // Note that only the mesh ID is used.
+    rpc hasMesh(MeshInContext) returns (Bool) {}
+
+    // Returns a 3D mesh.
+    // Note that only the ID of the input mesh is used.
+    rpc getMesh(MeshInContext) returns (Mesh) {}
+
+    // Sends a 3D mesh to the server.
+    rpc pushMesh(MeshInContext) returns (Empty) {}
 }
 
-enum NodeType {
-    UNDEFINED = 0;
-    // Entities are abstract nodes. They can represent non-physical objects
-    // (like a reference frame) or groups of other objects.
-    ENTITY = 1; 
-    // a physical object, with an associated 3D mesh
-    MESH = 2;
-    CAMERA = 3;
+/////////////////////////////////////////////
+// GENERIC MESSAGES
+
+message Empty {}
+
+message Bool {
+    bool value = 1;
 }
 
-enum NodeInvalidationType {
-    NEW = 0;
-    UPDATE = 1;
-    DELETE = 2;
-}
-
-enum TimelineInvalidationType {
-    EVENT = 0;
-    START = 1;
-    END = 2;
-}
-
-enum InteractionType {
-    READER = 0;
-    PROVIDER = 1;
-    MONITOR = 2;
-    FILTER = 3;
-}
-    
-message Client {
-    string id = 1;
-    string name = 2;
-    repeated ClientInteraction links = 3;
-}
-
-message ClientInteraction {
-    string world = 1;
-    InteractionType type = 2;
-    Time last_activity = 3;
-}
-
-message Context {
-    string client = 1;
-    string world = 2;
+message Time {
+    // Time (in second). Can represent an absolute time (seconds elapsed since
+    // the begining of epoch) or a duration.
+    double time = 1;
 }
 
 message Name {
@@ -112,13 +93,72 @@ message Size {
     int32 size = 1;
 }
 
+// A 3D point with floating point precision
+message Pointf {
+    float x = 1;
+    float y = 2;
+    float z = 3;
+}
+
+// A 3D point with integral coordinates
+message Point {
+    sint32 x = 1;
+    sint32 y = 2;
+    sint32 z = 3;
+}
+
+/////////////////////////////////////////////
+// CLIENT-RELATED MESSAGE
+
+message Client {
+    string id = 1;
+    string name = 2;
+    repeated ClientInteraction links = 3;
+}
+
+message ClientInteraction {
+
+    enum InteractionType {
+        READER = 0;
+        PROVIDER = 1;
+        MONITOR = 2;
+        FILTER = 3;
+    }
+
+    string world = 1;
+    InteractionType type = 2;
+    Time last_activity = 3;
+}
+
+message Context {
+    string client = 1;
+    string world = 2;
+}
+
+/////////////////////////////////////////////
+// TOPOLOGY
+
 // Encodes the current topology of Underworlds
 message Topology {
     repeated string worlds = 1;
     repeated Client clients = 2;
 }
 
+/////////////////////////////////////////////
+// NODE-RELATED MESSAGES
+
 message Node {
+
+    enum NodeType {
+        UNDEFINED = 0;
+        // Entities are abstract nodes. They can represent non-physical objects
+        // (like a reference frame) or groups of other objects.
+        ENTITY = 1; 
+        // a physical object, with an associated 3D mesh
+        MESH = 2;
+        CAMERA = 3;
+    }
+
     // an unique ID
     string id = 1;
 
@@ -134,16 +174,27 @@ message Node {
     repeated string children = 5;
 
     // 4x4 transformation matrix, relative to parent. Translation units are
-    // meters. Stored as a list of 16 double, row-major.
-    repeated double transformation = 6;
+    // meters. Stored as a list of 16 32bit float, row-major.
+    repeated float transformation = 6;
 
     // date/time of the last node's update (in sec since the epoch)
     double last_update = 8;
 
     // PROPERTIES
 
+    // For nodes of type MESH, the mesh ID of a low-resolution mesh (may be null)
+    string lowres = 16;
+    // For nodes of type MESH, the mesh ID of a high-resolution mesh (may be null)
+    string hires = 17;
+    // For nodes of type MESH, the mesh ID of a CAD model (may be null)
+    string cad = 18;
+
+    // When meaningful, the axis-aligned bounding-box of the node as 2 points (P1, P2).
+    // The order of the points is not guaranteed.
+    repeated Pointf aabb = 19;
+
     // if set to true, physics-related computation are expected to be run on this node
-    bool physics = 16;
+    bool physics = 30;
 }
 
 message Nodes {
@@ -156,23 +207,56 @@ message NodeInContext {
 }
 
 message NodeInvalidation {
+
+    enum NodeInvalidationType {
+        NEW = 0;
+        UPDATE = 1;
+        DELETE = 2;
+    }
+
     NodeInvalidationType type = 1;
 
     // the ID of the node which is being invalidated
     string id = 2;
 }
 
-message Time {
-    // Time (in second). Can represent an absolute time (seconds elapsed since
-    // the begining of epoch) or a duration.
-    double time = 1;
-}
+/////////////////////////////////////////////
+// TIMELINE-RELATED MESSAGES
 
 message TimelineInvalidation {
+
+    enum TimelineInvalidationType {
+        EVENT = 0;
+        START = 1;
+        END = 2;
+    }
+
     TimelineInvalidationType type = 1;
 
     // the ID of the situation which is being invalidated
     string id = 2;
 }
 
-message Empty {}
+/////////////////////////////////////////////
+// MESH-RELATED MESSAGES
+
+message Mesh {
+
+    // The mesh ID. Typically computed by hashing the mesh object so that identical
+    // meshes correspond to the same ID, thus allowing data re-use
+    string id = 1;
+    repeated Pointf vertices = 2;
+    // faces must be triangles and are encoded as a tuple of 3 indices in the
+    // vertices array.
+    repeated Point faces = 3;
+    repeated Pointf normals = 4;
+    repeated uint32 colors = 5;
+    map<string, string> material = 6;
+
+}
+
+message MeshInContext {
+    Client client = 1;
+    Mesh mesh = 2;
+}
+

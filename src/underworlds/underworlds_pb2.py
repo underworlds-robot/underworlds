@@ -3,7 +3,6 @@
 
 import sys
 _b=sys.version_info[0]<3 and (lambda x:x) or (lambda x:x.encode('latin1'))
-from google.protobuf.internal import enum_type_wrapper
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import message as _message
 from google.protobuf import reflection as _reflection
@@ -20,13 +19,45 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='underworlds.proto',
   package='underworlds',
   syntax='proto3',
-  serialized_pb=_b('\n\x11underworlds.proto\x12\x0bunderworlds\"Q\n\x06\x43lient\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0c\n\x04name\x18\x02 \x01(\t\x12-\n\x05links\x18\x03 \x03(\x0b\x32\x1e.underworlds.ClientInteraction\"x\n\x11\x43lientInteraction\x12\r\n\x05world\x18\x01 \x01(\t\x12*\n\x04type\x18\x02 \x01(\x0e\x32\x1c.underworlds.InteractionType\x12(\n\rlast_activity\x18\x03 \x01(\x0b\x32\x11.underworlds.Time\"(\n\x07\x43ontext\x12\x0e\n\x06\x63lient\x18\x01 \x01(\t\x12\r\n\x05world\x18\x02 \x01(\t\"\x14\n\x04Name\x12\x0c\n\x04name\x18\x01 \x01(\t\"\x14\n\x04Size\x12\x0c\n\x04size\x18\x01 \x01(\x05\"@\n\x08Topology\x12\x0e\n\x06worlds\x18\x01 \x03(\t\x12$\n\x07\x63lients\x18\x02 \x03(\x0b\x32\x13.underworlds.Client\"\xa5\x01\n\x04Node\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0c\n\x04name\x18\x02 \x01(\t\x12#\n\x04type\x18\x03 \x01(\x0e\x32\x15.underworlds.NodeType\x12\x0e\n\x06parent\x18\x04 \x01(\t\x12\x10\n\x08\x63hildren\x18\x05 \x03(\t\x12\x16\n\x0etransformation\x18\x06 \x03(\x02\x12\x13\n\x0blast_update\x18\x08 \x01(\x01\x12\x0f\n\x07physics\x18\x10 \x01(\x08\"\x14\n\x05Nodes\x12\x0b\n\x03ids\x18\x01 \x03(\t\"W\n\rNodeInContext\x12%\n\x07\x63ontext\x18\x01 \x01(\x0b\x32\x14.underworlds.Context\x12\x1f\n\x04node\x18\x02 \x01(\x0b\x32\x11.underworlds.Node\"O\n\x10NodeInvalidation\x12/\n\x04type\x18\x01 \x01(\x0e\x32!.underworlds.NodeInvalidationType\x12\n\n\x02id\x18\x02 \x01(\t\"\x14\n\x04Time\x12\x0c\n\x04time\x18\x01 \x01(\x01\"W\n\x14TimelineInvalidation\x12\x33\n\x04type\x18\x01 \x01(\x0e\x32%.underworlds.TimelineInvalidationType\x12\n\n\x02id\x18\x02 \x01(\t\"\x07\n\x05\x45mpty*;\n\x08NodeType\x12\r\n\tUNDEFINED\x10\x00\x12\n\n\x06\x45NTITY\x10\x01\x12\x08\n\x04MESH\x10\x02\x12\n\n\x06\x43\x41MERA\x10\x03*7\n\x14NodeInvalidationType\x12\x07\n\x03NEW\x10\x00\x12\n\n\x06UPDATE\x10\x01\x12\n\n\x06\x44\x45LETE\x10\x02*9\n\x18TimelineInvalidationType\x12\t\n\x05\x45VENT\x10\x00\x12\t\n\x05START\x10\x01\x12\x07\n\x03\x45ND\x10\x02*D\n\x0fInteractionType\x12\n\n\x06READER\x10\x00\x12\x0c\n\x08PROVIDER\x10\x01\x12\x0b\n\x07MONITOR\x10\x02\x12\n\n\x06\x46ILTER\x10\x03\x32\xff\x05\n\x0bUnderworlds\x12\x30\n\x04helo\x12\x11.underworlds.Name\x1a\x13.underworlds.Client\"\x00\x12\x32\n\x06uptime\x12\x13.underworlds.Client\x1a\x11.underworlds.Time\"\x00\x12\x38\n\x08topology\x12\x13.underworlds.Client\x1a\x15.underworlds.Topology\"\x00\x12\x38\n\x0bgetNodesLen\x12\x14.underworlds.Context\x1a\x11.underworlds.Size\"\x00\x12\x39\n\x0bgetNodesIds\x12\x14.underworlds.Context\x1a\x12.underworlds.Nodes\"\x00\x12\x38\n\x0bgetRootNode\x12\x14.underworlds.Context\x1a\x11.underworlds.Node\"\x00\x12:\n\x07getNode\x12\x1a.underworlds.NodeInContext\x1a\x11.underworlds.Node\"\x00\x12>\n\nupdateNode\x12\x1a.underworlds.NodeInContext\x1a\x12.underworlds.Empty\"\x00\x12>\n\ndeleteNode\x12\x1a.underworlds.NodeInContext\x1a\x12.underworlds.Empty\"\x00\x12O\n\x14getNodeInvalidations\x12\x14.underworlds.Context\x1a\x1d.underworlds.NodeInvalidation\"\x00\x30\x01\x12;\n\x0etimelineOrigin\x12\x14.underworlds.Context\x1a\x11.underworlds.Time\"\x00\x12W\n\x18getTimelineInvalidations\x12\x14.underworlds.Context\x1a!.underworlds.TimelineInvalidation\"\x00\x30\x01\x62\x06proto3')
+  serialized_pb=_b('\n\x11underworlds.proto\x12\x0bunderworlds\"\x07\n\x05\x45mpty\"\x15\n\x04\x42ool\x12\r\n\x05value\x18\x01 \x01(\x08\"\x14\n\x04Time\x12\x0c\n\x04time\x18\x01 \x01(\x01\"\x14\n\x04Name\x12\x0c\n\x04name\x18\x01 \x01(\t\"\x14\n\x04Size\x12\x0c\n\x04size\x18\x01 \x01(\x05\")\n\x06Pointf\x12\t\n\x01x\x18\x01 \x01(\x02\x12\t\n\x01y\x18\x02 \x01(\x02\x12\t\n\x01z\x18\x03 \x01(\x02\"(\n\x05Point\x12\t\n\x01x\x18\x01 \x01(\x11\x12\t\n\x01y\x18\x02 \x01(\x11\x12\t\n\x01z\x18\x03 \x01(\x11\"Q\n\x06\x43lient\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0c\n\x04name\x18\x02 \x01(\t\x12-\n\x05links\x18\x03 \x03(\x0b\x32\x1e.underworlds.ClientInteraction\"\xd0\x01\n\x11\x43lientInteraction\x12\r\n\x05world\x18\x01 \x01(\t\x12<\n\x04type\x18\x02 \x01(\x0e\x32..underworlds.ClientInteraction.InteractionType\x12(\n\rlast_activity\x18\x03 \x01(\x0b\x32\x11.underworlds.Time\"D\n\x0fInteractionType\x12\n\n\x06READER\x10\x00\x12\x0c\n\x08PROVIDER\x10\x01\x12\x0b\n\x07MONITOR\x10\x02\x12\n\n\x06\x46ILTER\x10\x03\"(\n\x07\x43ontext\x12\x0e\n\x06\x63lient\x18\x01 \x01(\t\x12\r\n\x05world\x18\x02 \x01(\t\"@\n\x08Topology\x12\x0e\n\x06worlds\x18\x01 \x03(\t\x12$\n\x07\x63lients\x18\x02 \x03(\x0b\x32\x13.underworlds.Client\"\xb6\x02\n\x04Node\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0c\n\x04name\x18\x02 \x01(\t\x12(\n\x04type\x18\x03 \x01(\x0e\x32\x1a.underworlds.Node.NodeType\x12\x0e\n\x06parent\x18\x04 \x01(\t\x12\x10\n\x08\x63hildren\x18\x05 \x03(\t\x12\x16\n\x0etransformation\x18\x06 \x03(\x02\x12\x13\n\x0blast_update\x18\x08 \x01(\x01\x12\x0e\n\x06lowres\x18\x10 \x01(\t\x12\r\n\x05hires\x18\x11 \x01(\t\x12\x0b\n\x03\x63\x61\x64\x18\x12 \x01(\t\x12!\n\x04\x61\x61\x62\x62\x18\x13 \x03(\x0b\x32\x13.underworlds.Pointf\x12\x0f\n\x07physics\x18\x1e \x01(\x08\";\n\x08NodeType\x12\r\n\tUNDEFINED\x10\x00\x12\n\n\x06\x45NTITY\x10\x01\x12\x08\n\x04MESH\x10\x02\x12\n\n\x06\x43\x41MERA\x10\x03\"\x14\n\x05Nodes\x12\x0b\n\x03ids\x18\x01 \x03(\t\"W\n\rNodeInContext\x12%\n\x07\x63ontext\x18\x01 \x01(\x0b\x32\x14.underworlds.Context\x12\x1f\n\x04node\x18\x02 \x01(\x0b\x32\x11.underworlds.Node\"\x99\x01\n\x10NodeInvalidation\x12@\n\x04type\x18\x01 \x01(\x0e\x32\x32.underworlds.NodeInvalidation.NodeInvalidationType\x12\n\n\x02id\x18\x02 \x01(\t\"7\n\x14NodeInvalidationType\x12\x07\n\x03NEW\x10\x00\x12\n\n\x06UPDATE\x10\x01\x12\n\n\x06\x44\x45LETE\x10\x02\"\xa7\x01\n\x14TimelineInvalidation\x12H\n\x04type\x18\x01 \x01(\x0e\x32:.underworlds.TimelineInvalidation.TimelineInvalidationType\x12\n\n\x02id\x18\x02 \x01(\t\"9\n\x18TimelineInvalidationType\x12\t\n\x05\x45VENT\x10\x00\x12\t\n\x05START\x10\x01\x12\x07\n\x03\x45ND\x10\x02\"\xf6\x01\n\x04Mesh\x12\n\n\x02id\x18\x01 \x01(\t\x12%\n\x08vertices\x18\x02 \x03(\x0b\x32\x13.underworlds.Pointf\x12!\n\x05\x66\x61\x63\x65s\x18\x03 \x03(\x0b\x32\x12.underworlds.Point\x12$\n\x07normals\x18\x04 \x03(\x0b\x32\x13.underworlds.Pointf\x12\x0e\n\x06\x63olors\x18\x05 \x03(\r\x12\x31\n\x08material\x18\x06 \x03(\x0b\x32\x1f.underworlds.Mesh.MaterialEntry\x1a/\n\rMaterialEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"U\n\rMeshInContext\x12#\n\x06\x63lient\x18\x01 \x01(\x0b\x32\x13.underworlds.Client\x12\x1f\n\x04mesh\x18\x02 \x01(\x0b\x32\x11.underworlds.Mesh2\xb5\x07\n\x0bUnderworlds\x12\x30\n\x04helo\x12\x11.underworlds.Name\x1a\x13.underworlds.Client\"\x00\x12\x32\n\x06uptime\x12\x13.underworlds.Client\x1a\x11.underworlds.Time\"\x00\x12\x38\n\x08topology\x12\x13.underworlds.Client\x1a\x15.underworlds.Topology\"\x00\x12\x38\n\x0bgetNodesLen\x12\x14.underworlds.Context\x1a\x11.underworlds.Size\"\x00\x12\x39\n\x0bgetNodesIds\x12\x14.underworlds.Context\x1a\x12.underworlds.Nodes\"\x00\x12\x38\n\x0bgetRootNode\x12\x14.underworlds.Context\x1a\x11.underworlds.Node\"\x00\x12:\n\x07getNode\x12\x1a.underworlds.NodeInContext\x1a\x11.underworlds.Node\"\x00\x12>\n\nupdateNode\x12\x1a.underworlds.NodeInContext\x1a\x12.underworlds.Empty\"\x00\x12>\n\ndeleteNode\x12\x1a.underworlds.NodeInContext\x1a\x12.underworlds.Empty\"\x00\x12O\n\x14getNodeInvalidations\x12\x14.underworlds.Context\x1a\x1d.underworlds.NodeInvalidation\"\x00\x30\x01\x12;\n\x0etimelineOrigin\x12\x14.underworlds.Context\x1a\x11.underworlds.Time\"\x00\x12W\n\x18getTimelineInvalidations\x12\x14.underworlds.Context\x1a!.underworlds.TimelineInvalidation\"\x00\x30\x01\x12:\n\x07hasMesh\x12\x1a.underworlds.MeshInContext\x1a\x11.underworlds.Bool\"\x00\x12:\n\x07getMesh\x12\x1a.underworlds.MeshInContext\x1a\x11.underworlds.Mesh\"\x00\x12<\n\x08pushMesh\x12\x1a.underworlds.MeshInContext\x1a\x12.underworlds.Empty\"\x00\x62\x06proto3')
 )
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
-_NODETYPE = _descriptor.EnumDescriptor(
+
+
+_CLIENTINTERACTION_INTERACTIONTYPE = _descriptor.EnumDescriptor(
+  name='InteractionType',
+  full_name='underworlds.ClientInteraction.InteractionType',
+  filename=None,
+  file=DESCRIPTOR,
+  values=[
+    _descriptor.EnumValueDescriptor(
+      name='READER', index=0, number=0,
+      options=None,
+      type=None),
+    _descriptor.EnumValueDescriptor(
+      name='PROVIDER', index=1, number=1,
+      options=None,
+      type=None),
+    _descriptor.EnumValueDescriptor(
+      name='MONITOR', index=2, number=2,
+      options=None,
+      type=None),
+    _descriptor.EnumValueDescriptor(
+      name='FILTER', index=3, number=3,
+      options=None,
+      type=None),
+  ],
+  containing_type=None,
+  options=None,
+  serialized_start=441,
+  serialized_end=509,
+)
+_sym_db.RegisterEnumDescriptor(_CLIENTINTERACTION_INTERACTIONTYPE)
+
+_NODE_NODETYPE = _descriptor.EnumDescriptor(
   name='NodeType',
-  full_name='underworlds.NodeType',
+  full_name='underworlds.Node.NodeType',
   filename=None,
   file=DESCRIPTOR,
   values=[
@@ -52,12 +83,11 @@ _NODETYPE = _descriptor.EnumDescriptor(
   serialized_start=871,
   serialized_end=930,
 )
-_sym_db.RegisterEnumDescriptor(_NODETYPE)
+_sym_db.RegisterEnumDescriptor(_NODE_NODETYPE)
 
-NodeType = enum_type_wrapper.EnumTypeWrapper(_NODETYPE)
-_NODEINVALIDATIONTYPE = _descriptor.EnumDescriptor(
+_NODEINVALIDATION_NODEINVALIDATIONTYPE = _descriptor.EnumDescriptor(
   name='NodeInvalidationType',
-  full_name='underworlds.NodeInvalidationType',
+  full_name='underworlds.NodeInvalidation.NodeInvalidationType',
   filename=None,
   file=DESCRIPTOR,
   values=[
@@ -76,15 +106,14 @@ _NODEINVALIDATIONTYPE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   options=None,
-  serialized_start=932,
-  serialized_end=987,
+  serialized_start=1142,
+  serialized_end=1197,
 )
-_sym_db.RegisterEnumDescriptor(_NODEINVALIDATIONTYPE)
+_sym_db.RegisterEnumDescriptor(_NODEINVALIDATION_NODEINVALIDATIONTYPE)
 
-NodeInvalidationType = enum_type_wrapper.EnumTypeWrapper(_NODEINVALIDATIONTYPE)
-_TIMELINEINVALIDATIONTYPE = _descriptor.EnumDescriptor(
+_TIMELINEINVALIDATION_TIMELINEINVALIDATIONTYPE = _descriptor.EnumDescriptor(
   name='TimelineInvalidationType',
-  full_name='underworlds.TimelineInvalidationType',
+  full_name='underworlds.TimelineInvalidation.TimelineInvalidationType',
   filename=None,
   file=DESCRIPTOR,
   values=[
@@ -103,58 +132,248 @@ _TIMELINEINVALIDATIONTYPE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   options=None,
-  serialized_start=989,
-  serialized_end=1046,
+  serialized_start=1310,
+  serialized_end=1367,
 )
-_sym_db.RegisterEnumDescriptor(_TIMELINEINVALIDATIONTYPE)
+_sym_db.RegisterEnumDescriptor(_TIMELINEINVALIDATION_TIMELINEINVALIDATIONTYPE)
 
-TimelineInvalidationType = enum_type_wrapper.EnumTypeWrapper(_TIMELINEINVALIDATIONTYPE)
-_INTERACTIONTYPE = _descriptor.EnumDescriptor(
-  name='InteractionType',
-  full_name='underworlds.InteractionType',
+
+_EMPTY = _descriptor.Descriptor(
+  name='Empty',
+  full_name='underworlds.Empty',
   filename=None,
   file=DESCRIPTOR,
-  values=[
-    _descriptor.EnumValueDescriptor(
-      name='READER', index=0, number=0,
-      options=None,
-      type=None),
-    _descriptor.EnumValueDescriptor(
-      name='PROVIDER', index=1, number=1,
-      options=None,
-      type=None),
-    _descriptor.EnumValueDescriptor(
-      name='MONITOR', index=2, number=2,
-      options=None,
-      type=None),
-    _descriptor.EnumValueDescriptor(
-      name='FILTER', index=3, number=3,
-      options=None,
-      type=None),
-  ],
   containing_type=None,
+  fields=[
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
   options=None,
-  serialized_start=1048,
-  serialized_end=1116,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=34,
+  serialized_end=41,
 )
-_sym_db.RegisterEnumDescriptor(_INTERACTIONTYPE)
 
-InteractionType = enum_type_wrapper.EnumTypeWrapper(_INTERACTIONTYPE)
-UNDEFINED = 0
-ENTITY = 1
-MESH = 2
-CAMERA = 3
-NEW = 0
-UPDATE = 1
-DELETE = 2
-EVENT = 0
-START = 1
-END = 2
-READER = 0
-PROVIDER = 1
-MONITOR = 2
-FILTER = 3
 
+_BOOL = _descriptor.Descriptor(
+  name='Bool',
+  full_name='underworlds.Bool',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='value', full_name='underworlds.Bool.value', index=0,
+      number=1, type=8, cpp_type=7, label=1,
+      has_default_value=False, default_value=False,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=43,
+  serialized_end=64,
+)
+
+
+_TIME = _descriptor.Descriptor(
+  name='Time',
+  full_name='underworlds.Time',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='time', full_name='underworlds.Time.time', index=0,
+      number=1, type=1, cpp_type=5, label=1,
+      has_default_value=False, default_value=float(0),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=66,
+  serialized_end=86,
+)
+
+
+_NAME = _descriptor.Descriptor(
+  name='Name',
+  full_name='underworlds.Name',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='name', full_name='underworlds.Name.name', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=88,
+  serialized_end=108,
+)
+
+
+_SIZE = _descriptor.Descriptor(
+  name='Size',
+  full_name='underworlds.Size',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='size', full_name='underworlds.Size.size', index=0,
+      number=1, type=5, cpp_type=1, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=110,
+  serialized_end=130,
+)
+
+
+_POINTF = _descriptor.Descriptor(
+  name='Pointf',
+  full_name='underworlds.Pointf',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='x', full_name='underworlds.Pointf.x', index=0,
+      number=1, type=2, cpp_type=6, label=1,
+      has_default_value=False, default_value=float(0),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='y', full_name='underworlds.Pointf.y', index=1,
+      number=2, type=2, cpp_type=6, label=1,
+      has_default_value=False, default_value=float(0),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='z', full_name='underworlds.Pointf.z', index=2,
+      number=3, type=2, cpp_type=6, label=1,
+      has_default_value=False, default_value=float(0),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=132,
+  serialized_end=173,
+)
+
+
+_POINT = _descriptor.Descriptor(
+  name='Point',
+  full_name='underworlds.Point',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='x', full_name='underworlds.Point.x', index=0,
+      number=1, type=17, cpp_type=1, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='y', full_name='underworlds.Point.y', index=1,
+      number=2, type=17, cpp_type=1, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='z', full_name='underworlds.Point.z', index=2,
+      number=3, type=17, cpp_type=1, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=175,
+  serialized_end=215,
+)
 
 
 _CLIENT = _descriptor.Descriptor(
@@ -197,8 +416,8 @@ _CLIENT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=34,
-  serialized_end=115,
+  serialized_start=217,
+  serialized_end=298,
 )
 
 
@@ -235,6 +454,7 @@ _CLIENTINTERACTION = _descriptor.Descriptor(
   ],
   nested_types=[],
   enum_types=[
+    _CLIENTINTERACTION_INTERACTIONTYPE,
   ],
   options=None,
   is_extendable=False,
@@ -242,8 +462,8 @@ _CLIENTINTERACTION = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=117,
-  serialized_end=237,
+  serialized_start=301,
+  serialized_end=509,
 )
 
 
@@ -280,70 +500,8 @@ _CONTEXT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=239,
-  serialized_end=279,
-)
-
-
-_NAME = _descriptor.Descriptor(
-  name='Name',
-  full_name='underworlds.Name',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='name', full_name='underworlds.Name.name', index=0,
-      number=1, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  options=None,
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=281,
-  serialized_end=301,
-)
-
-
-_SIZE = _descriptor.Descriptor(
-  name='Size',
-  full_name='underworlds.Size',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='size', full_name='underworlds.Size.size', index=0,
-      number=1, type=5, cpp_type=1, label=1,
-      has_default_value=False, default_value=0,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  options=None,
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=303,
-  serialized_end=323,
+  serialized_start=511,
+  serialized_end=551,
 )
 
 
@@ -380,8 +538,8 @@ _TOPOLOGY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=325,
-  serialized_end=389,
+  serialized_start=553,
+  serialized_end=617,
 )
 
 
@@ -442,8 +600,36 @@ _NODE = _descriptor.Descriptor(
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='physics', full_name='underworlds.Node.physics', index=7,
-      number=16, type=8, cpp_type=7, label=1,
+      name='lowres', full_name='underworlds.Node.lowres', index=7,
+      number=16, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='hires', full_name='underworlds.Node.hires', index=8,
+      number=17, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='cad', full_name='underworlds.Node.cad', index=9,
+      number=18, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='aabb', full_name='underworlds.Node.aabb', index=10,
+      number=19, type=11, cpp_type=10, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='physics', full_name='underworlds.Node.physics', index=11,
+      number=30, type=8, cpp_type=7, label=1,
       has_default_value=False, default_value=False,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
@@ -453,6 +639,7 @@ _NODE = _descriptor.Descriptor(
   ],
   nested_types=[],
   enum_types=[
+    _NODE_NODETYPE,
   ],
   options=None,
   is_extendable=False,
@@ -460,8 +647,8 @@ _NODE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=392,
-  serialized_end=557,
+  serialized_start=620,
+  serialized_end=930,
 )
 
 
@@ -491,8 +678,8 @@ _NODES = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=559,
-  serialized_end=579,
+  serialized_start=932,
+  serialized_end=952,
 )
 
 
@@ -529,8 +716,8 @@ _NODEINCONTEXT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=581,
-  serialized_end=668,
+  serialized_start=954,
+  serialized_end=1041,
 )
 
 
@@ -560,6 +747,7 @@ _NODEINVALIDATION = _descriptor.Descriptor(
   ],
   nested_types=[],
   enum_types=[
+    _NODEINVALIDATION_NODEINVALIDATIONTYPE,
   ],
   options=None,
   is_extendable=False,
@@ -567,39 +755,8 @@ _NODEINVALIDATION = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=670,
-  serialized_end=749,
-)
-
-
-_TIME = _descriptor.Descriptor(
-  name='Time',
-  full_name='underworlds.Time',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='time', full_name='underworlds.Time.time', index=0,
-      number=1, type=1, cpp_type=5, label=1,
-      has_default_value=False, default_value=float(0),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  options=None,
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=751,
-  serialized_end=771,
+  serialized_start=1044,
+  serialized_end=1197,
 )
 
 
@@ -629,6 +786,7 @@ _TIMELINEINVALIDATION = _descriptor.Descriptor(
   ],
   nested_types=[],
   enum_types=[
+    _TIMELINEINVALIDATION_TIMELINEINVALIDATIONTYPE,
   ],
   options=None,
   is_extendable=False,
@@ -636,18 +794,135 @@ _TIMELINEINVALIDATION = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=773,
-  serialized_end=860,
+  serialized_start=1200,
+  serialized_end=1367,
 )
 
 
-_EMPTY = _descriptor.Descriptor(
-  name='Empty',
-  full_name='underworlds.Empty',
+_MESH_MATERIALENTRY = _descriptor.Descriptor(
+  name='MaterialEntry',
+  full_name='underworlds.Mesh.MaterialEntry',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
+    _descriptor.FieldDescriptor(
+      name='key', full_name='underworlds.Mesh.MaterialEntry.key', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='value', full_name='underworlds.Mesh.MaterialEntry.value', index=1,
+      number=2, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  options=_descriptor._ParseOptions(descriptor_pb2.MessageOptions(), _b('8\001')),
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=1569,
+  serialized_end=1616,
+)
+
+_MESH = _descriptor.Descriptor(
+  name='Mesh',
+  full_name='underworlds.Mesh',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='id', full_name='underworlds.Mesh.id', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='vertices', full_name='underworlds.Mesh.vertices', index=1,
+      number=2, type=11, cpp_type=10, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='faces', full_name='underworlds.Mesh.faces', index=2,
+      number=3, type=11, cpp_type=10, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='normals', full_name='underworlds.Mesh.normals', index=3,
+      number=4, type=11, cpp_type=10, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='colors', full_name='underworlds.Mesh.colors', index=4,
+      number=5, type=13, cpp_type=3, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='material', full_name='underworlds.Mesh.material', index=5,
+      number=6, type=11, cpp_type=10, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+  ],
+  extensions=[
+  ],
+  nested_types=[_MESH_MATERIALENTRY, ],
+  enum_types=[
+  ],
+  options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=1370,
+  serialized_end=1616,
+)
+
+
+_MESHINCONTEXT = _descriptor.Descriptor(
+  name='MeshInContext',
+  full_name='underworlds.MeshInContext',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='client', full_name='underworlds.MeshInContext.client', index=0,
+      number=1, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='mesh', full_name='underworlds.MeshInContext.mesh', index=1,
+      number=2, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
   ],
   extensions=[
   ],
@@ -660,36 +935,98 @@ _EMPTY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=862,
-  serialized_end=869,
+  serialized_start=1618,
+  serialized_end=1703,
 )
 
 _CLIENT.fields_by_name['links'].message_type = _CLIENTINTERACTION
-_CLIENTINTERACTION.fields_by_name['type'].enum_type = _INTERACTIONTYPE
+_CLIENTINTERACTION.fields_by_name['type'].enum_type = _CLIENTINTERACTION_INTERACTIONTYPE
 _CLIENTINTERACTION.fields_by_name['last_activity'].message_type = _TIME
+_CLIENTINTERACTION_INTERACTIONTYPE.containing_type = _CLIENTINTERACTION
 _TOPOLOGY.fields_by_name['clients'].message_type = _CLIENT
-_NODE.fields_by_name['type'].enum_type = _NODETYPE
+_NODE.fields_by_name['type'].enum_type = _NODE_NODETYPE
+_NODE.fields_by_name['aabb'].message_type = _POINTF
+_NODE_NODETYPE.containing_type = _NODE
 _NODEINCONTEXT.fields_by_name['context'].message_type = _CONTEXT
 _NODEINCONTEXT.fields_by_name['node'].message_type = _NODE
-_NODEINVALIDATION.fields_by_name['type'].enum_type = _NODEINVALIDATIONTYPE
-_TIMELINEINVALIDATION.fields_by_name['type'].enum_type = _TIMELINEINVALIDATIONTYPE
+_NODEINVALIDATION.fields_by_name['type'].enum_type = _NODEINVALIDATION_NODEINVALIDATIONTYPE
+_NODEINVALIDATION_NODEINVALIDATIONTYPE.containing_type = _NODEINVALIDATION
+_TIMELINEINVALIDATION.fields_by_name['type'].enum_type = _TIMELINEINVALIDATION_TIMELINEINVALIDATIONTYPE
+_TIMELINEINVALIDATION_TIMELINEINVALIDATIONTYPE.containing_type = _TIMELINEINVALIDATION
+_MESH_MATERIALENTRY.containing_type = _MESH
+_MESH.fields_by_name['vertices'].message_type = _POINTF
+_MESH.fields_by_name['faces'].message_type = _POINT
+_MESH.fields_by_name['normals'].message_type = _POINTF
+_MESH.fields_by_name['material'].message_type = _MESH_MATERIALENTRY
+_MESHINCONTEXT.fields_by_name['client'].message_type = _CLIENT
+_MESHINCONTEXT.fields_by_name['mesh'].message_type = _MESH
+DESCRIPTOR.message_types_by_name['Empty'] = _EMPTY
+DESCRIPTOR.message_types_by_name['Bool'] = _BOOL
+DESCRIPTOR.message_types_by_name['Time'] = _TIME
+DESCRIPTOR.message_types_by_name['Name'] = _NAME
+DESCRIPTOR.message_types_by_name['Size'] = _SIZE
+DESCRIPTOR.message_types_by_name['Pointf'] = _POINTF
+DESCRIPTOR.message_types_by_name['Point'] = _POINT
 DESCRIPTOR.message_types_by_name['Client'] = _CLIENT
 DESCRIPTOR.message_types_by_name['ClientInteraction'] = _CLIENTINTERACTION
 DESCRIPTOR.message_types_by_name['Context'] = _CONTEXT
-DESCRIPTOR.message_types_by_name['Name'] = _NAME
-DESCRIPTOR.message_types_by_name['Size'] = _SIZE
 DESCRIPTOR.message_types_by_name['Topology'] = _TOPOLOGY
 DESCRIPTOR.message_types_by_name['Node'] = _NODE
 DESCRIPTOR.message_types_by_name['Nodes'] = _NODES
 DESCRIPTOR.message_types_by_name['NodeInContext'] = _NODEINCONTEXT
 DESCRIPTOR.message_types_by_name['NodeInvalidation'] = _NODEINVALIDATION
-DESCRIPTOR.message_types_by_name['Time'] = _TIME
 DESCRIPTOR.message_types_by_name['TimelineInvalidation'] = _TIMELINEINVALIDATION
-DESCRIPTOR.message_types_by_name['Empty'] = _EMPTY
-DESCRIPTOR.enum_types_by_name['NodeType'] = _NODETYPE
-DESCRIPTOR.enum_types_by_name['NodeInvalidationType'] = _NODEINVALIDATIONTYPE
-DESCRIPTOR.enum_types_by_name['TimelineInvalidationType'] = _TIMELINEINVALIDATIONTYPE
-DESCRIPTOR.enum_types_by_name['InteractionType'] = _INTERACTIONTYPE
+DESCRIPTOR.message_types_by_name['Mesh'] = _MESH
+DESCRIPTOR.message_types_by_name['MeshInContext'] = _MESHINCONTEXT
+
+Empty = _reflection.GeneratedProtocolMessageType('Empty', (_message.Message,), dict(
+  DESCRIPTOR = _EMPTY,
+  __module__ = 'underworlds_pb2'
+  # @@protoc_insertion_point(class_scope:underworlds.Empty)
+  ))
+_sym_db.RegisterMessage(Empty)
+
+Bool = _reflection.GeneratedProtocolMessageType('Bool', (_message.Message,), dict(
+  DESCRIPTOR = _BOOL,
+  __module__ = 'underworlds_pb2'
+  # @@protoc_insertion_point(class_scope:underworlds.Bool)
+  ))
+_sym_db.RegisterMessage(Bool)
+
+Time = _reflection.GeneratedProtocolMessageType('Time', (_message.Message,), dict(
+  DESCRIPTOR = _TIME,
+  __module__ = 'underworlds_pb2'
+  # @@protoc_insertion_point(class_scope:underworlds.Time)
+  ))
+_sym_db.RegisterMessage(Time)
+
+Name = _reflection.GeneratedProtocolMessageType('Name', (_message.Message,), dict(
+  DESCRIPTOR = _NAME,
+  __module__ = 'underworlds_pb2'
+  # @@protoc_insertion_point(class_scope:underworlds.Name)
+  ))
+_sym_db.RegisterMessage(Name)
+
+Size = _reflection.GeneratedProtocolMessageType('Size', (_message.Message,), dict(
+  DESCRIPTOR = _SIZE,
+  __module__ = 'underworlds_pb2'
+  # @@protoc_insertion_point(class_scope:underworlds.Size)
+  ))
+_sym_db.RegisterMessage(Size)
+
+Pointf = _reflection.GeneratedProtocolMessageType('Pointf', (_message.Message,), dict(
+  DESCRIPTOR = _POINTF,
+  __module__ = 'underworlds_pb2'
+  # @@protoc_insertion_point(class_scope:underworlds.Pointf)
+  ))
+_sym_db.RegisterMessage(Pointf)
+
+Point = _reflection.GeneratedProtocolMessageType('Point', (_message.Message,), dict(
+  DESCRIPTOR = _POINT,
+  __module__ = 'underworlds_pb2'
+  # @@protoc_insertion_point(class_scope:underworlds.Point)
+  ))
+_sym_db.RegisterMessage(Point)
 
 Client = _reflection.GeneratedProtocolMessageType('Client', (_message.Message,), dict(
   DESCRIPTOR = _CLIENT,
@@ -711,20 +1048,6 @@ Context = _reflection.GeneratedProtocolMessageType('Context', (_message.Message,
   # @@protoc_insertion_point(class_scope:underworlds.Context)
   ))
 _sym_db.RegisterMessage(Context)
-
-Name = _reflection.GeneratedProtocolMessageType('Name', (_message.Message,), dict(
-  DESCRIPTOR = _NAME,
-  __module__ = 'underworlds_pb2'
-  # @@protoc_insertion_point(class_scope:underworlds.Name)
-  ))
-_sym_db.RegisterMessage(Name)
-
-Size = _reflection.GeneratedProtocolMessageType('Size', (_message.Message,), dict(
-  DESCRIPTOR = _SIZE,
-  __module__ = 'underworlds_pb2'
-  # @@protoc_insertion_point(class_scope:underworlds.Size)
-  ))
-_sym_db.RegisterMessage(Size)
 
 Topology = _reflection.GeneratedProtocolMessageType('Topology', (_message.Message,), dict(
   DESCRIPTOR = _TOPOLOGY,
@@ -761,13 +1084,6 @@ NodeInvalidation = _reflection.GeneratedProtocolMessageType('NodeInvalidation', 
   ))
 _sym_db.RegisterMessage(NodeInvalidation)
 
-Time = _reflection.GeneratedProtocolMessageType('Time', (_message.Message,), dict(
-  DESCRIPTOR = _TIME,
-  __module__ = 'underworlds_pb2'
-  # @@protoc_insertion_point(class_scope:underworlds.Time)
-  ))
-_sym_db.RegisterMessage(Time)
-
 TimelineInvalidation = _reflection.GeneratedProtocolMessageType('TimelineInvalidation', (_message.Message,), dict(
   DESCRIPTOR = _TIMELINEINVALIDATION,
   __module__ = 'underworlds_pb2'
@@ -775,14 +1091,31 @@ TimelineInvalidation = _reflection.GeneratedProtocolMessageType('TimelineInvalid
   ))
 _sym_db.RegisterMessage(TimelineInvalidation)
 
-Empty = _reflection.GeneratedProtocolMessageType('Empty', (_message.Message,), dict(
-  DESCRIPTOR = _EMPTY,
+Mesh = _reflection.GeneratedProtocolMessageType('Mesh', (_message.Message,), dict(
+
+  MaterialEntry = _reflection.GeneratedProtocolMessageType('MaterialEntry', (_message.Message,), dict(
+    DESCRIPTOR = _MESH_MATERIALENTRY,
+    __module__ = 'underworlds_pb2'
+    # @@protoc_insertion_point(class_scope:underworlds.Mesh.MaterialEntry)
+    ))
+  ,
+  DESCRIPTOR = _MESH,
   __module__ = 'underworlds_pb2'
-  # @@protoc_insertion_point(class_scope:underworlds.Empty)
+  # @@protoc_insertion_point(class_scope:underworlds.Mesh)
   ))
-_sym_db.RegisterMessage(Empty)
+_sym_db.RegisterMessage(Mesh)
+_sym_db.RegisterMessage(Mesh.MaterialEntry)
+
+MeshInContext = _reflection.GeneratedProtocolMessageType('MeshInContext', (_message.Message,), dict(
+  DESCRIPTOR = _MESHINCONTEXT,
+  __module__ = 'underworlds_pb2'
+  # @@protoc_insertion_point(class_scope:underworlds.MeshInContext)
+  ))
+_sym_db.RegisterMessage(MeshInContext)
 
 
+_MESH_MATERIALENTRY.has_options = True
+_MESH_MATERIALENTRY._options = _descriptor._ParseOptions(descriptor_pb2.MessageOptions(), _b('8\001'))
 import grpc
 from grpc.beta import implementations as beta_implementations
 from grpc.beta import interfaces as beta_interfaces
@@ -857,6 +1190,21 @@ class UnderworldsStub(object):
         '/underworlds.Underworlds/getTimelineInvalidations',
         request_serializer=Context.SerializeToString,
         response_deserializer=TimelineInvalidation.FromString,
+        )
+    self.hasMesh = channel.unary_unary(
+        '/underworlds.Underworlds/hasMesh',
+        request_serializer=MeshInContext.SerializeToString,
+        response_deserializer=Bool.FromString,
+        )
+    self.getMesh = channel.unary_unary(
+        '/underworlds.Underworlds/getMesh',
+        request_serializer=MeshInContext.SerializeToString,
+        response_deserializer=Mesh.FromString,
+        )
+    self.pushMesh = channel.unary_unary(
+        '/underworlds.Underworlds/pushMesh',
+        request_serializer=MeshInContext.SerializeToString,
+        response_deserializer=Empty.FromString,
         )
 
 
@@ -960,6 +1308,31 @@ class UnderworldsServicer(object):
     context.set_details('Method not implemented!')
     raise NotImplementedError('Method not implemented!')
 
+  def hasMesh(self, request, context):
+    """MESHES
+
+    Returns whether the given mesh is already available on the server.
+    Note that only the mesh ID is used.
+    """
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
+  def getMesh(self, request, context):
+    """Returns a 3D mesh.
+    Note that only the ID of the input mesh is used.
+    """
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
+  def pushMesh(self, request, context):
+    """Sends a 3D mesh to the server.
+    """
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
 
 def add_UnderworldsServicer_to_server(servicer, server):
   rpc_method_handlers = {
@@ -1022,6 +1395,21 @@ def add_UnderworldsServicer_to_server(servicer, server):
           servicer.getTimelineInvalidations,
           request_deserializer=Context.FromString,
           response_serializer=TimelineInvalidation.SerializeToString,
+      ),
+      'hasMesh': grpc.unary_unary_rpc_method_handler(
+          servicer.hasMesh,
+          request_deserializer=MeshInContext.FromString,
+          response_serializer=Bool.SerializeToString,
+      ),
+      'getMesh': grpc.unary_unary_rpc_method_handler(
+          servicer.getMesh,
+          request_deserializer=MeshInContext.FromString,
+          response_serializer=Mesh.SerializeToString,
+      ),
+      'pushMesh': grpc.unary_unary_rpc_method_handler(
+          servicer.pushMesh,
+          request_deserializer=MeshInContext.FromString,
+          response_serializer=Empty.SerializeToString,
       ),
   }
   generic_handler = grpc.method_handlers_generic_handler(
@@ -1090,6 +1478,22 @@ class BetaUnderworldsServicer(object):
     """Returns a (stream of) 'invalidated' nodes that need to be updated.
     Invalidated nodes can be new nodes, nodes that have changed, or nodes
     that have been removed (see Invalidation.type).
+    """
+    context.code(beta_interfaces.StatusCode.UNIMPLEMENTED)
+  def hasMesh(self, request, context):
+    """MESHES
+
+    Returns whether the given mesh is already available on the server.
+    Note that only the mesh ID is used.
+    """
+    context.code(beta_interfaces.StatusCode.UNIMPLEMENTED)
+  def getMesh(self, request, context):
+    """Returns a 3D mesh.
+    Note that only the ID of the input mesh is used.
+    """
+    context.code(beta_interfaces.StatusCode.UNIMPLEMENTED)
+  def pushMesh(self, request, context):
+    """Sends a 3D mesh to the server.
     """
     context.code(beta_interfaces.StatusCode.UNIMPLEMENTED)
 
@@ -1167,18 +1571,40 @@ class BetaUnderworldsStub(object):
     that have been removed (see Invalidation.type).
     """
     raise NotImplementedError()
+  def hasMesh(self, request, timeout, metadata=None, with_call=False, protocol_options=None):
+    """MESHES
+
+    Returns whether the given mesh is already available on the server.
+    Note that only the mesh ID is used.
+    """
+    raise NotImplementedError()
+  hasMesh.future = None
+  def getMesh(self, request, timeout, metadata=None, with_call=False, protocol_options=None):
+    """Returns a 3D mesh.
+    Note that only the ID of the input mesh is used.
+    """
+    raise NotImplementedError()
+  getMesh.future = None
+  def pushMesh(self, request, timeout, metadata=None, with_call=False, protocol_options=None):
+    """Sends a 3D mesh to the server.
+    """
+    raise NotImplementedError()
+  pushMesh.future = None
 
 
 def beta_create_Underworlds_server(servicer, pool=None, pool_size=None, default_timeout=None, maximum_timeout=None):
   request_deserializers = {
     ('underworlds.Underworlds', 'deleteNode'): NodeInContext.FromString,
+    ('underworlds.Underworlds', 'getMesh'): MeshInContext.FromString,
     ('underworlds.Underworlds', 'getNode'): NodeInContext.FromString,
     ('underworlds.Underworlds', 'getNodeInvalidations'): Context.FromString,
     ('underworlds.Underworlds', 'getNodesIds'): Context.FromString,
     ('underworlds.Underworlds', 'getNodesLen'): Context.FromString,
     ('underworlds.Underworlds', 'getRootNode'): Context.FromString,
     ('underworlds.Underworlds', 'getTimelineInvalidations'): Context.FromString,
+    ('underworlds.Underworlds', 'hasMesh'): MeshInContext.FromString,
     ('underworlds.Underworlds', 'helo'): Name.FromString,
+    ('underworlds.Underworlds', 'pushMesh'): MeshInContext.FromString,
     ('underworlds.Underworlds', 'timelineOrigin'): Context.FromString,
     ('underworlds.Underworlds', 'topology'): Client.FromString,
     ('underworlds.Underworlds', 'updateNode'): NodeInContext.FromString,
@@ -1186,13 +1612,16 @@ def beta_create_Underworlds_server(servicer, pool=None, pool_size=None, default_
   }
   response_serializers = {
     ('underworlds.Underworlds', 'deleteNode'): Empty.SerializeToString,
+    ('underworlds.Underworlds', 'getMesh'): Mesh.SerializeToString,
     ('underworlds.Underworlds', 'getNode'): Node.SerializeToString,
     ('underworlds.Underworlds', 'getNodeInvalidations'): NodeInvalidation.SerializeToString,
     ('underworlds.Underworlds', 'getNodesIds'): Nodes.SerializeToString,
     ('underworlds.Underworlds', 'getNodesLen'): Size.SerializeToString,
     ('underworlds.Underworlds', 'getRootNode'): Node.SerializeToString,
     ('underworlds.Underworlds', 'getTimelineInvalidations'): TimelineInvalidation.SerializeToString,
+    ('underworlds.Underworlds', 'hasMesh'): Bool.SerializeToString,
     ('underworlds.Underworlds', 'helo'): Client.SerializeToString,
+    ('underworlds.Underworlds', 'pushMesh'): Empty.SerializeToString,
     ('underworlds.Underworlds', 'timelineOrigin'): Time.SerializeToString,
     ('underworlds.Underworlds', 'topology'): Topology.SerializeToString,
     ('underworlds.Underworlds', 'updateNode'): Empty.SerializeToString,
@@ -1200,13 +1629,16 @@ def beta_create_Underworlds_server(servicer, pool=None, pool_size=None, default_
   }
   method_implementations = {
     ('underworlds.Underworlds', 'deleteNode'): face_utilities.unary_unary_inline(servicer.deleteNode),
+    ('underworlds.Underworlds', 'getMesh'): face_utilities.unary_unary_inline(servicer.getMesh),
     ('underworlds.Underworlds', 'getNode'): face_utilities.unary_unary_inline(servicer.getNode),
     ('underworlds.Underworlds', 'getNodeInvalidations'): face_utilities.unary_stream_inline(servicer.getNodeInvalidations),
     ('underworlds.Underworlds', 'getNodesIds'): face_utilities.unary_unary_inline(servicer.getNodesIds),
     ('underworlds.Underworlds', 'getNodesLen'): face_utilities.unary_unary_inline(servicer.getNodesLen),
     ('underworlds.Underworlds', 'getRootNode'): face_utilities.unary_unary_inline(servicer.getRootNode),
     ('underworlds.Underworlds', 'getTimelineInvalidations'): face_utilities.unary_stream_inline(servicer.getTimelineInvalidations),
+    ('underworlds.Underworlds', 'hasMesh'): face_utilities.unary_unary_inline(servicer.hasMesh),
     ('underworlds.Underworlds', 'helo'): face_utilities.unary_unary_inline(servicer.helo),
+    ('underworlds.Underworlds', 'pushMesh'): face_utilities.unary_unary_inline(servicer.pushMesh),
     ('underworlds.Underworlds', 'timelineOrigin'): face_utilities.unary_unary_inline(servicer.timelineOrigin),
     ('underworlds.Underworlds', 'topology'): face_utilities.unary_unary_inline(servicer.topology),
     ('underworlds.Underworlds', 'updateNode'): face_utilities.unary_unary_inline(servicer.updateNode),
@@ -1219,13 +1651,16 @@ def beta_create_Underworlds_server(servicer, pool=None, pool_size=None, default_
 def beta_create_Underworlds_stub(channel, host=None, metadata_transformer=None, pool=None, pool_size=None):
   request_serializers = {
     ('underworlds.Underworlds', 'deleteNode'): NodeInContext.SerializeToString,
+    ('underworlds.Underworlds', 'getMesh'): MeshInContext.SerializeToString,
     ('underworlds.Underworlds', 'getNode'): NodeInContext.SerializeToString,
     ('underworlds.Underworlds', 'getNodeInvalidations'): Context.SerializeToString,
     ('underworlds.Underworlds', 'getNodesIds'): Context.SerializeToString,
     ('underworlds.Underworlds', 'getNodesLen'): Context.SerializeToString,
     ('underworlds.Underworlds', 'getRootNode'): Context.SerializeToString,
     ('underworlds.Underworlds', 'getTimelineInvalidations'): Context.SerializeToString,
+    ('underworlds.Underworlds', 'hasMesh'): MeshInContext.SerializeToString,
     ('underworlds.Underworlds', 'helo'): Name.SerializeToString,
+    ('underworlds.Underworlds', 'pushMesh'): MeshInContext.SerializeToString,
     ('underworlds.Underworlds', 'timelineOrigin'): Context.SerializeToString,
     ('underworlds.Underworlds', 'topology'): Client.SerializeToString,
     ('underworlds.Underworlds', 'updateNode'): NodeInContext.SerializeToString,
@@ -1233,13 +1668,16 @@ def beta_create_Underworlds_stub(channel, host=None, metadata_transformer=None, 
   }
   response_deserializers = {
     ('underworlds.Underworlds', 'deleteNode'): Empty.FromString,
+    ('underworlds.Underworlds', 'getMesh'): Mesh.FromString,
     ('underworlds.Underworlds', 'getNode'): Node.FromString,
     ('underworlds.Underworlds', 'getNodeInvalidations'): NodeInvalidation.FromString,
     ('underworlds.Underworlds', 'getNodesIds'): Nodes.FromString,
     ('underworlds.Underworlds', 'getNodesLen'): Size.FromString,
     ('underworlds.Underworlds', 'getRootNode'): Node.FromString,
     ('underworlds.Underworlds', 'getTimelineInvalidations'): TimelineInvalidation.FromString,
+    ('underworlds.Underworlds', 'hasMesh'): Bool.FromString,
     ('underworlds.Underworlds', 'helo'): Client.FromString,
+    ('underworlds.Underworlds', 'pushMesh'): Empty.FromString,
     ('underworlds.Underworlds', 'timelineOrigin'): Time.FromString,
     ('underworlds.Underworlds', 'topology'): Topology.FromString,
     ('underworlds.Underworlds', 'updateNode'): Empty.FromString,
@@ -1247,13 +1685,16 @@ def beta_create_Underworlds_stub(channel, host=None, metadata_transformer=None, 
   }
   cardinalities = {
     'deleteNode': cardinality.Cardinality.UNARY_UNARY,
+    'getMesh': cardinality.Cardinality.UNARY_UNARY,
     'getNode': cardinality.Cardinality.UNARY_UNARY,
     'getNodeInvalidations': cardinality.Cardinality.UNARY_STREAM,
     'getNodesIds': cardinality.Cardinality.UNARY_UNARY,
     'getNodesLen': cardinality.Cardinality.UNARY_UNARY,
     'getRootNode': cardinality.Cardinality.UNARY_UNARY,
     'getTimelineInvalidations': cardinality.Cardinality.UNARY_STREAM,
+    'hasMesh': cardinality.Cardinality.UNARY_UNARY,
     'helo': cardinality.Cardinality.UNARY_UNARY,
+    'pushMesh': cardinality.Cardinality.UNARY_UNARY,
     'timelineOrigin': cardinality.Cardinality.UNARY_UNARY,
     'topology': cardinality.Cardinality.UNARY_UNARY,
     'updateNode': cardinality.Cardinality.UNARY_UNARY,

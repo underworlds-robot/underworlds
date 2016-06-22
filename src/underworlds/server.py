@@ -329,9 +329,32 @@ class Server(gRPC.BetaUnderworldsServicer):
 
 
 
+    ############ MESHES
+    def hasMesh(self, meshInCtxt, context):
+        logger.debug("Got <hasMesh> from %s" % meshInCtxt.client.id)
+        res = gRPC.Bool(value=(meshInCtxt.mesh.id in self.meshes))
+        logger.debug("<hasMesh> completed")
+        return res
 
+    def getMesh(self, meshInCtxt, context):
+        logger.debug("Got <getMesh> from %s" % meshInCtxt.client.id)
+        logger.debug("<getMesh> completed")
+        return self.meshes[meshInCtxt.mesh.id]
 
-       
+    def pushMesh(self, meshInCtxt, context):
+        logger.debug("Got <pushMesh> from %s" % meshInCtxt.client.id)
+
+        mesh_id = meshInCtxt.mesh.id
+        self.meshes[mesh_id] = meshInCtxt.mesh
+
+        logger.info("<%s> added a new mesh ID %s (%d faces)" % \
+                                (self._clientname(meshInCtxt.client.id),
+                                mesh_id, 
+                                len(self.meshes[mesh_id].faces)))
+
+        logger.debug("<pushMesh> completed")
+        return gRPC.Empty()
+
 
 #    def event(self, timeline, sit):
 #
@@ -456,21 +479,7 @@ class Server(gRPC.BetaUnderworldsServicer):
 #                ###########################################################################
 #                # MESHES
 #                ###########################################################################
-#                elif cmd == "push_mesh":
-#                    mesh_id, data = arg.split(" ",1)
-#                    self.meshes[mesh_id] = json.loads(data)
-#                    logger.info("<%s> added a new mesh ID %s (%d faces)" % \
-#                                           (clientname,
-#                                            mesh_id, 
-#                                            len(self.meshes[mesh_id]['faces'])))
-#                    rpc.send(b"ack")
-#
-#                elif cmd == "get_mesh":
-#                    rpc.send_json(self.meshes[arg])
-#
-#                elif cmd == "has_mesh":
-#                    rpc.send_json(arg in self.meshes)
-#
+
 #                else:
 #                    logger.warning("Unknown request <%s>" % cmd)
 #                    rpc.send(b"unknown request")
