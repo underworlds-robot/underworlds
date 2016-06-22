@@ -11,7 +11,6 @@ class Server(gRPC.BetaUnderworldsServicer):
 
     def __init__(self):
 
-        self._running = True
         self._worlds = {}
 
         # for each world (key), stores a mapping {client: list of node IDs that
@@ -337,9 +336,6 @@ class Server(gRPC.BetaUnderworldsServicer):
 #        return str(action + " " + id)
 #
 #
-    def stop(self, grace):
-        self._running = False
-        super(Server,self).stop(grace)
 #
 #    def uptime(self):
 #        return time.time() - self.starttime
@@ -482,7 +478,12 @@ class Server(gRPC.BetaUnderworldsServicer):
 def start():
 
     server = gRPC.beta_create_Underworlds_server(Server())
-    server.add_insecure_port('[::]:50051')
+    port = server.add_insecure_port('[::]:50051')
+
+    if port == 0:
+        logger.error("The port is already in use! Underworlds server already running?"
+                     "I can not start the server.")
+        return server
 
     logger.info("Starting the server.")
     server.start()
