@@ -121,6 +121,34 @@ class Server(gRPC.BetaUnderworldsServicer):
         logger.debug("<uptime> completed")
         return res
 
+    def topology(self, client, context):
+        logger.debug("Got <topology> from %s" % client.id)
+    
+        topo = gRPC.Topology()
+
+        for w in self._worlds.keys():
+            topo.worlds.append(w)
+
+        for client_id, links in self._clients.items():
+            client = topo.clients.add()
+            client.id  = client_id
+            client.name = self._clientname(client_id)
+
+            for w, details in links.items():
+
+                type, timestamp = details
+
+                interaction = client.links.add()
+                interaction.world = w
+                interaction.type = type
+                interaction.last_activity.time = timestamp
+
+
+
+        logger.debug("<topology> completed")
+        return topo
+
+
 
     ############ NODES
     def getNodesLen(self, ctxt, context):
@@ -303,10 +331,6 @@ class Server(gRPC.BetaUnderworldsServicer):
 
 
 
-#
-#    def get_current_topology(self):
-#        return {"clientnames": self._clientnames, "clients": self._clients, "worlds": list(self._worlds.keys())}
-#
        
 
 #    def event(self, timeline, sit):
@@ -446,16 +470,6 @@ class Server(gRPC.BetaUnderworldsServicer):
 #
 #                elif cmd == "has_mesh":
 #                    rpc.send_json(arg in self.meshes)
-#
-#                ###########################################################################
-#                # MISC
-#                ###########################################################################
-#
-#
-#                elif cmd == "get_topology":
-#                    rpc.send_json(self.get_current_topology())
-#
-#                ###########################################################################
 #
 #                else:
 #                    logger.warning("Unknown request <%s>" % cmd)

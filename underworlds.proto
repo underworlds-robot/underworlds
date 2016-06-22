@@ -10,8 +10,12 @@ service Underworlds {
     // request to the server.
     rpc helo(Name) returns (Client) {}
 
-    //
+    // Returns the uptime of the server, in seconds
     rpc uptime(Client) returns (Time) {}
+
+    // Returns the current topology of underworlds: the list of worlds and the
+    // list of clients + their interactions with the worlds
+    rpc topology(Client) returns (Topology) {}
 
     // NODES
 
@@ -76,8 +80,23 @@ enum TimelineInvalidationType {
     END = 2;
 }
 
+enum InteractionType {
+    READER = 0;
+    PROVIDER = 1;
+    MONITOR = 2;
+    FILTER = 3;
+}
+    
 message Client {
     string id = 1;
+    string name = 2;
+    repeated ClientInteraction links = 3;
+}
+
+message ClientInteraction {
+    string world = 1;
+    InteractionType type = 2;
+    Time last_activity = 3;
 }
 
 message Context {
@@ -91,6 +110,12 @@ message Name {
 
 message Size {
     int32 size = 1;
+}
+
+// Encodes the current topology of Underworlds
+message Topology {
+    repeated string worlds = 1;
+    repeated Client clients = 2;
 }
 
 message Node {
@@ -109,12 +134,11 @@ message Node {
     repeated string children = 5;
 
     // 4x4 transformation matrix, relative to parent. Translation units are
-    // meters. Stored as a list of 16 floats, row-major.
-    repeated float transformation = 6;
+    // meters. Stored as a list of 16 double, row-major.
+    repeated double transformation = 6;
 
-    // a float representing the date/time of the last node's update (in sec
-    // since the epoch)
-    float last_update = 8;
+    // date/time of the last node's update (in sec since the epoch)
+    double last_update = 8;
 
     // PROPERTIES
 
@@ -139,8 +163,9 @@ message NodeInvalidation {
 }
 
 message Time {
-    // Time (in second) elapsed since the begining of epoch.
-    float time = 1;
+    // Time (in second). Can represent an absolute time (seconds elapsed since
+    // the begining of epoch) or a duration.
+    double time = 1;
 }
 
 message TimelineInvalidation {

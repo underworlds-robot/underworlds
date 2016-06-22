@@ -11,19 +11,31 @@ from underworlds.errors import *
 from underworlds.situations import *
 
 # Clients types
-READER = "READER"
-PROVIDER = "PROVIDER"
-MONITOR = "MONITOR"
-FILTER = "FILTER"
+READER = gRPC.READER
+PROVIDER = gRPC.PROVIDER
+MONITOR = gRPC.MONITOR
+FILTER = gRPC.FILTER
 
+CLIENTTYPE_NAMES = {READER:'reader',
+                    PROVIDER:'provider',
+                    MONITOR:'monitor',
+                    FILTER:'filter'
+                   }
 
 # Node types
 UNDEFINED = gRPC.UNDEFINED
-MESH = gRPC.MESH
 # Entities are abstract nodes. They can represent non-physical objects (like a
 # reference frame) or groups of other objects.
 ENTITY = gRPC.ENTITY
+MESH = gRPC.MESH
 CAMERA = gRPC.CAMERA
+
+NODETYPE_NAMES = {UNDEFINED:'undefined',
+                  ENTITY:'entity',
+                  MESH:'mesh',
+                  CAMERA:'camera'
+                   }
+
 
 class Node(object):
     def __init__(self, name = "", type = UNDEFINED):
@@ -55,7 +67,7 @@ class Node(object):
     
     
     def __str__(self):
-        return self.name if self.name else self.id + " (" + self.type.lower() + ")"
+        return self.name if self.name else self.id + " (" + NODETYPE_NAMES[self.type] + ")"
 
     def __lt__(self, node):
         return self.id < node.id

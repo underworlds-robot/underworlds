@@ -488,8 +488,8 @@ class WorldsProxy:
         an up-to-date list of worlds, and yield worlds as much as needed.
         Doing so, worlds are lazily created.
         """
-        topo = self._ctx.topology()
-        for world in topo["worlds"]:
+        topo = self._ctx.rpc.topology(gRPC.Client(id=self._ctx.id), _TIMEOUT_SECONDS)
+        for world in topo.worlds:
             yield self.__getitem__(world)
 
     def finalize(self):
@@ -523,15 +523,19 @@ class Context(object):
     def topology(self):
         """Returns the current topology to the underworlds environment.
 
-        It returns a dictionary with two members:
-        - 'clients': a dictionary with clients' names known to the system
-        as keys, and a dictionary of {world name: (link type, timestamp of
-        last activity)} as values.
-        - 'worlds': a list of all worlds known to the system
+        It returns an object with two members:
+        - 'worlds': the list of all worlds' names known to the system
+        - 'clients': the list of known clients. Each client is an object with
+          the following members:
+          - client.id
+          - client.name
+          - client.links: a list of the 'links' between this client and the
+            worlds. Each link has the following members:
+            - link.world
+            - link.type: `READER`, `PROVIDER`, `FILTER`, `MONITOR`, see `types.py`
+            - link.last_activity: the timestamp of the last time this link has been used
         """
-        self.send("get_topology")
-
-        return self.rpc.recv_json()
+        return self.rpc.topology(gRPC.Client(id=self.id), _TIMEOUT_SECONDS)
 
     def uptime(self):
         """Returns the server uptime in seconds.
