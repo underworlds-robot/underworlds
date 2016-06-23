@@ -13,5 +13,8 @@ int main(int argc, char** argv) {
     auto uptime = ctxt.uptime();
     cout << "Server running since: " << chrono::duration_cast<chrono::minutes>(uptime).count() << "min" << endl;
 
+    auto topo = ctxt.topology();
+
+    cout << "Topology:" << endl << topo << endl;
     return 0;
 }
