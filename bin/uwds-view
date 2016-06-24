@@ -630,37 +630,45 @@ class Underworlds3DViewer:
 
         ### First, the silhouette
 
-        shader = self.silhouette_shader
+        if False:
+            shader = self.silhouette_shader
 
-        #glDepthMask(GL_FALSE)
-        glCullFace (GL_FRONT) # cull front faces
+            #glDepthMask(GL_FALSE)
+            glCullFace (GL_FRONT) # cull front faces
 
-        glUseProgram(shader)
-        glUniform1f( shader.u_offset, 0.1)
+            glUseProgram(shader)
+            glUniform1f( shader.u_offset, 0.1)
 
-        glUniformMatrix4fv( shader.u_viewProjectionMatrix, 1, GL_TRUE,
-                            numpy.dot(self.projection_matrix,self.view_matrix))
+            glUniformMatrix4fv( shader.u_viewProjectionMatrix, 1, GL_TRUE,
+                                numpy.dot(self.projection_matrix,self.view_matrix))
 
 
-        self.recursive_render(self.scene.rootnode, shader, mode=SILHOUETTE)
+            self.recursive_render(self.scene.rootnode, shader, mode=SILHOUETTE)
 
-        glUseProgram( 0 )
+            glUseProgram( 0 )
 
         ### Then, inner shading
         #glDepthMask(GL_TRUE)
         glCullFace (GL_BACK)
-        #shader = self.shader
-        shader = self.gooch_shader
 
-        glUseProgram(shader)
-        glUniform3f( shader.u_lightPos, -.5,-.5,.5 )
+        use_gooch = False
+        if use_gooch:
+            shader = self.gooch_shader
 
-        ##### GOOCH specific
-        glUniform3f( shader.u_coolColor, 159.0/255, 148.0/255, 255.0/255)
-        glUniform3f( shader.u_warmColor, 255.0/255, 75.0/255, 75.0/255)
-        glUniform1f( shader.u_alpha, .25)
-        glUniform1f( shader.u_beta, .25)
-        #########
+            glUseProgram(shader)
+            glUniform3f( shader.u_lightPos, -.5,-.5,.5 )
+
+            ##### GOOCH specific
+            glUniform3f( shader.u_coolColor, 159.0/255, 148.0/255, 255.0/255)
+            glUniform3f( shader.u_warmColor, 255.0/255, 75.0/255, 75.0/255)
+            glUniform1f( shader.u_alpha, .25)
+            glUniform1f( shader.u_beta, .25)
+            #########
+        else:
+            shader = self.shader
+            glUseProgram(shader)
+            glUniform3f( shader.u_lightPos, -.5,-.5,.5 )
+
 
         glUniformMatrix4fv( shader.u_viewProjectionMatrix, 1, GL_TRUE,
                             numpy.dot(self.projection_matrix,self.view_matrix))
