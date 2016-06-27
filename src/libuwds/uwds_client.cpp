@@ -5,16 +5,32 @@
 
 using namespace std;
 
+void walk(const shared_ptr<uwds::Node> node, string ident = " ") {
+    cout << ident << "- " << *node << endl;
+    for (const auto child : node->children) {
+        walk(child, ident + " ");
+    }
+}
+
 int main(int argc, char** argv) {
 
     uwds::Context ctxt("cpp client", "localhost:50051");
 
-        string name("cpp client");
     auto uptime = ctxt.uptime();
     cout << "Server running since: " << chrono::duration_cast<chrono::minutes>(uptime).count() << "min" << endl;
 
     auto topo = ctxt.topology();
 
     cout << "Topology:" << endl << topo << endl;
+
+
+    for (const auto& world : topo.worlds) {
+        auto scene = ctxt.worlds[world]->scene;
+        cout << "World <" << world << "> has root node " << *scene.root << endl;
+        cout << "Nodes: " << endl;
+        walk(scene.root);
+
+    }
+
     return 0;
 }

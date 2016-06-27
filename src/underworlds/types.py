@@ -244,8 +244,8 @@ class Mesh(object):
                     normals = [(n.x,n.y,n.z) for n in data.normals],
                     diffuse = (data.diffuse.r, data.diffuse.g, data.diffuse.b, data.diffuse.a))
 
-        if mesh.id != data.id:
-            raise RuntimeError("Can not verify mesh integrity!")
+        #if mesh.id != data.id:
+        #    raise RuntimeError("Can not verify mesh integrity!")
 
         return mesh
 

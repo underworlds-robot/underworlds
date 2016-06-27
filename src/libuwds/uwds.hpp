@@ -8,10 +8,17 @@
 #include <vector>
 #include <array>
 #include <iostream>
+#include <opencv2/core/core.hpp> // for transformation matrices
 
 #include "underworlds.grpc.pb.h"
 
+
 namespace uwds {
+
+/////////////////////////////////////////////////////////////////////////
+///////////  GENERAL TYPES
+
+typedef cv::Matx44d Transformation;
 
 enum InteractionType {
     READER = 0,
@@ -44,48 +51,131 @@ struct Topology {
 
 };
 
-class Context {
+/////////////////////////////////////////////////////////////////////////
+///////////  NODES TYPES
 
-public:
-        Context(const std::string& name, const std::string& address="localhost:50051");
+enum NodeType {
+    UNDEFINED = 0,
+    ENTITY,
+    MESH,
+    CAMERA
+};
+static const std::array<std::string,4> NodeTypeName{"undefined", "entity", "mesh", "camera"};
 
-        std::string name() const {return _name;}
-        std::string id() const {return _myself.id();}
+class Scene;
 
-        std::chrono::duration<double> uptime();
-        Topology topology();
+struct Node {
+
+    Node(std::shared_ptr<Scene> scene) : _scene(scene) {};
+
+    std::string id;
+    std::string name;
+    NodeType type;
+    std::shared_ptr<Node> parent;
+    std::set<std::shared_ptr<Node>> children;
+    Transformation transform;
+    std::chrono::system_clock::time_point last_update;
+
+    underworlds::Node serialize() const;
+    static Node deserialize(const underworlds::Node&, std::shared_ptr<Scene> scene);
 
 private:
-        std::string helo(const std::string& name);
-
-        std::string _name;
-        std::string _id;
-        std::unique_ptr<underworlds::Underworlds::Stub> _server;
-        underworlds::Client _myself;
+    std::shared_ptr<Scene> _scene;
 };
 
+/////////////////////////////////////////////////////////////////////////
+///////////  API
+
+class Context;
+class Worlds;
+class World;
+
+class Scene {
+    friend class World; // give World access to our private constructor
+
+public:
+    std::shared_ptr<Node> root;
+    std::set<std::shared_ptr<Node>> nodes() {return _nodes;}
+
+    // Returns a node from its ID. If the node is not locally available, queries the
+    // server.
+    std::shared_ptr<Node> node(const std::string& id);
+
+private:
+    // only class World (friend) can create a new world
+    Scene(Context& ctxt, const std::string& world);
+
+    Context& _ctxt;
+    std::string _world;
+
+    std::set<std::shared_ptr<Node>> _nodes;
+
+};
+
+
+class World {
+    friend class Worlds; // give Worlds access to our private constructor
+
+public:
+
+    std::string name() const {return _name;}
+
+    Scene scene;
+
+private:
+    // only class Worlds (friend) can create a new world
+    World(Context& ctxt, const std::string& name);
+
+    std::string _name;
+    Context& _ctxt;
+};
+
+class Worlds {
+    friend class Context; // give Context access to our private constructor
+
+public:
+    std::shared_ptr<World> operator[](const std::string& world);
+
+private:
+    Worlds(Context& ctxt);
+    Context& _ctxt;
+
+    std::map<std::string, std::shared_ptr<World>> _worlds;
+};
+
+class Context {
+
+    friend class World; // World can access _server
+    friend class Scene; // Scene can access _server
+
+public:
+    Context(const std::string& name, const std::string& address="localhost:50051");
+
+    std::string name() const {return _name;}
+    std::string id() const {return _myself.id();}
+
+    std::chrono::duration<double> uptime();
+    Topology topology();
+
+
+    Worlds worlds;
+
+
+private:
+    std::string helo(const std::string& name);
+
+    std::string _name;
+    std::string _id;
+    std::unique_ptr<underworlds::Underworlds::Stub> _server;
+    underworlds::Client _myself;
+};
+
+
 }
 
-std::ostream& operator<<(std::ostream& os, const uwds::Topology& topo)
-{
-    os << "worlds: " << std::endl;
-    if (topo.worlds.size() > 0) {
-        for (const auto& world : topo.worlds) os << " - " << world  << std::endl;
-    } else {
-        os << " none" << std::endl;
-    }
-    os << "clients: " << std::endl;
-    for (const auto& client : topo.clients) {
-        os << " - " << client.name << " [" << client.id << "]" << std::endl;
-        if (client.links.size() > 0) {
-            for (const auto& link : client.links) {
-                os << "     - link with world <" << link.world << "> (" << uwds::InteractionTypeName[link.type] << ")" << std::endl;
-            }
-        }
-    }
+std::ostream& operator<<(std::ostream& os, const uwds::Topology& topo);
+std::ostream& operator<<(std::ostream& os, const uwds::Node& topo);
 
-    return os;
-}
 #endif
 
 

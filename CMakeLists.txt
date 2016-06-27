@@ -11,6 +11,9 @@ pkg_check_modules(GRPC grpc++)
 include_directories(${GRPC_INCLUDE_DIRS})
 link_directories(${GRPC_LIBRARY_DIRS})
 
+find_package(OpenCV COMPONENTS core REQUIRED)
+include_directories(${OpenCV_INCLUDE_DIRS})
+
 
 file(GLOB uwds_pb_src src/libuwds/*pb.cc)
 add_library(libuwds SHARED src/libuwds/uwds.cpp ${uwds_pb_src})
