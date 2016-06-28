@@ -27,7 +27,39 @@ logging.basicConfig(level=logging.INFO)
 
 import underworlds
 from underworlds.types import *
-from underworlds.helpers.geometry import transform
+from underworlds.helpers.geometry import transform, get_world_transform
+from underworlds.helpers import transformations
+
+
+FLAT_VERTEX_SHADER="""
+#version 130
+
+uniform mat4 u_viewProjectionMatrix;
+uniform mat4 u_modelMatrix;
+
+uniform vec4 u_materialDiffuse;
+
+in vec3 a_vertex;
+
+out vec4 v_color;
+
+void main(void)
+{
+    v_color = u_materialDiffuse;
+    gl_Position = u_viewProjectionMatrix * u_modelMatrix * vec4(a_vertex, 1.0);
+}
+"""
+
+BASIC_FRAGMENT_SHADER="""
+#version 130
+
+in vec4 v_color;
+
+void main() {
+    gl_FragColor = v_color;
+}
+"""
+
 
 class VisibilityMonitor:
 
@@ -81,27 +113,16 @@ class VisibilityMonitor:
 
     def prepare_shaders(self):
 
-        flatvertex = shaders.compileShader(
-        """
-        uniform vec4 Material_diffuse;
-        attribute vec3 Vertex_position;
-        varying vec4 baseColor;
-        void main() {
-            gl_Position = gl_ModelViewProjectionMatrix * vec4(
-                Vertex_position, 1.0
-            );
-            baseColor = Material_diffuse;
-        }""", GL_VERTEX_SHADER)
-
-        fragment = shaders.compileShader("""
-        varying vec4 baseColor;
-        void main() {
-            gl_FragColor = baseColor;
-        }
-        """, GL_FRAGMENT_SHADER)
+        ### Flat shader
+        flatvertex = shaders.compileShader(FLAT_VERTEX_SHADER, GL_VERTEX_SHADER)
+        fragment = shaders.compileShader(BASIC_FRAGMENT_SHADER, GL_FRAGMENT_SHADER)
 
         self.flatshader = shaders.compileProgram(flatvertex,fragment)
-        self.set_shader_accessors( ('Material_diffuse',), ('Vertex_position',), self.flatshader)
+
+        self.set_shader_accessors( ('u_modelMatrix',
+                                    'u_viewProjectionMatrix',
+                                    'u_materialDiffuse',), 
+                                    ('a_vertex',), self.flatshader)
 
 
     def set_shader_accessors(self, uniforms, attributes, shader):
@@ -109,13 +130,15 @@ class VisibilityMonitor:
         for uniform in uniforms:
             location = glGetUniformLocation( shader,  uniform )
             if location in (None,-1):
-                logger.warning('No uniform: %s'%( uniform ))
+                raise RuntimeError('No uniform: %s (maybe it is not used '
+                                   'anymore and has been optimized out by'
+                                   ' the shader compiler)'%( uniform ))
             setattr( shader, uniform, location )
 
         for attribute in attributes:
             location = glGetAttribLocation( shader, attribute )
             if location in (None,-1):
-                logger.warning('No attribute: %s'%( attribute ))
+                raise RuntimeError('No attribute: %s'%( attribute ))
             setattr( shader, attribute, location )
 
     def prepare_gl_buffers(self, id):
@@ -129,13 +152,18 @@ class VisibilityMonitor:
         meshes[id] = {}
 
         # leave some time for new nodes to push their meshes
-        while not self.ctx.has_mesh(id):
-            time.sleep(0.01)
+        if not self.ctx.has_mesh(id):
+            logger.warning("Mesh ID %s is not available on the server... "
+                           "waiting for it..." % id)
+            while not self.ctx.has_mesh(id):
+                time.sleep(0.01)
+
+            logger.info("Mesh ID %s is now available. Getting it..." % id)
 
         mesh = self.ctx.mesh(id) # retrieve the mesh from the server
 
         # Fill the buffer for vertex
-        v = numpy.array(mesh["vertices"], 'f')
+        v = numpy.array(mesh.vertices, 'f')
 
         meshes[id]["vbo"] = vbo.VBO(v)
 
@@ -143,11 +171,12 @@ class VisibilityMonitor:
         meshes[id]["faces"] = glGenBuffers(1)
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, meshes[id]["faces"])
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, 
-                    numpy.array(mesh["faces"], dtype=numpy.int32),
+                    numpy.array(mesh.faces, dtype=numpy.int32),
                     GL_STATIC_DRAW)
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,0)
 
-        meshes[id]["nbfaces"] = len(mesh["faces"])
+        meshes[id]["nbfaces"] = len(mesh.faces)
+
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,0)
 
     def get_rgb_from_colorid(self, colorid):
         r = (colorid >> 0) & 0xff
@@ -165,21 +194,18 @@ class VisibilityMonitor:
 
     def glize(self, node):
 
-        logger.info("Loading node <%s>" % node)
-
-        node.transformation = numpy.array(node.transformation)
 
         if node.type == MESH:
             colorid = self.get_color_id()
             self.colorid2node[colorid] = node
             self.node2colorid[node] = colorid
 
-            if hasattr(node, "lowres"):
+            if hasattr(node, "cad"):
+                node.glmeshes = node.cad
+            elif hasattr(node, "lowres"):
                 node.glmeshes = node.lowres
             elif hasattr(node, "hires"):
                 node.glmeshes = node.hires
-            elif hasattr(node, "cad"):
-                node.glmeshes = node.cad
             else:
                 raise StandardError("The node %s has no mesh available!" % node.name)
             for mesh in node.glmeshes:
@@ -196,6 +222,7 @@ class VisibilityMonitor:
         scene = self.scene = self.world.scene
         nodes = scene.nodes
         for node in nodes:
+            logger.info("Loading node <%s>" % node)
             self.glize(node)
 
         logger.info("World <%s> ready for visibility monitoring." % self.world)
@@ -219,14 +246,15 @@ class VisibilityMonitor:
         glFrustum(-w, w, -h, h, znear, zfar)
         # equivalent to:
         #gluPerspective(fov * 180/math.pi, aspect, znear, zfar)
+
+        self.projection_matrix = glGetFloatv( GL_PROJECTION_MATRIX).transpose()
+
+        self.view_matrix = linalg.inv(camera.transformation)
+
         glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
+        glMultMatrixf(self.view_matrix.transpose())
 
-        cam = transform([0.0, 0.0, 0.0], camera.transformation)
-        at = transform(camera.lookat, camera.transformation)
-        gluLookAt(cam[0], cam[2], -cam[1],
-                   at[0],  at[2],  -at[1],
-                       0,      1,       0)
 
     def render_colors(self):
 
@@ -238,11 +266,18 @@ class VisibilityMonitor:
 
         glUseProgram(self.flatshader)
 
+        glUniformMatrix4fv( self.flatshader.u_viewProjectionMatrix, 1, GL_TRUE,
+                            numpy.dot(self.projection_matrix,self.view_matrix))
+
+
         self.recursive_render(self.scene.rootnode, self.flatshader)
 
         glUseProgram( 0 )
 
     def check_visibility(self, debug = False):
+        """
+        Attention: The performances of this method relies heavily on the size of the display!
+        """
         for c in self.cameras:
                 
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
@@ -284,17 +319,19 @@ class VisibilityMonitor:
         """ Main recursive rendering method.
         """
 
-        # save model matrix and apply node transformation
-        glPushMatrix()
         try:
-            m = node.transformation.transpose() # OpenGL row major
+            m = get_world_transform(self.scene, node)
         except AttributeError:
             #probably a new incoming node, that has not yet been converted to numpy
             self.glize(node)
-            m = node.transformation.transpose() # OpenGL row major
-        glMultMatrixf(m)
+            m = get_world_transform(self.scene, node)
 
         if node.type == MESH:
+
+            # if the node has been recently turned into a mesh, we might not
+            # have the mesh data yet.
+            if not hasattr(node, "glmeshes"):
+                self.glize(node)
 
             for id in node.glmeshes:
 
@@ -302,15 +339,17 @@ class VisibilityMonitor:
 
                 colorid = self.node2colorid[node]
                 r,g,b= self.get_rgb_from_colorid(colorid)
-                glUniform4f( shader.Material_diffuse, r/255.0,g/255.0,b/255.0,1.0 )
+                glUniform4f( shader.u_materialDiffuse, r/255.0,g/255.0,b/255.0,1.0 )
+
+                glUniformMatrix4fv( shader.u_modelMatrix, 1, GL_TRUE, m )
 
                 vbo = self.meshes[id]["vbo"]
                 vbo.bind()
 
-                glEnableVertexAttribArray( shader.Vertex_position )
+                glEnableVertexAttribArray( shader.a_vertex )
 
                 glVertexAttribPointer(
-                    shader.Vertex_position,
+                    shader.a_vertex,
                     3, GL_FLOAT,False, stride, vbo
                 )
 
@@ -319,13 +358,17 @@ class VisibilityMonitor:
 
 
                 vbo.unbind()
-                glDisableVertexAttribArray( shader.Vertex_position )
+                glDisableVertexAttribArray( shader.a_vertex )
+
                 glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0)
 
         for child in node.children:
-            self.recursive_render(self.scene.nodes[child], shader)
+            try:
+                self.recursive_render(self.scene.nodes[child], shader)
+            except KeyError as ke:
+                logger.warning("Node ID %s listed as child of %s, but it"
+                                " does not exist! Skipping it" % (child, repr(node)))
 
-        glPopMatrix()
 
     def loop(self):
 
