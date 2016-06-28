@@ -7,6 +7,7 @@ import gi
 gi.require_version('Gtk', '3.0')
 
 from gi.repository import Gtk
+from gi.repository import GLib
 
 try:
     import xdot
@@ -115,7 +116,7 @@ class UnderworldsWindow(xdot.DotWindow):
         xdot.DotWindow.__init__(self)
 
 
-        self.autorefresh = False
+        self.autorefresh = True
 
         # Create actions
         actiongroup = Gtk.ActionGroup('ReloadAction')
@@ -123,7 +124,7 @@ class UnderworldsWindow(xdot.DotWindow):
             ('Reload', Gtk.STOCK_REFRESH, None, None, "Reload the topology", self.on_reload),
         ))
         actiongroup.add_toggle_actions((
-            ('Autorefresh', Gtk.STOCK_MEDIA_PLAY, None, None, "Autorefresh", self.toggle_autorefresh, False),
+            ('Autorefresh', Gtk.STOCK_REFRESH, None, None, "Autorefresh", self.toggle_autorefresh, False),
         ))
 
         # Add the actiongroup to the uimanager
@@ -133,12 +134,16 @@ class UnderworldsWindow(xdot.DotWindow):
 
         self._ctx = underworlds.Context("topology observer")
 
+
+        GLib.timeout_add(200, self.autoupdate)
+
     def toggle_autorefresh(self, action):
         if self.autorefresh:
             self.autorefresh = False
         else:
+            print("Auto-refresh enabled")
             self.autorefresh = True
-            gobject.timeout_add(200, self.autoupdate)
+            GLib.timeout_add(200, self.autoupdate)
 
     def get_dot_content(self):
         pass
