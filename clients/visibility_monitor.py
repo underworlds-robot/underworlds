@@ -65,7 +65,7 @@ class VisibilityMonitor:
 
     base_name = "Underworlds Visibility Monitor"
 
-    def __init__(self, ctx, world, w=80, h=60, stupidmode = False):
+    def __init__(self, ctx, world, w=80, h=60):
         """
 
         :param stupidmode: runs continously, as fast as possible. Nice for
@@ -76,8 +76,6 @@ class VisibilityMonitor:
 
         self.w = w
         self.h = h
-
-        self.stupid = stupidmode
 
         pygame.init()
         pygame.display.set_caption(self.base_name)
@@ -106,9 +104,6 @@ class VisibilityMonitor:
             logger.error("No camera in the world <%s>. Giving up." % self.world)
             sys.exit(1)
 
-        # for FPS computation
-        self.frames = 0
-        self.last_fps_time = glutGet(GLUT_ELAPSED_TIME)
 
 
     def prepare_shaders(self):
@@ -274,10 +269,13 @@ class VisibilityMonitor:
 
         glUseProgram( 0 )
 
-    def check_visibility(self, debug = False):
+    def check_visibility(self):
         """
+        :returns: dictionary {camera: [visible nodes]}
         Attention: The performances of this method relies heavily on the size of the display!
         """
+        visible_objects = {}
+
         for c in self.cameras:
                 
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
@@ -297,6 +295,8 @@ class VisibilityMonitor:
             seen.sort()
             seen = seen[1:] # remove the 0 for background
 
+            visible_objects[c] = [self.colorid2node[i] for i in seen]
+
             #colors = colors[numpy.nonzero(colors)] #discard black background
             
             #if colors.any():
@@ -308,12 +308,7 @@ class VisibilityMonitor:
             #else:
             #    print("Nothing visible!")
 
-            print("Camera %s:\t\t%d objects visible" % (c, len(seen)))
-            if debug:
-                raw_input("Press a key to switch to next camera")
-
-        print('\x1b[%dF' % (len(self.cameras) + 1)) # move the console cursor up.
-
+        return visible_objects
 
     def recursive_render(self, node, shader):
         """ Main recursive rendering method.
@@ -370,43 +365,49 @@ class VisibilityMonitor:
                                 " does not exist! Skipping it" % (child, repr(node)))
 
 
-    def loop(self):
+def main(world):
+    benchmark = False
 
-        pygame.event.pump()
-        self.keys = [k for k, pressed in enumerate(pygame.key.get_pressed()) if pressed]
-
-
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-
-        if self.stupid:
-            # Compute FPS
-            gl_time = glutGet(GLUT_ELAPSED_TIME)
-            self.frames += 1
-            delta = gl_time - self.last_fps_time
-        
-
-            if delta >= 1000:
-                fps_per_camera = (self.frames * 1000 / delta) / len(self.cameras)
-                update_delay = (delta / self.frames) * len(self.cameras)
-
-
-                print("\x1b[1FUpdate every %.2fms - %.0f fps (per camera)                            " % (update_delay, fps_per_camera))
-                self.frames = 0
-                self.last_fps_time = gl_time
-
-        return True
-
-def main(world, debug = False):
     with underworlds.Context("Visibility Monitor") as ctx:
-        app = VisibilityMonitor(ctx, world, stupidmode = True)
+        app = VisibilityMonitor(ctx, world)
+
+        # for FPS computation
+        frames = 0
+        last_fps_time = glutGet(GLUT_ELAPSED_TIME)
 
         try:
-            while app.loop():
-                app.check_visibility(debug)
-                if not app.stupid:
+            while True:
+
+                if benchmark:
+                    # Compute FPS
+                    gl_time = glutGet(GLUT_ELAPSED_TIME)
+                    frames += 1
+                    delta = gl_time - last_fps_time
+                
+
+                    if delta >= 1000:
+                        fps = (frames * 1000 / delta)
+                        update_delay = (delta / frames)
+
+                        print("\x1b[1FUpdate every %.2fms - %.0f fps" % (update_delay, fps))
+                        frames = 0
+                        last_fps_time = gl_time
+
+                objs = app.check_visibility()
+
+                printed_lines = 0
+                for c, seen in objs.items():
+                    printed_lines += 1
+                    print("Camera %s:\t\t%d objects visible" % (c, len(seen)))
+                    for n in seen:
+                        printed_lines += 1
+                        print(" - %s" % n)
+
+                print('\x1b[%dF' % (printed_lines + 1)) # move the console cursor up.
+
+                if not benchmark:
                     app.scene.waitforchanges(0.2)
-                if pygame.K_ESCAPE in app.keys:
-                    break
+
         except KeyboardInterrupt:
             pass
 
@@ -417,9 +418,8 @@ if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("world", help="Underworlds world to monitor")
-    parser.add_argument("-d", "--debug", help="run in interactive, debug mode", action="store_true")
     args = parser.parse_args()
 
-    main(args.world,args.debug)
+    main(args.world)
 
 
