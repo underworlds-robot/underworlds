@@ -165,16 +165,21 @@ class UnderworldsTopologyWindow(UnderworldsWindow):
 
         dotcode = "digraph G {\n"
 
-        for w in topo["worlds"]:
+        for w in topo.worlds:
             dotcode += '"%s" [color="#%s", shape=box, style=filled, URL="%s"];\n' % (w, COL_WORLDS, w)
 
-        for c in topo["clients"].keys():
-            name = topo["clientnames"][c]
-            dotcode += '"%s" [label="%s", color="#%s", style=filled];\n' % (c, name, COL_CLIENTS)
+        for c in topo.clients:
+            name = c.name
+            dotcode += '"%s" [label="%s", color="#%s", style=filled];\n' % (c.id, name, COL_CLIENTS)
 
-        for c, links in topo["clients"].items():
-            for w, details in links.items():
-                type, timestamp = details
+        for c in topo.clients:
+
+            for link in c.links:
+
+                w = link.world
+                type = CLIENTTYPE_NAMES[link.type]
+                timestamp = link.last_activity.time
+
 
                 last_activity = time.time() - timestamp
                 
@@ -191,12 +196,12 @@ class UnderworldsTopologyWindow(UnderworldsWindow):
                 label += " ago)"
 
                 # orient the arrow in the right direction
-                if type == READER:
-                    edge = '"%s" -> "%s"' % (w, c)
-                elif type == MONITOR:
-                    edge = '"%s" <-> "%s"' % (w, c)
+                if link.type == READER:
+                    edge = '"%s" -> "%s"' % (w, c.id)
+                elif link.type == MONITOR:
+                    edge = '"%s" <-> "%s"' % (w, c.id)
                 else:
-                    edge = '"%s" -> "%s"' % (c, w)
+                    edge = '"%s" -> "%s"' % (c.id, w)
                 dotcode += edge + ' [label="%s", color="#%s", fontsize=8];\n' % (label, heat_to_rgb(heat))
 
         dotcode += "}\n"
