@@ -500,11 +500,11 @@ class WorldsProxy:
 
 class Context(object):
 
-    def __init__(self, name):
+    def __init__(self, name, host="localhost",port=50051):
 
         self.name = name
 
-        channel = implementations.insecure_channel('localhost', 50051)
+        channel = implementations.insecure_channel(host, port)
         self.rpc = gRPC.beta_create_Underworlds_stub(channel)
 
         logger.info("Connecting to the underworlds server...")
