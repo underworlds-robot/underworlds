@@ -102,6 +102,7 @@ class ModelLoader:
                 underworlds_node.aspect = cam.aspect
 
             underworlds_node.horizontalfov = cam.horizontalfov
+
             underworlds_node.lookat = [round(a, 5) for a in cam.lookat]
         else:
             underworlds_node.type = ENTITY
