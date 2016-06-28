@@ -1000,6 +1000,8 @@ def main():
         app = Underworlds3DViewer(ctx, world = sys.argv[1])
 
 
+        clock = pygame.time.Clock()
+
         while app.loop():
 
             ## Main rendering
@@ -1021,7 +1023,8 @@ def main():
             ## User interactions
             app.controls_3d(0)
 
-            pygame.time.wait(10)
+            # Make sure we do not go over 30fps
+            clock.tick(30)
 
 #########################################################################
 #########################################################################
