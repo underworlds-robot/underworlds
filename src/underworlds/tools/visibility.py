@@ -69,7 +69,7 @@ class VisibilityMonitor:
         self.prepare_shaders()
 
         self.ctx = ctx
-        self.world = ctx.worlds[world]
+        self.world = world
 
         self.scene = None
         self.meshes = {} # stores the OpenGL vertex/faces/normals buffers pointers
@@ -250,7 +250,7 @@ class VisibilityMonitor:
 
         glUseProgram( 0 )
 
-    def visibility(self):
+    def compute(self):
         """
         :returns: dictionary {camera: [visible nodes]}
         Attention: The performances of this method relies heavily on the size of the display!

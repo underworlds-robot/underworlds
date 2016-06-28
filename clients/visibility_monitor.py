@@ -13,7 +13,7 @@ def main(world):
     benchmark = False
 
     with underworlds.Context("Visibility Monitor") as ctx:
-        app = VisibilityMonitor(ctx, world)
+        visibility = VisibilityMonitor(ctx, ctx.worlds[world])
 
         # for FPS computation
         frames = 0
@@ -37,7 +37,7 @@ def main(world):
                         frames = 0
                         last_fps_time = gl_time
 
-                objs = app.visibility()
+                objs = visibility.compute()
 
                 printed_lines = 0
                 for c, seen in objs.items():
@@ -50,13 +50,13 @@ def main(world):
                 print('\x1b[%dF' % (printed_lines + 1)) # move the console cursor up.
 
                 if not benchmark:
-                    app.scene.waitforchanges(0.2)
+                    visibility.scene.waitforchanges(0.2)
 
         except KeyboardInterrupt:
             pass
 
-        print("\x1b[%dE" % len(app.cameras))
-        logger.info("Quitting")
+        print("\x1b[%dE" % len(visibility.cameras))
+        print("Quitting")
 
 if __name__ == '__main__':
     import argparse
