@@ -291,6 +291,15 @@ class SceneProxy(object):
         self.nodes.waitforchanges.release()
 
 
+    def nodebyname(self, name):
+        """ Returns a list of node that have the given name (or [] if no node has this name)
+        """
+        nodes = []
+        for n in self.nodes:
+            if n.name == name:
+                nodes.append(n)
+        return nodes
+
     def finalize(self):
         self.nodes._running = False
         self.nodes.join()

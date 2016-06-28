@@ -101,6 +101,17 @@ class Node(object):
     def __hash__(self):
         return hash(self.id)
 
+    def copy(self):
+        """ Performs a deep-copy of myself, and return the copy.
+        The copy *has a new, different, unique ID* (ie, the ID is not copied).
+        """
+
+        import copy
+        node = copy.deepcopy(self)
+        node.id = str(uuid.uuid4())
+
+        return node
+
     def serialize(self, NodeType):
         """Outputs a protobuf encoding of the node
 
@@ -268,9 +279,20 @@ class Scene(object):
         raise NotImplementedError
 
     def node(self, id):
+        """ Returns a node from its ID (or None if the node does not exist)
+        """
         for n in self.nodes:
             if n.id == id:
                 return n
+
+    def nodebyname(self, name):
+        """ Returns a list of node that have the given name (or [] if no node has this name)
+        """
+        nodes = []
+        for n in self.nodes:
+            if n.name == name:
+                nodes.append(n)
+        return nodes
 
 class Timeline(object):
     """ Stores 'situations' (ie, either events -- temporal objects
