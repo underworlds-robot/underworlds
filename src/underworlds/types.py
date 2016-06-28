@@ -8,7 +8,7 @@ logger = logging.getLogger("underworlds.core")
 
 import numpy
 
-import underworlds_pb2 as gRPC
+import underworlds.underworlds_pb2 as gRPC
 
 from underworlds.errors import *
 

@@ -11,7 +11,7 @@ logger = logging.getLogger("underworlds.client")
 
 from grpc.beta import implementations
 from grpc.framework.interfaces.face.face import ExpirationError,NetworkError
-import underworlds_pb2 as gRPC
+import underworlds.underworlds_pb2 as gRPC
 
 from underworlds.types import World, Node, Situation, Mesh
 
