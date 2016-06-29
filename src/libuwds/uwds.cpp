@@ -1,6 +1,9 @@
 #include <system_error>
 #include <algorithm>
 
+#include <boost/uuid/uuid_io.hpp>
+#include <boost/uuid/uuid_generators.hpp>
+
 #include <grpc++/grpc++.h>
 
 #include "underworlds.grpc.pb.h"
@@ -20,7 +23,9 @@ Node Node::deserialize(const underworlds::Node& remoteNode, shared_ptr<Scene> sc
     node.name = remoteNode.name();
     node.type = (NodeType) remoteNode.type();
     
-    for(size_t i = 0; i < remoteNode.children_size(); i++) {
+    node.parent = scene->node(remoteNode.parent());
+
+    for(int i = 0; i < remoteNode.children_size(); i++) {
         node.children.insert(scene->node(remoteNode.children(i)));
 
     }
@@ -28,6 +33,19 @@ Node Node::deserialize(const underworlds::Node& remoteNode, shared_ptr<Scene> sc
 
     return node;
 }
+
+Node::Node(std::shared_ptr<Scene> scene) : id(boost::uuids::to_string(boost::uuids::random_generator()())),
+                                     _scene(scene) {};
+
+Node::Node(const Node& n) : id(boost::uuids::to_string(boost::uuids::random_generator()())),
+                      name(n.name),
+                      type(n.type),
+                      parent(n.parent),
+                      children(n.children),
+                      transform(n.transform),
+                      last_update(n.last_update),
+                      _scene(n._scene) {}
+
 
 Context::Context(const string& name, const string& address)
                    : _name(name),
@@ -120,11 +138,12 @@ Topology Context::topology() {
 Scene::Scene(Context& ctxt, const std::string& world) : _ctxt(ctxt), _world(world) {
 
 
-    // get nodes
+    ///////////////////////////////////////////////
+    // First, get the list of existing nodes
+    
     underworlds::Context request;
     request.set_client(ctxt._myself.id());
     request.set_world(world);
-
 
     underworlds::Nodes reply;
 
@@ -137,7 +156,7 @@ Scene::Scene(Context& ctxt, const std::string& world) : _ctxt(ctxt), _world(worl
         throw system_error(error_code(status.error_code(),generic_category()), status.error_message());
     }
 
-    for (auto i = 0; i < reply.ids_size(); i++) {
+    for (int i = 0; i < reply.ids_size(); i++) {
 
         auto id = reply.ids(i);
 
@@ -146,11 +165,9 @@ Scene::Scene(Context& ctxt, const std::string& world) : _ctxt(ctxt), _world(worl
         node(id);
     }
 
-
-
-
-
-
+    ///////////////////////////////////////////////
+    // Now, get the root node
+    
     underworlds::Node reply2;
 
     grpc::ClientContext context2;

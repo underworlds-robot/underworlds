@@ -4,6 +4,10 @@ project(underworlds)
 
 SET(CMAKE_CXX_FLAGS "-std=c++11")
 
+# for UUIDs
+find_package(Boost 1.43.0 REQUIRED)
+include_directories(${Boost_INCLUDE_DIRS})
+
 find_package(PkgConfig)
 pkg_check_modules(PROTOBUF protobuf)
 include_directories(${PROTOBUF_INCLUDE_DIRS})

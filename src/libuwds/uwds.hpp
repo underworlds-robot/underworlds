@@ -66,7 +66,13 @@ class Scene;
 
 struct Node {
 
-    Node(std::shared_ptr<Scene> scene) : _scene(scene) {};
+    Node(std::shared_ptr<Scene> scene);
+
+    /** Copy-constructor
+     *
+     * Copies another node, but generates a new, unique ID.
+     */
+    Node(const Node&);
 
     std::string id;
     std::string name;
