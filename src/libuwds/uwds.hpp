@@ -74,11 +74,13 @@ struct Node {
      */
     Node(const Node&);
 
+    bool operator==(const Node &n) const {return n.id == id;}
+
     std::string id;
     std::string name;
     NodeType type;
-    std::shared_ptr<Node> parent;
-    std::set<std::shared_ptr<Node>> children;
+    std::string parent;
+    std::set<std::string> children;
     Transformation transform;
     std::chrono::system_clock::time_point last_update;
 
@@ -105,16 +107,65 @@ public:
 
     // Returns a node from its ID. If the node is not locally available, queries the
     // server.
-    std::shared_ptr<Node> node(const std::string& id);
+    //
+    // If no_fetch is set to true, the method does not attempt to fetch the node from
+    // the server if it is not locally available. It returns nullptr instead.
+    std::shared_ptr<Node> node(const std::string& id, bool no_fetch=false);
+
+    /** Mirrors a node coming from a different scene to the current scene.
+     *
+     * If the source node already exists in the current scene, returns it
+     * immediately (the node is not modified).
+     *
+     * Otherwise, a copy of the source node is created in the current scene
+     * (mirrored node).
+     *
+     * The mirrored node is not an exact copy: - the mirrored node has its own
+     * unique ID - the parent and children of the node are the mirrors of the
+     * source parent/children in the current scene. If the parent/children have
+     * not been mirrored in the current scene, they are left out of the
+     * mirrored node (the parenting is however restored if the source
+     * parent/children are mirrored at a later stage).
+     *
+     * The mapping between the source node and the mirrored node is saved: if
+     * Scene::mirroris called again with the same source node, the previously
+     * mirrored node will be updated instead of newly created.
+     */
+    std::shared_ptr<Node> mirror(const std::shared_ptr<Node> source);
+
+    /** Returns all the nodes whose name matches the argument.
+     */
+    std::set<std::shared_ptr<Node>> nodeByName(const std::string& name);
+
+    /** Commits the changes operated on a node to the underworlds server.
+     *
+     * If the node has never been committed before, the node is created on the server.
+     *
+     * The changes performed on the node are only visible to the other
+     * underworlds clients after Scene::commit has been called (note that
+     * the propagation to all the client may take up to 100ms, depending on the
+     * network)
+     */
+    void commit(const Node& node);
+
+    /** alias for commit
+     */
+    void append(const Node& node) {return commit(node);}
 
 private:
     // only class World (friend) can create a new world
     Scene(Context& ctxt, const std::string& world);
 
+    std::shared_ptr<Node> _fetchNode(const std::string&);
+
     Context& _ctxt;
     std::string _world;
 
     std::set<std::shared_ptr<Node>> _nodes;
+
+    /** Holds the node ID mappings needed by Node::mirror
+     */
+    std::map<std::string, std::string> _mappings;
 
 };
 

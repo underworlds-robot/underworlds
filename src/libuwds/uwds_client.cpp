@@ -5,10 +5,10 @@
 
 using namespace std;
 
-void walk(const shared_ptr<uwds::Node> node, string ident = " ") {
+void walk(uwds::Scene& scene, const shared_ptr<uwds::Node> node, string ident = " ") {
     cout << ident << "- " << *node << endl;
     for (const auto child : node->children) {
-        walk(child, ident + " ");
+        walk(scene, scene.node(child), ident + " ");
     }
 }
 
@@ -28,7 +28,7 @@ int main(int argc, char** argv) {
         auto scene = ctxt.worlds[world]->scene;
         cout << "World <" << world << "> has root node " << *scene.root << endl;
         cout << "Nodes: " << endl;
-        walk(scene.root);
+        walk(scene, scene.root);
 
     }
 

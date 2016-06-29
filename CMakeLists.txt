@@ -20,7 +20,11 @@ include_directories(${OpenCV_INCLUDE_DIRS})
 
 
 file(GLOB uwds_pb_src src/libuwds/*pb.cc)
-add_library(libuwds SHARED src/libuwds/uwds.cpp ${uwds_pb_src})
+add_library(libuwds SHARED 
+                src/libuwds/uwds.cpp 
+                src/libuwds/scene.cpp 
+                src/libuwds/node.cpp 
+                ${uwds_pb_src})
 
 add_executable( uwds_test src/libuwds/uwds_client.cpp )
 target_link_libraries( uwds_test libuwds ${PROTOBUF_LIBRARIES} ${GRPC_LIBRARIES} )
