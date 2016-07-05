@@ -221,7 +221,7 @@ public:
 
     /** Resets Underworlds
      *
-     * All the worlds are destroyed and the list of clients on the server is reset.
+     * All the worlds are destroyed on the server.
      */
     void reset();
 

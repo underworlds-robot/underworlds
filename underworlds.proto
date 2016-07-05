@@ -19,8 +19,10 @@ service Underworlds {
     // list of clients + their interactions with the worlds
     rpc topology(Client) returns (Topology) {}
 
-    // Hard reset of Underworlds: the whole network is deleted: worlds, clients
+    // Hard reset of Underworlds: all the worlds are deleted.
     // The existing mesh database is kept, however.
+    // This does not impact the list of known clients (ie, clients do not have to
+    // call 'helo' again).
     rpc reset(Client) returns (Empty) {}
 
     // NODES

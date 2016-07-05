@@ -159,8 +159,6 @@ class Server(gRPC.BetaUnderworldsServicer):
         logger.warning("This might break other clients!")
 
         self._worlds = {}
-        self._clients = {}
-        self._clientnames = {}
 
         self._node_invalidations = {}
         self._timeline_invalidations = {}
