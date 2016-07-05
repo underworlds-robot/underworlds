@@ -74,7 +74,7 @@ const Node& Scene::mirror(const Node& source) {
     }
 
     // copy the source node
-    Node node(source);
+    Node node = source.clone();
 
     // have we previously mirrored this node?
     if (_mappings.count(source.id)) {

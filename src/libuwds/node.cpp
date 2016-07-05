@@ -1,3 +1,4 @@
+#include <chrono>
 #include <system_error>
 
 #include <boost/uuid/uuid_io.hpp>
@@ -14,7 +15,7 @@ using namespace uwds;
 
 Node::Node() : id(boost::uuids::to_string(boost::uuids::random_generator()())) {};
 
-Node::Node(const Node& n) : id(boost::uuids::to_string(boost::uuids::random_generator()())),
+Node::Node(const Node&& n) : id(n.id),
                       name(n.name),
                       type(n.type),
                       parent(n.parent),
@@ -23,6 +24,18 @@ Node::Node(const Node& n) : id(boost::uuids::to_string(boost::uuids::random_gene
                       last_update(n.last_update) {}
 
 
+Node Node::clone() const {
+
+    auto node = Node();
+    node.name = name;
+    node.type = type;
+    node.parent = parent;
+    node.children = children;
+    node.transform = transform;
+    node.last_update = chrono::system_clock::now();
+
+    return node;
+}
 
 underworlds::Node Node::serialize() const {
 

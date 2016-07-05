@@ -69,11 +69,14 @@ struct Node {
 
     Node();
 
-    /** Copy-constructor
+    /** Delete copy-constructor
      *
-     * Copies another node, but generates a new, unique ID.
+     * Prevents the copy to another node, as it would break the invariant
+     * that nodes are unique (unique ID)
      */
-    Node(const Node&);
+    Node(const Node&) = delete;
+
+    Node(const Node&&);
 
     bool operator==(const Node& n) const {return n.id == id;}
 
@@ -85,6 +88,8 @@ struct Node {
     Transformation transform;
     std::chrono::system_clock::time_point last_update;
 
+    // Creates a new node that is identical to this one, except for the ID
+    Node clone() const;
     underworlds::Node serialize() const;
     static Node deserialize(const underworlds::Node&);
 };
