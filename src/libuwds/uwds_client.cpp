@@ -5,10 +5,10 @@
 
 using namespace std;
 
-void walk(uwds::Scene& scene, const shared_ptr<uwds::Node> node, string ident = " ") {
-    cout << ident << "- " << *node << endl;
-    for (const auto child : node->children) {
-        walk(scene, scene.node(child), ident + " ");
+void walk(uwds::Scene& scene, const uwds::Node& node, string ident = " ") {
+    cout << ident << "- " << node << endl;
+    for (const auto child : node.children) {
+        walk(scene, scene.nodes[child], ident + " ");
     }
 }
 
@@ -25,10 +25,10 @@ int main(int argc, char** argv) {
 
 
     for (const auto& world : topo.worlds) {
-        auto scene = ctxt.worlds[world]->scene;
-        cout << "World <" << world << "> has root node " << *scene.root << endl;
+        auto scene = ctxt.worlds[world].scene;
+        cout << "World <" << world << "> has root node " << scene.root() << endl;
         cout << "Nodes: " << endl;
-        walk(scene, scene.root);
+        walk(scene, scene.root());
 
     }
 

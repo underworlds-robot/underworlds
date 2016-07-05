@@ -96,7 +96,7 @@ struct Node {
 
 // make less-than operator a non-member for implicit conversions on from
 // std::reference_wrapper<T> (when storing ref to Node in sets for instance)
-bool operator<(const Node& n1, const Node& n2) {return n1.id < n2.id;}
+inline bool operator<(const Node& n1, const Node& n2) {return n1.id < n2.id;}
 
 /////////////////////////////////////////////////////////////////////////
 ///////////  API
@@ -221,7 +221,7 @@ private:
     Context& _ctxt;
     std::string _world;
 
-    std::shared_ptr<const Node> _root;
+    const Node* _root;
 
     /** Holds the node ID mappings needed by Scene::mirror
      */

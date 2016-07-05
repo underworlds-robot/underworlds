@@ -48,7 +48,7 @@ TEST_F(UnderworldsTest, Worlds) {
 
     EXPECT_EQ (worlds.size(), 2);
 
-    EXPECT_EQ(world1->name(), "base");
+    EXPECT_EQ(world1.name(), "base");
 
 }
 

@@ -43,7 +43,7 @@ Scene::Scene(Context& ctxt, const std::string& world) :
 
         auto id = reply.ids(i);
 
-        // 
+        // As side-effect, fetch and add locally the nodes
         nodes[id];
 
     }
@@ -60,7 +60,7 @@ Scene::Scene(Context& ctxt, const std::string& world) :
 
     // Act upon its status.
     if (status.ok()) {
-        _root = shared_ptr<const Node>(&nodes.at(reply2.id()));
+        _root = &nodes.at(reply2.id());
     } else {
         throw system_error(error_code(status.error_code(),generic_category()), status.error_message());
     }
