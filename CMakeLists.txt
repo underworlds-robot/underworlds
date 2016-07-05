@@ -23,7 +23,7 @@ include_directories(${OpenCV_INCLUDE_DIRS})
 include_directories(src/libuwds)
 
 file(GLOB uwds_pb_src src/libuwds/*pb.cc)
-add_library(libuwds SHARED 
+add_library(uwds SHARED 
                 src/libuwds/uwds.cpp 
                 src/libuwds/scene.cpp 
                 src/libuwds/nodes.cpp 
@@ -31,9 +31,9 @@ add_library(libuwds SHARED
                 ${uwds_pb_src})
 
 add_executable( uwds_test src/libuwds/uwds_client.cpp )
-target_link_libraries( uwds_test libuwds ${PROTOBUF_LIBRARIES} ${GRPC_LIBRARIES} )
+target_link_libraries( uwds_test uwds ${PROTOBUF_LIBRARIES} ${GRPC_LIBRARIES} )
 
-install (TARGETS libuwds
+install (TARGETS uwds
          RUNTIME DESTINATION bin
          LIBRARY DESTINATION lib)
 
