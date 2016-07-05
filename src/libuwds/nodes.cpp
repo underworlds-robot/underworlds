@@ -17,6 +17,7 @@ using grpc::Status;
 using namespace std;
 using namespace uwds;
 
+Nodes::Nodes(Context& ctxt, Scene& scene):_ctxt(ctxt),_scene(scene) {}
 
 Node& Nodes::operator[](const string& id) {
 
