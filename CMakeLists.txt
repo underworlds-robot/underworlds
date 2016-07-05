@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 2.8)
 
 project(underworlds)
 
+option(ENABLE_TESTS "Build unit-tests" ON)
+
 SET(CMAKE_CXX_FLAGS "-std=c++11")
 
 # for UUIDs
@@ -18,6 +20,7 @@ link_directories(${GRPC_LIBRARY_DIRS})
 find_package(OpenCV COMPONENTS core REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS})
 
+include_directories(src/libuwds)
 
 file(GLOB uwds_pb_src src/libuwds/*pb.cc)
 add_library(libuwds SHARED 
@@ -33,3 +36,7 @@ install (TARGETS libuwds
          RUNTIME DESTINATION bin
          LIBRARY DESTINATION lib)
 
+if(ENABLE_TESTS)
+    enable_testing()
+    add_subdirectory(testing/cpp)
+endif()
