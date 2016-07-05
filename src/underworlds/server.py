@@ -202,8 +202,13 @@ class Server(gRPC.BetaUnderworldsServicer):
         node = scene.node(nodeInCtxt.node.id)
 
         if not node:
-            logger.warning("%s has required an non-existant"
-                           "node %s" % (self._clientname(client_id), nodeInCtxt.node.id))
+            logger.warning("%s has required an non-existant "
+                           "node <%s> in world %s" % (self._clientname(client_id), nodeInCtxt.node.id, world))
+
+            context.details("Node <%s> does not exist in world %s" % (nodeInCtxt.node.id, world))
+            context.code(beta_interfaces.StatusCode.UNKNOWN)
+
+
         else:
             res = node.serialize(gRPC.Node)
             logger.debug("<getNode> completed")
