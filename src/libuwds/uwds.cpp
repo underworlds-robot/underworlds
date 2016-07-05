@@ -122,7 +122,7 @@ World::World(Context& ctxt, const std::string& name) : _ctxt(ctxt),
 
 Worlds::Worlds(Context& ctxt): _ctxt(ctxt) {}
 
-shared_ptr<World> Worlds::operator[](const string& name) {
+World& Worlds::operator[](const string& name) {
 
     if (_worlds.count(name) == 0) {
         // create a new world (note that make_shared does not work here because
@@ -130,7 +130,7 @@ shared_ptr<World> Worlds::operator[](const string& name) {
         _worlds[name] = shared_ptr<World>(new World(_ctxt, name)); 
     }
     
-    return _worlds[name];
+    return *_worlds.at(name);
 
 }
 

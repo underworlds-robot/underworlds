@@ -26,6 +26,7 @@ file(GLOB uwds_pb_src src/libuwds/*pb.cc)
 add_library(libuwds SHARED 
                 src/libuwds/uwds.cpp 
                 src/libuwds/scene.cpp 
+                src/libuwds/nodes.cpp 
                 src/libuwds/node.cpp 
                 ${uwds_pb_src})
 

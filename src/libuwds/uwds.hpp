@@ -2,6 +2,7 @@
 #define UWDS_HPP
 
 #include <memory>
+#include <iterator>
 #include <string>
 #include <chrono>
 #include <set>
@@ -74,7 +75,7 @@ struct Node {
      */
     Node(const Node&);
 
-    bool operator==(const Node &n) const {return n.id == id;}
+    bool operator==(const Node& n) const {return n.id == id;}
 
     std::string id;
     std::string name;
@@ -88,6 +89,10 @@ struct Node {
     static Node deserialize(const underworlds::Node&);
 };
 
+// make less-than operator a non-member for implicit conversions on from
+// std::reference_wrapper<T> (when storing ref to Node in sets for instance)
+bool operator<(const Node& n1, const Node& n2) {return n1.id < n2.id;}
+
 /////////////////////////////////////////////////////////////////////////
 ///////////  API
 
@@ -95,19 +100,76 @@ class Context;
 class Worlds;
 class World;
 
-class Scene {
-    friend class World; // give World access to our private constructor
+class Nodes {
+    friend class Scene; // give Scene access to our private constructor
 
 public:
-    std::shared_ptr<Node> root;
-    std::set<std::shared_ptr<Node>> nodes() {return _nodes;}
+    typedef std::map<std::string, std::shared_ptr<Node>> NodeMap;
 
-    // Returns a node from its ID. If the node is not locally available, queries the
-    // server.
+    // Returns a node from its ID. If the node is not available, throws an
+    // out_of_range exception.
     //
-    // If no_fetch is set to true, the method does not attempt to fetch the node from
-    // the server if it is not locally available. It returns nullptr instead.
-    std::shared_ptr<Node> node(const std::string& id, bool no_fetch=false);
+    // As a side-effect, if the node is not locally available, queries the remote
+    // server for possible new nodes.
+    //
+    // See Nodes::at for a version that does not attempt to query the remote
+    // server.
+    Node& operator[](const std::string& id);
+
+    // Returns a node from its ID. If the node is not available, throws an
+    // out_of_range exception.
+    //
+    // This method does not attempt to fetch new nodes from the server. Use
+    // Node::operator[] instead.
+    Node& at(const std::string& id) const {return *_nodes.at(id);}
+
+    /** Returns all the nodes whose name matches the argument.
+     */
+    std::set<std::reference_wrapper<Node>> from_name(const std::string& name);
+
+    // Returns true if the node exists
+    bool has(const std::string& id) const {return _nodes.count(id) != 0;}
+
+    // Returns the number of existing nodes
+    size_t size() const {return _nodes.size();}
+
+    class Iterator {
+
+        NodeMap::const_iterator _it_map;
+
+        public:
+            Iterator(NodeMap::const_iterator it_map):_it_map(it_map) {}
+
+            const Node& operator*() { return *(*_it_map).second; }
+            Iterator& operator++() { ++_it_map; }
+            bool operator!=(const Iterator& it) const { return _it_map != it._it_map; }
+    };
+
+    //NodeMap::iterator begin() {return _nodes.begin();}
+    Iterator begin() {return {_nodes.begin()};}
+    //const_iterator cbegin() const {return _nodes.cbegin();}
+    //NodeMap::iterator end() {return _nodes.end();}
+    Iterator end() {return {_nodes.end()};}
+    //NodeMap::const_iterator cend() const {return _nodes.cend();}
+
+private:
+    Nodes(Context& ctxt, Scene& scene);
+    Context& _ctxt;
+    Scene& _scene;
+
+    std::shared_ptr<Node> _fetch(const std::string&);
+
+    NodeMap _nodes;
+};
+
+class Scene {
+    friend class World; // give World access to our private constructor
+    friend class Nodes; // give Nodes access to _world
+
+public:
+    const Node& root() const {return *_root;}
+    Nodes nodes;
+
 
     /** Mirrors a node coming from a different scene to the current scene.
      *
@@ -128,11 +190,8 @@ public:
      * Scene::mirroris called again with the same source node, the previously
      * mirrored node will be updated instead of newly created.
      */
-    std::shared_ptr<Node> mirror(const std::shared_ptr<Node> source);
+    const Node& mirror(const Node& source);
 
-    /** Returns all the nodes whose name matches the argument.
-     */
-    std::set<std::shared_ptr<Node>> nodeByName(const std::string& name);
 
     /** Commits the changes operated on a node to the underworlds server.
      *
@@ -153,14 +212,13 @@ private:
     // only class World (friend) can create a new world
     Scene(Context& ctxt, const std::string& world);
 
-    std::shared_ptr<Node> _fetchNode(const std::string&);
 
     Context& _ctxt;
     std::string _world;
 
-    std::set<std::shared_ptr<Node>> _nodes;
+    std::shared_ptr<const Node> _root;
 
-    /** Holds the node ID mappings needed by Node::mirror
+    /** Holds the node ID mappings needed by Scene::mirror
      */
     std::map<std::string, std::string> _mappings;
 
@@ -188,7 +246,7 @@ class Worlds {
     friend class Context; // give Context access to our private constructor
 
 public:
-    std::shared_ptr<World> operator[](const std::string& world);
+    World& operator[](const std::string& world);
 
     size_t size() {return _worlds.size();}
 
@@ -203,6 +261,7 @@ class Context {
 
     friend class World; // World can access _server
     friend class Scene; // Scene can access _server
+    friend class Nodes; // Scene can access _server
 
 public:
     Context(const std::string& name, const std::string& address="localhost:50051");
