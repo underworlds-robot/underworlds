@@ -217,6 +217,12 @@ public:
 
     Worlds worlds;
 
+    /** Resets Underworlds
+     *
+     * All the worlds are destroyed and the list of clients on the server is reset.
+     */
+    void reset();
+
 
 private:
     std::string helo(const std::string& name);

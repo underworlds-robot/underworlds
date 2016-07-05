@@ -51,6 +51,12 @@ class Underworlds GRPC_FINAL {
     std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::underworlds::Topology>> Asynctopology(::grpc::ClientContext* context, const ::underworlds::Client& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::underworlds::Topology>>(AsynctopologyRaw(context, request, cq));
     }
+    // Hard reset of Underworlds: the whole network is deleted: worlds, clients
+    // The existing mesh database is kept, however.
+    virtual ::grpc::Status reset(::grpc::ClientContext* context, const ::underworlds::Client& request, ::underworlds::Empty* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::underworlds::Empty>> Asyncreset(::grpc::ClientContext* context, const ::underworlds::Client& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::underworlds::Empty>>(AsyncresetRaw(context, request, cq));
+    }
     // NODES
     //
     // Returns the number of nodes in a given world.
@@ -149,6 +155,7 @@ class Underworlds GRPC_FINAL {
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::underworlds::Client>* AsyncheloRaw(::grpc::ClientContext* context, const ::underworlds::Name& request, ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::underworlds::Time>* AsyncuptimeRaw(::grpc::ClientContext* context, const ::underworlds::Client& request, ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::underworlds::Topology>* AsynctopologyRaw(::grpc::ClientContext* context, const ::underworlds::Client& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::underworlds::Empty>* AsyncresetRaw(::grpc::ClientContext* context, const ::underworlds::Client& request, ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::underworlds::Size>* AsyncgetNodesLenRaw(::grpc::ClientContext* context, const ::underworlds::Context& request, ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::underworlds::Nodes>* AsyncgetNodesIdsRaw(::grpc::ClientContext* context, const ::underworlds::Context& request, ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::underworlds::Node>* AsyncgetRootNodeRaw(::grpc::ClientContext* context, const ::underworlds::Context& request, ::grpc::CompletionQueue* cq) = 0;
@@ -181,6 +188,10 @@ class Underworlds GRPC_FINAL {
     ::grpc::Status topology(::grpc::ClientContext* context, const ::underworlds::Client& request, ::underworlds::Topology* response) GRPC_OVERRIDE;
     std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::underworlds::Topology>> Asynctopology(::grpc::ClientContext* context, const ::underworlds::Client& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::underworlds::Topology>>(AsynctopologyRaw(context, request, cq));
+    }
+    ::grpc::Status reset(::grpc::ClientContext* context, const ::underworlds::Client& request, ::underworlds::Empty* response) GRPC_OVERRIDE;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::underworlds::Empty>> Asyncreset(::grpc::ClientContext* context, const ::underworlds::Client& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::underworlds::Empty>>(AsyncresetRaw(context, request, cq));
     }
     ::grpc::Status getNodesLen(::grpc::ClientContext* context, const ::underworlds::Context& request, ::underworlds::Size* response) GRPC_OVERRIDE;
     std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::underworlds::Size>> AsyncgetNodesLen(::grpc::ClientContext* context, const ::underworlds::Context& request, ::grpc::CompletionQueue* cq) {
@@ -252,6 +263,7 @@ class Underworlds GRPC_FINAL {
     ::grpc::ClientAsyncResponseReader< ::underworlds::Client>* AsyncheloRaw(::grpc::ClientContext* context, const ::underworlds::Name& request, ::grpc::CompletionQueue* cq) GRPC_OVERRIDE;
     ::grpc::ClientAsyncResponseReader< ::underworlds::Time>* AsyncuptimeRaw(::grpc::ClientContext* context, const ::underworlds::Client& request, ::grpc::CompletionQueue* cq) GRPC_OVERRIDE;
     ::grpc::ClientAsyncResponseReader< ::underworlds::Topology>* AsynctopologyRaw(::grpc::ClientContext* context, const ::underworlds::Client& request, ::grpc::CompletionQueue* cq) GRPC_OVERRIDE;
+    ::grpc::ClientAsyncResponseReader< ::underworlds::Empty>* AsyncresetRaw(::grpc::ClientContext* context, const ::underworlds::Client& request, ::grpc::CompletionQueue* cq) GRPC_OVERRIDE;
     ::grpc::ClientAsyncResponseReader< ::underworlds::Size>* AsyncgetNodesLenRaw(::grpc::ClientContext* context, const ::underworlds::Context& request, ::grpc::CompletionQueue* cq) GRPC_OVERRIDE;
     ::grpc::ClientAsyncResponseReader< ::underworlds::Nodes>* AsyncgetNodesIdsRaw(::grpc::ClientContext* context, const ::underworlds::Context& request, ::grpc::CompletionQueue* cq) GRPC_OVERRIDE;
     ::grpc::ClientAsyncResponseReader< ::underworlds::Node>* AsyncgetRootNodeRaw(::grpc::ClientContext* context, const ::underworlds::Context& request, ::grpc::CompletionQueue* cq) GRPC_OVERRIDE;
@@ -272,6 +284,7 @@ class Underworlds GRPC_FINAL {
     const ::grpc::RpcMethod rpcmethod_helo_;
     const ::grpc::RpcMethod rpcmethod_uptime_;
     const ::grpc::RpcMethod rpcmethod_topology_;
+    const ::grpc::RpcMethod rpcmethod_reset_;
     const ::grpc::RpcMethod rpcmethod_getNodesLen_;
     const ::grpc::RpcMethod rpcmethod_getNodesIds_;
     const ::grpc::RpcMethod rpcmethod_getRootNode_;
@@ -306,6 +319,9 @@ class Underworlds GRPC_FINAL {
     // Returns the current topology of underworlds: the list of worlds and the
     // list of clients + their interactions with the worlds
     virtual ::grpc::Status topology(::grpc::ServerContext* context, const ::underworlds::Client* request, ::underworlds::Topology* response);
+    // Hard reset of Underworlds: the whole network is deleted: worlds, clients
+    // The existing mesh database is kept, however.
+    virtual ::grpc::Status reset(::grpc::ServerContext* context, const ::underworlds::Client* request, ::underworlds::Empty* response);
     // NODES
     //
     // Returns the number of nodes in a given world.
@@ -413,12 +429,32 @@ class Underworlds GRPC_FINAL {
     }
   };
   template <class BaseClass>
+  class WithAsyncMethod_reset : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service *service) {}
+   public:
+    WithAsyncMethod_reset() {
+      ::grpc::Service::MarkMethodAsync(3);
+    }
+    ~WithAsyncMethod_reset() GRPC_OVERRIDE {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status reset(::grpc::ServerContext* context, const ::underworlds::Client* request, ::underworlds::Empty* response) GRPC_FINAL GRPC_OVERRIDE {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void Requestreset(::grpc::ServerContext* context, ::underworlds::Client* request, ::grpc::ServerAsyncResponseWriter< ::underworlds::Empty>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(3, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
   class WithAsyncMethod_getNodesLen : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service *service) {}
    public:
     WithAsyncMethod_getNodesLen() {
-      ::grpc::Service::MarkMethodAsync(3);
+      ::grpc::Service::MarkMethodAsync(4);
     }
     ~WithAsyncMethod_getNodesLen() GRPC_OVERRIDE {
       BaseClassMustBeDerivedFromService(this);
@@ -429,7 +465,7 @@ class Underworlds GRPC_FINAL {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestgetNodesLen(::grpc::ServerContext* context, ::underworlds::Context* request, ::grpc::ServerAsyncResponseWriter< ::underworlds::Size>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(3, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(4, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -438,7 +474,7 @@ class Underworlds GRPC_FINAL {
     void BaseClassMustBeDerivedFromService(const Service *service) {}
    public:
     WithAsyncMethod_getNodesIds() {
-      ::grpc::Service::MarkMethodAsync(4);
+      ::grpc::Service::MarkMethodAsync(5);
     }
     ~WithAsyncMethod_getNodesIds() GRPC_OVERRIDE {
       BaseClassMustBeDerivedFromService(this);
@@ -449,7 +485,7 @@ class Underworlds GRPC_FINAL {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestgetNodesIds(::grpc::ServerContext* context, ::underworlds::Context* request, ::grpc::ServerAsyncResponseWriter< ::underworlds::Nodes>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(4, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(5, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -458,7 +494,7 @@ class Underworlds GRPC_FINAL {
     void BaseClassMustBeDerivedFromService(const Service *service) {}
    public:
     WithAsyncMethod_getRootNode() {
-      ::grpc::Service::MarkMethodAsync(5);
+      ::grpc::Service::MarkMethodAsync(6);
     }
     ~WithAsyncMethod_getRootNode() GRPC_OVERRIDE {
       BaseClassMustBeDerivedFromService(this);
@@ -469,7 +505,7 @@ class Underworlds GRPC_FINAL {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestgetRootNode(::grpc::ServerContext* context, ::underworlds::Context* request, ::grpc::ServerAsyncResponseWriter< ::underworlds::Node>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(5, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(6, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -478,7 +514,7 @@ class Underworlds GRPC_FINAL {
     void BaseClassMustBeDerivedFromService(const Service *service) {}
    public:
     WithAsyncMethod_getNode() {
-      ::grpc::Service::MarkMethodAsync(6);
+      ::grpc::Service::MarkMethodAsync(7);
     }
     ~WithAsyncMethod_getNode() GRPC_OVERRIDE {
       BaseClassMustBeDerivedFromService(this);
@@ -489,7 +525,7 @@ class Underworlds GRPC_FINAL {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestgetNode(::grpc::ServerContext* context, ::underworlds::NodeInContext* request, ::grpc::ServerAsyncResponseWriter< ::underworlds::Node>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(6, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(7, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -498,7 +534,7 @@ class Underworlds GRPC_FINAL {
     void BaseClassMustBeDerivedFromService(const Service *service) {}
    public:
     WithAsyncMethod_updateNode() {
-      ::grpc::Service::MarkMethodAsync(7);
+      ::grpc::Service::MarkMethodAsync(8);
     }
     ~WithAsyncMethod_updateNode() GRPC_OVERRIDE {
       BaseClassMustBeDerivedFromService(this);
@@ -509,7 +545,7 @@ class Underworlds GRPC_FINAL {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestupdateNode(::grpc::ServerContext* context, ::underworlds::NodeInContext* request, ::grpc::ServerAsyncResponseWriter< ::underworlds::Empty>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(7, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(8, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -518,7 +554,7 @@ class Underworlds GRPC_FINAL {
     void BaseClassMustBeDerivedFromService(const Service *service) {}
    public:
     WithAsyncMethod_deleteNode() {
-      ::grpc::Service::MarkMethodAsync(8);
+      ::grpc::Service::MarkMethodAsync(9);
     }
     ~WithAsyncMethod_deleteNode() GRPC_OVERRIDE {
       BaseClassMustBeDerivedFromService(this);
@@ -529,7 +565,7 @@ class Underworlds GRPC_FINAL {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestdeleteNode(::grpc::ServerContext* context, ::underworlds::NodeInContext* request, ::grpc::ServerAsyncResponseWriter< ::underworlds::Empty>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(8, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(9, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -538,7 +574,7 @@ class Underworlds GRPC_FINAL {
     void BaseClassMustBeDerivedFromService(const Service *service) {}
    public:
     WithAsyncMethod_getNodeInvalidations() {
-      ::grpc::Service::MarkMethodAsync(9);
+      ::grpc::Service::MarkMethodAsync(10);
     }
     ~WithAsyncMethod_getNodeInvalidations() GRPC_OVERRIDE {
       BaseClassMustBeDerivedFromService(this);
@@ -549,7 +585,7 @@ class Underworlds GRPC_FINAL {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestgetNodeInvalidations(::grpc::ServerContext* context, ::underworlds::Context* request, ::grpc::ServerAsyncWriter< ::underworlds::NodeInvalidation>* writer, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncServerStreaming(9, context, request, writer, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncServerStreaming(10, context, request, writer, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -558,7 +594,7 @@ class Underworlds GRPC_FINAL {
     void BaseClassMustBeDerivedFromService(const Service *service) {}
    public:
     WithAsyncMethod_timelineOrigin() {
-      ::grpc::Service::MarkMethodAsync(10);
+      ::grpc::Service::MarkMethodAsync(11);
     }
     ~WithAsyncMethod_timelineOrigin() GRPC_OVERRIDE {
       BaseClassMustBeDerivedFromService(this);
@@ -569,7 +605,7 @@ class Underworlds GRPC_FINAL {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequesttimelineOrigin(::grpc::ServerContext* context, ::underworlds::Context* request, ::grpc::ServerAsyncResponseWriter< ::underworlds::Time>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(10, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(11, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -578,7 +614,7 @@ class Underworlds GRPC_FINAL {
     void BaseClassMustBeDerivedFromService(const Service *service) {}
    public:
     WithAsyncMethod_event() {
-      ::grpc::Service::MarkMethodAsync(11);
+      ::grpc::Service::MarkMethodAsync(12);
     }
     ~WithAsyncMethod_event() GRPC_OVERRIDE {
       BaseClassMustBeDerivedFromService(this);
@@ -589,7 +625,7 @@ class Underworlds GRPC_FINAL {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void Requestevent(::grpc::ServerContext* context, ::underworlds::SituationInContext* request, ::grpc::ServerAsyncResponseWriter< ::underworlds::Empty>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(11, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(12, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -598,7 +634,7 @@ class Underworlds GRPC_FINAL {
     void BaseClassMustBeDerivedFromService(const Service *service) {}
    public:
     WithAsyncMethod_startSituation() {
-      ::grpc::Service::MarkMethodAsync(12);
+      ::grpc::Service::MarkMethodAsync(13);
     }
     ~WithAsyncMethod_startSituation() GRPC_OVERRIDE {
       BaseClassMustBeDerivedFromService(this);
@@ -609,7 +645,7 @@ class Underworlds GRPC_FINAL {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequeststartSituation(::grpc::ServerContext* context, ::underworlds::SituationInContext* request, ::grpc::ServerAsyncResponseWriter< ::underworlds::Empty>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(12, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(13, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -618,7 +654,7 @@ class Underworlds GRPC_FINAL {
     void BaseClassMustBeDerivedFromService(const Service *service) {}
    public:
     WithAsyncMethod_endSituation() {
-      ::grpc::Service::MarkMethodAsync(13);
+      ::grpc::Service::MarkMethodAsync(14);
     }
     ~WithAsyncMethod_endSituation() GRPC_OVERRIDE {
       BaseClassMustBeDerivedFromService(this);
@@ -629,7 +665,7 @@ class Underworlds GRPC_FINAL {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestendSituation(::grpc::ServerContext* context, ::underworlds::SituationInContext* request, ::grpc::ServerAsyncResponseWriter< ::underworlds::Empty>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(13, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(14, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -638,7 +674,7 @@ class Underworlds GRPC_FINAL {
     void BaseClassMustBeDerivedFromService(const Service *service) {}
    public:
     WithAsyncMethod_getTimelineInvalidations() {
-      ::grpc::Service::MarkMethodAsync(14);
+      ::grpc::Service::MarkMethodAsync(15);
     }
     ~WithAsyncMethod_getTimelineInvalidations() GRPC_OVERRIDE {
       BaseClassMustBeDerivedFromService(this);
@@ -649,7 +685,7 @@ class Underworlds GRPC_FINAL {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestgetTimelineInvalidations(::grpc::ServerContext* context, ::underworlds::Context* request, ::grpc::ServerAsyncWriter< ::underworlds::TimelineInvalidation>* writer, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncServerStreaming(14, context, request, writer, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncServerStreaming(15, context, request, writer, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -658,7 +694,7 @@ class Underworlds GRPC_FINAL {
     void BaseClassMustBeDerivedFromService(const Service *service) {}
    public:
     WithAsyncMethod_hasMesh() {
-      ::grpc::Service::MarkMethodAsync(15);
+      ::grpc::Service::MarkMethodAsync(16);
     }
     ~WithAsyncMethod_hasMesh() GRPC_OVERRIDE {
       BaseClassMustBeDerivedFromService(this);
@@ -669,7 +705,7 @@ class Underworlds GRPC_FINAL {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequesthasMesh(::grpc::ServerContext* context, ::underworlds::MeshInContext* request, ::grpc::ServerAsyncResponseWriter< ::underworlds::Bool>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(15, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(16, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -678,7 +714,7 @@ class Underworlds GRPC_FINAL {
     void BaseClassMustBeDerivedFromService(const Service *service) {}
    public:
     WithAsyncMethod_getMesh() {
-      ::grpc::Service::MarkMethodAsync(16);
+      ::grpc::Service::MarkMethodAsync(17);
     }
     ~WithAsyncMethod_getMesh() GRPC_OVERRIDE {
       BaseClassMustBeDerivedFromService(this);
@@ -689,7 +725,7 @@ class Underworlds GRPC_FINAL {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestgetMesh(::grpc::ServerContext* context, ::underworlds::MeshInContext* request, ::grpc::ServerAsyncResponseWriter< ::underworlds::Mesh>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(16, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(17, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -698,7 +734,7 @@ class Underworlds GRPC_FINAL {
     void BaseClassMustBeDerivedFromService(const Service *service) {}
    public:
     WithAsyncMethod_pushMesh() {
-      ::grpc::Service::MarkMethodAsync(17);
+      ::grpc::Service::MarkMethodAsync(18);
     }
     ~WithAsyncMethod_pushMesh() GRPC_OVERRIDE {
       BaseClassMustBeDerivedFromService(this);
@@ -709,10 +745,10 @@ class Underworlds GRPC_FINAL {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestpushMesh(::grpc::ServerContext* context, ::underworlds::MeshInContext* request, ::grpc::ServerAsyncResponseWriter< ::underworlds::Empty>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(17, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(18, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
-  typedef WithAsyncMethod_helo<WithAsyncMethod_uptime<WithAsyncMethod_topology<WithAsyncMethod_getNodesLen<WithAsyncMethod_getNodesIds<WithAsyncMethod_getRootNode<WithAsyncMethod_getNode<WithAsyncMethod_updateNode<WithAsyncMethod_deleteNode<WithAsyncMethod_getNodeInvalidations<WithAsyncMethod_timelineOrigin<WithAsyncMethod_event<WithAsyncMethod_startSituation<WithAsyncMethod_endSituation<WithAsyncMethod_getTimelineInvalidations<WithAsyncMethod_hasMesh<WithAsyncMethod_getMesh<WithAsyncMethod_pushMesh<Service > > > > > > > > > > > > > > > > > > AsyncService;
+  typedef WithAsyncMethod_helo<WithAsyncMethod_uptime<WithAsyncMethod_topology<WithAsyncMethod_reset<WithAsyncMethod_getNodesLen<WithAsyncMethod_getNodesIds<WithAsyncMethod_getRootNode<WithAsyncMethod_getNode<WithAsyncMethod_updateNode<WithAsyncMethod_deleteNode<WithAsyncMethod_getNodeInvalidations<WithAsyncMethod_timelineOrigin<WithAsyncMethod_event<WithAsyncMethod_startSituation<WithAsyncMethod_endSituation<WithAsyncMethod_getTimelineInvalidations<WithAsyncMethod_hasMesh<WithAsyncMethod_getMesh<WithAsyncMethod_pushMesh<Service > > > > > > > > > > > > > > > > > > > AsyncService;
   template <class BaseClass>
   class WithGenericMethod_helo : public BaseClass {
    private:
@@ -765,12 +801,29 @@ class Underworlds GRPC_FINAL {
     }
   };
   template <class BaseClass>
+  class WithGenericMethod_reset : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service *service) {}
+   public:
+    WithGenericMethod_reset() {
+      ::grpc::Service::MarkMethodGeneric(3);
+    }
+    ~WithGenericMethod_reset() GRPC_OVERRIDE {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status reset(::grpc::ServerContext* context, const ::underworlds::Client* request, ::underworlds::Empty* response) GRPC_FINAL GRPC_OVERRIDE {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+  };
+  template <class BaseClass>
   class WithGenericMethod_getNodesLen : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service *service) {}
    public:
     WithGenericMethod_getNodesLen() {
-      ::grpc::Service::MarkMethodGeneric(3);
+      ::grpc::Service::MarkMethodGeneric(4);
     }
     ~WithGenericMethod_getNodesLen() GRPC_OVERRIDE {
       BaseClassMustBeDerivedFromService(this);
@@ -787,7 +840,7 @@ class Underworlds GRPC_FINAL {
     void BaseClassMustBeDerivedFromService(const Service *service) {}
    public:
     WithGenericMethod_getNodesIds() {
-      ::grpc::Service::MarkMethodGeneric(4);
+      ::grpc::Service::MarkMethodGeneric(5);
     }
     ~WithGenericMethod_getNodesIds() GRPC_OVERRIDE {
       BaseClassMustBeDerivedFromService(this);
@@ -804,7 +857,7 @@ class Underworlds GRPC_FINAL {
     void BaseClassMustBeDerivedFromService(const Service *service) {}
    public:
     WithGenericMethod_getRootNode() {
-      ::grpc::Service::MarkMethodGeneric(5);
+      ::grpc::Service::MarkMethodGeneric(6);
     }
     ~WithGenericMethod_getRootNode() GRPC_OVERRIDE {
       BaseClassMustBeDerivedFromService(this);
@@ -821,7 +874,7 @@ class Underworlds GRPC_FINAL {
     void BaseClassMustBeDerivedFromService(const Service *service) {}
    public:
     WithGenericMethod_getNode() {
-      ::grpc::Service::MarkMethodGeneric(6);
+      ::grpc::Service::MarkMethodGeneric(7);
     }
     ~WithGenericMethod_getNode() GRPC_OVERRIDE {
       BaseClassMustBeDerivedFromService(this);
@@ -838,7 +891,7 @@ class Underworlds GRPC_FINAL {
     void BaseClassMustBeDerivedFromService(const Service *service) {}
    public:
     WithGenericMethod_updateNode() {
-      ::grpc::Service::MarkMethodGeneric(7);
+      ::grpc::Service::MarkMethodGeneric(8);
     }
     ~WithGenericMethod_updateNode() GRPC_OVERRIDE {
       BaseClassMustBeDerivedFromService(this);
@@ -855,7 +908,7 @@ class Underworlds GRPC_FINAL {
     void BaseClassMustBeDerivedFromService(const Service *service) {}
    public:
     WithGenericMethod_deleteNode() {
-      ::grpc::Service::MarkMethodGeneric(8);
+      ::grpc::Service::MarkMethodGeneric(9);
     }
     ~WithGenericMethod_deleteNode() GRPC_OVERRIDE {
       BaseClassMustBeDerivedFromService(this);
@@ -872,7 +925,7 @@ class Underworlds GRPC_FINAL {
     void BaseClassMustBeDerivedFromService(const Service *service) {}
    public:
     WithGenericMethod_getNodeInvalidations() {
-      ::grpc::Service::MarkMethodGeneric(9);
+      ::grpc::Service::MarkMethodGeneric(10);
     }
     ~WithGenericMethod_getNodeInvalidations() GRPC_OVERRIDE {
       BaseClassMustBeDerivedFromService(this);
@@ -889,7 +942,7 @@ class Underworlds GRPC_FINAL {
     void BaseClassMustBeDerivedFromService(const Service *service) {}
    public:
     WithGenericMethod_timelineOrigin() {
-      ::grpc::Service::MarkMethodGeneric(10);
+      ::grpc::Service::MarkMethodGeneric(11);
     }
     ~WithGenericMethod_timelineOrigin() GRPC_OVERRIDE {
       BaseClassMustBeDerivedFromService(this);
@@ -906,7 +959,7 @@ class Underworlds GRPC_FINAL {
     void BaseClassMustBeDerivedFromService(const Service *service) {}
    public:
     WithGenericMethod_event() {
-      ::grpc::Service::MarkMethodGeneric(11);
+      ::grpc::Service::MarkMethodGeneric(12);
     }
     ~WithGenericMethod_event() GRPC_OVERRIDE {
       BaseClassMustBeDerivedFromService(this);
@@ -923,7 +976,7 @@ class Underworlds GRPC_FINAL {
     void BaseClassMustBeDerivedFromService(const Service *service) {}
    public:
     WithGenericMethod_startSituation() {
-      ::grpc::Service::MarkMethodGeneric(12);
+      ::grpc::Service::MarkMethodGeneric(13);
     }
     ~WithGenericMethod_startSituation() GRPC_OVERRIDE {
       BaseClassMustBeDerivedFromService(this);
@@ -940,7 +993,7 @@ class Underworlds GRPC_FINAL {
     void BaseClassMustBeDerivedFromService(const Service *service) {}
    public:
     WithGenericMethod_endSituation() {
-      ::grpc::Service::MarkMethodGeneric(13);
+      ::grpc::Service::MarkMethodGeneric(14);
     }
     ~WithGenericMethod_endSituation() GRPC_OVERRIDE {
       BaseClassMustBeDerivedFromService(this);
@@ -957,7 +1010,7 @@ class Underworlds GRPC_FINAL {
     void BaseClassMustBeDerivedFromService(const Service *service) {}
    public:
     WithGenericMethod_getTimelineInvalidations() {
-      ::grpc::Service::MarkMethodGeneric(14);
+      ::grpc::Service::MarkMethodGeneric(15);
     }
     ~WithGenericMethod_getTimelineInvalidations() GRPC_OVERRIDE {
       BaseClassMustBeDerivedFromService(this);
@@ -974,7 +1027,7 @@ class Underworlds GRPC_FINAL {
     void BaseClassMustBeDerivedFromService(const Service *service) {}
    public:
     WithGenericMethod_hasMesh() {
-      ::grpc::Service::MarkMethodGeneric(15);
+      ::grpc::Service::MarkMethodGeneric(16);
     }
     ~WithGenericMethod_hasMesh() GRPC_OVERRIDE {
       BaseClassMustBeDerivedFromService(this);
@@ -991,7 +1044,7 @@ class Underworlds GRPC_FINAL {
     void BaseClassMustBeDerivedFromService(const Service *service) {}
    public:
     WithGenericMethod_getMesh() {
-      ::grpc::Service::MarkMethodGeneric(16);
+      ::grpc::Service::MarkMethodGeneric(17);
     }
     ~WithGenericMethod_getMesh() GRPC_OVERRIDE {
       BaseClassMustBeDerivedFromService(this);
@@ -1008,7 +1061,7 @@ class Underworlds GRPC_FINAL {
     void BaseClassMustBeDerivedFromService(const Service *service) {}
    public:
     WithGenericMethod_pushMesh() {
-      ::grpc::Service::MarkMethodGeneric(17);
+      ::grpc::Service::MarkMethodGeneric(18);
     }
     ~WithGenericMethod_pushMesh() GRPC_OVERRIDE {
       BaseClassMustBeDerivedFromService(this);

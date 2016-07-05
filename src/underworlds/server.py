@@ -153,6 +153,22 @@ class Server(gRPC.BetaUnderworldsServicer):
         logger.debug("<topology> completed")
         return topo
 
+    def reset(self, client, context):
+        logger.debug("Got <reset> from %s" % client.id)
+        logger.warning("Resetting Underworlds upon client <%s> request" % client.id)
+        logger.warning("This might break other clients!")
+
+        self._worlds = {}
+        self._clients = {}
+        self._clientnames = {}
+
+        self._node_invalidations = {}
+        self._timeline_invalidations = {}
+
+
+        logger.debug("<reset> completed")
+
+        return gRPC.Empty()
 
 
     ############ NODES

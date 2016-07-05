@@ -100,6 +100,17 @@ Topology Context::topology() {
     return topo;
 }
 
+void Context::reset() {
+
+    grpc::ClientContext context;
+    underworlds::Empty reply;
+
+    Status status = _server->reset(&context, _myself, &reply);
+
+    if (!status.ok()) {
+        throw system_error(error_code(status.error_code(),generic_category()), status.error_message());
+    }
+}
 
 World::World(Context& ctxt, const std::string& name) : _ctxt(ctxt), 
                                                        _name(name),

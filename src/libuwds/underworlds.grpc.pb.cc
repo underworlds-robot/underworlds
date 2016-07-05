@@ -19,6 +19,7 @@ static const char* Underworlds_method_names[] = {
   "/underworlds.Underworlds/helo",
   "/underworlds.Underworlds/uptime",
   "/underworlds.Underworlds/topology",
+  "/underworlds.Underworlds/reset",
   "/underworlds.Underworlds/getNodesLen",
   "/underworlds.Underworlds/getNodesIds",
   "/underworlds.Underworlds/getRootNode",
@@ -45,21 +46,22 @@ Underworlds::Stub::Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channe
   : channel_(channel), rpcmethod_helo_(Underworlds_method_names[0], ::grpc::RpcMethod::NORMAL_RPC, channel)
   , rpcmethod_uptime_(Underworlds_method_names[1], ::grpc::RpcMethod::NORMAL_RPC, channel)
   , rpcmethod_topology_(Underworlds_method_names[2], ::grpc::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_getNodesLen_(Underworlds_method_names[3], ::grpc::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_getNodesIds_(Underworlds_method_names[4], ::grpc::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_getRootNode_(Underworlds_method_names[5], ::grpc::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_getNode_(Underworlds_method_names[6], ::grpc::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_updateNode_(Underworlds_method_names[7], ::grpc::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_deleteNode_(Underworlds_method_names[8], ::grpc::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_getNodeInvalidations_(Underworlds_method_names[9], ::grpc::RpcMethod::SERVER_STREAMING, channel)
-  , rpcmethod_timelineOrigin_(Underworlds_method_names[10], ::grpc::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_event_(Underworlds_method_names[11], ::grpc::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_startSituation_(Underworlds_method_names[12], ::grpc::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_endSituation_(Underworlds_method_names[13], ::grpc::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_getTimelineInvalidations_(Underworlds_method_names[14], ::grpc::RpcMethod::SERVER_STREAMING, channel)
-  , rpcmethod_hasMesh_(Underworlds_method_names[15], ::grpc::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_getMesh_(Underworlds_method_names[16], ::grpc::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_pushMesh_(Underworlds_method_names[17], ::grpc::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_reset_(Underworlds_method_names[3], ::grpc::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_getNodesLen_(Underworlds_method_names[4], ::grpc::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_getNodesIds_(Underworlds_method_names[5], ::grpc::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_getRootNode_(Underworlds_method_names[6], ::grpc::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_getNode_(Underworlds_method_names[7], ::grpc::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_updateNode_(Underworlds_method_names[8], ::grpc::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_deleteNode_(Underworlds_method_names[9], ::grpc::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_getNodeInvalidations_(Underworlds_method_names[10], ::grpc::RpcMethod::SERVER_STREAMING, channel)
+  , rpcmethod_timelineOrigin_(Underworlds_method_names[11], ::grpc::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_event_(Underworlds_method_names[12], ::grpc::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_startSituation_(Underworlds_method_names[13], ::grpc::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_endSituation_(Underworlds_method_names[14], ::grpc::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_getTimelineInvalidations_(Underworlds_method_names[15], ::grpc::RpcMethod::SERVER_STREAMING, channel)
+  , rpcmethod_hasMesh_(Underworlds_method_names[16], ::grpc::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_getMesh_(Underworlds_method_names[17], ::grpc::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_pushMesh_(Underworlds_method_names[18], ::grpc::RpcMethod::NORMAL_RPC, channel)
   {}
 
 ::grpc::Status Underworlds::Stub::helo(::grpc::ClientContext* context, const ::underworlds::Name& request, ::underworlds::Client* response) {
@@ -84,6 +86,14 @@ Underworlds::Stub::Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channe
 
 ::grpc::ClientAsyncResponseReader< ::underworlds::Topology>* Underworlds::Stub::AsynctopologyRaw(::grpc::ClientContext* context, const ::underworlds::Client& request, ::grpc::CompletionQueue* cq) {
   return new ::grpc::ClientAsyncResponseReader< ::underworlds::Topology>(channel_.get(), cq, rpcmethod_topology_, context, request);
+}
+
+::grpc::Status Underworlds::Stub::reset(::grpc::ClientContext* context, const ::underworlds::Client& request, ::underworlds::Empty* response) {
+  return ::grpc::BlockingUnaryCall(channel_.get(), rpcmethod_reset_, context, request, response);
+}
+
+::grpc::ClientAsyncResponseReader< ::underworlds::Empty>* Underworlds::Stub::AsyncresetRaw(::grpc::ClientContext* context, const ::underworlds::Client& request, ::grpc::CompletionQueue* cq) {
+  return new ::grpc::ClientAsyncResponseReader< ::underworlds::Empty>(channel_.get(), cq, rpcmethod_reset_, context, request);
 }
 
 ::grpc::Status Underworlds::Stub::getNodesLen(::grpc::ClientContext* context, const ::underworlds::Context& request, ::underworlds::Size* response) {
@@ -226,75 +236,80 @@ Underworlds::Service::Service() {
   AddMethod(new ::grpc::RpcServiceMethod(
       Underworlds_method_names[3],
       ::grpc::RpcMethod::NORMAL_RPC,
+      new ::grpc::RpcMethodHandler< Underworlds::Service, ::underworlds::Client, ::underworlds::Empty>(
+          std::mem_fn(&Underworlds::Service::reset), this)));
+  AddMethod(new ::grpc::RpcServiceMethod(
+      Underworlds_method_names[4],
+      ::grpc::RpcMethod::NORMAL_RPC,
       new ::grpc::RpcMethodHandler< Underworlds::Service, ::underworlds::Context, ::underworlds::Size>(
           std::mem_fn(&Underworlds::Service::getNodesLen), this)));
   AddMethod(new ::grpc::RpcServiceMethod(
-      Underworlds_method_names[4],
+      Underworlds_method_names[5],
       ::grpc::RpcMethod::NORMAL_RPC,
       new ::grpc::RpcMethodHandler< Underworlds::Service, ::underworlds::Context, ::underworlds::Nodes>(
           std::mem_fn(&Underworlds::Service::getNodesIds), this)));
   AddMethod(new ::grpc::RpcServiceMethod(
-      Underworlds_method_names[5],
+      Underworlds_method_names[6],
       ::grpc::RpcMethod::NORMAL_RPC,
       new ::grpc::RpcMethodHandler< Underworlds::Service, ::underworlds::Context, ::underworlds::Node>(
           std::mem_fn(&Underworlds::Service::getRootNode), this)));
   AddMethod(new ::grpc::RpcServiceMethod(
-      Underworlds_method_names[6],
+      Underworlds_method_names[7],
       ::grpc::RpcMethod::NORMAL_RPC,
       new ::grpc::RpcMethodHandler< Underworlds::Service, ::underworlds::NodeInContext, ::underworlds::Node>(
           std::mem_fn(&Underworlds::Service::getNode), this)));
   AddMethod(new ::grpc::RpcServiceMethod(
-      Underworlds_method_names[7],
+      Underworlds_method_names[8],
       ::grpc::RpcMethod::NORMAL_RPC,
       new ::grpc::RpcMethodHandler< Underworlds::Service, ::underworlds::NodeInContext, ::underworlds::Empty>(
           std::mem_fn(&Underworlds::Service::updateNode), this)));
   AddMethod(new ::grpc::RpcServiceMethod(
-      Underworlds_method_names[8],
+      Underworlds_method_names[9],
       ::grpc::RpcMethod::NORMAL_RPC,
       new ::grpc::RpcMethodHandler< Underworlds::Service, ::underworlds::NodeInContext, ::underworlds::Empty>(
           std::mem_fn(&Underworlds::Service::deleteNode), this)));
   AddMethod(new ::grpc::RpcServiceMethod(
-      Underworlds_method_names[9],
+      Underworlds_method_names[10],
       ::grpc::RpcMethod::SERVER_STREAMING,
       new ::grpc::ServerStreamingHandler< Underworlds::Service, ::underworlds::Context, ::underworlds::NodeInvalidation>(
           std::mem_fn(&Underworlds::Service::getNodeInvalidations), this)));
   AddMethod(new ::grpc::RpcServiceMethod(
-      Underworlds_method_names[10],
+      Underworlds_method_names[11],
       ::grpc::RpcMethod::NORMAL_RPC,
       new ::grpc::RpcMethodHandler< Underworlds::Service, ::underworlds::Context, ::underworlds::Time>(
           std::mem_fn(&Underworlds::Service::timelineOrigin), this)));
   AddMethod(new ::grpc::RpcServiceMethod(
-      Underworlds_method_names[11],
+      Underworlds_method_names[12],
       ::grpc::RpcMethod::NORMAL_RPC,
       new ::grpc::RpcMethodHandler< Underworlds::Service, ::underworlds::SituationInContext, ::underworlds::Empty>(
           std::mem_fn(&Underworlds::Service::event), this)));
   AddMethod(new ::grpc::RpcServiceMethod(
-      Underworlds_method_names[12],
+      Underworlds_method_names[13],
       ::grpc::RpcMethod::NORMAL_RPC,
       new ::grpc::RpcMethodHandler< Underworlds::Service, ::underworlds::SituationInContext, ::underworlds::Empty>(
           std::mem_fn(&Underworlds::Service::startSituation), this)));
   AddMethod(new ::grpc::RpcServiceMethod(
-      Underworlds_method_names[13],
+      Underworlds_method_names[14],
       ::grpc::RpcMethod::NORMAL_RPC,
       new ::grpc::RpcMethodHandler< Underworlds::Service, ::underworlds::SituationInContext, ::underworlds::Empty>(
           std::mem_fn(&Underworlds::Service::endSituation), this)));
   AddMethod(new ::grpc::RpcServiceMethod(
-      Underworlds_method_names[14],
+      Underworlds_method_names[15],
       ::grpc::RpcMethod::SERVER_STREAMING,
       new ::grpc::ServerStreamingHandler< Underworlds::Service, ::underworlds::Context, ::underworlds::TimelineInvalidation>(
           std::mem_fn(&Underworlds::Service::getTimelineInvalidations), this)));
   AddMethod(new ::grpc::RpcServiceMethod(
-      Underworlds_method_names[15],
+      Underworlds_method_names[16],
       ::grpc::RpcMethod::NORMAL_RPC,
       new ::grpc::RpcMethodHandler< Underworlds::Service, ::underworlds::MeshInContext, ::underworlds::Bool>(
           std::mem_fn(&Underworlds::Service::hasMesh), this)));
   AddMethod(new ::grpc::RpcServiceMethod(
-      Underworlds_method_names[16],
+      Underworlds_method_names[17],
       ::grpc::RpcMethod::NORMAL_RPC,
       new ::grpc::RpcMethodHandler< Underworlds::Service, ::underworlds::MeshInContext, ::underworlds::Mesh>(
           std::mem_fn(&Underworlds::Service::getMesh), this)));
   AddMethod(new ::grpc::RpcServiceMethod(
-      Underworlds_method_names[17],
+      Underworlds_method_names[18],
       ::grpc::RpcMethod::NORMAL_RPC,
       new ::grpc::RpcMethodHandler< Underworlds::Service, ::underworlds::MeshInContext, ::underworlds::Empty>(
           std::mem_fn(&Underworlds::Service::pushMesh), this)));
@@ -318,6 +333,13 @@ Underworlds::Service::~Service() {
 }
 
 ::grpc::Status Underworlds::Service::topology(::grpc::ServerContext* context, const ::underworlds::Client* request, ::underworlds::Topology* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+::grpc::Status Underworlds::Service::reset(::grpc::ServerContext* context, const ::underworlds::Client* request, ::underworlds::Empty* response) {
   (void) context;
   (void) request;
   (void) response;
