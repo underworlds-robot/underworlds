@@ -193,6 +193,8 @@ class Worlds {
 public:
     std::shared_ptr<World> operator[](const std::string& world);
 
+    size_t size() {return _worlds.size();}
+
 private:
     Worlds(Context& ctxt);
     Context& _ctxt;
