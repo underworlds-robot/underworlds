@@ -66,7 +66,7 @@ class Scene;
 
 struct Node {
 
-    Node(std::shared_ptr<Scene> scene);
+    Node();
 
     /** Copy-constructor
      *
@@ -85,10 +85,7 @@ struct Node {
     std::chrono::system_clock::time_point last_update;
 
     underworlds::Node serialize() const;
-    static Node deserialize(const underworlds::Node&, std::shared_ptr<Scene> scene);
-
-private:
-    std::shared_ptr<Scene> _scene;
+    static Node deserialize(const underworlds::Node&);
 };
 
 /////////////////////////////////////////////////////////////////////////

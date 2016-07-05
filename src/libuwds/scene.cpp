@@ -75,7 +75,7 @@ shared_ptr<Node> Scene::node(const std::string& id, bool no_fetch) {
         return nullptr;
     }
 
-    _fetchNode(id);
+    return _fetchNode(id);
 }
 
 shared_ptr<Node> Scene::_fetchNode(const string& id) {
@@ -96,7 +96,7 @@ shared_ptr<Node> Scene::_fetchNode(const string& id) {
     // Act upon its status.
     if (status.ok()) {
 
-        auto node = make_shared<Node>(Node::deserialize(reply, shared_ptr<Scene>(this)));
+        auto node = make_shared<Node>(Node::deserialize(reply));
         _nodes.insert(node);
         return node;
 

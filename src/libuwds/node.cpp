@@ -12,8 +12,7 @@ using namespace uwds;
 
 
 
-Node::Node(std::shared_ptr<Scene> scene) : id(boost::uuids::to_string(boost::uuids::random_generator()())),
-                                     _scene(scene) {};
+Node::Node() : id(boost::uuids::to_string(boost::uuids::random_generator()())) {};
 
 Node::Node(const Node& n) : id(boost::uuids::to_string(boost::uuids::random_generator()())),
                       name(n.name),
@@ -21,8 +20,7 @@ Node::Node(const Node& n) : id(boost::uuids::to_string(boost::uuids::random_gene
                       parent(n.parent),
                       children(n.children),
                       transform(n.transform),
-                      last_update(n.last_update),
-                      _scene(n._scene) {}
+                      last_update(n.last_update) {}
 
 
 
@@ -43,9 +41,9 @@ underworlds::Node Node::serialize() const {
 }
 
 
-Node Node::deserialize(const underworlds::Node& remoteNode, shared_ptr<Scene> scene) {
+Node Node::deserialize(const underworlds::Node& remoteNode) {
 
-    auto node = Node(scene);
+    auto node = Node();
     node.id = remoteNode.id();
     node.name = remoteNode.name();
     node.type = (NodeType) remoteNode.type();
