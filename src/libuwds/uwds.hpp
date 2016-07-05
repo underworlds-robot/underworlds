@@ -84,7 +84,9 @@ struct Node {
     std::string name;
     NodeType type;
     std::string parent;
+    void set_parent(const std::string&);
     std::set<std::string> children;
+    void append_child(const std::string&);
     Transformation transform;
     std::chrono::system_clock::time_point last_update;
 
@@ -119,18 +121,18 @@ public:
     //
     // See Nodes::at for a version that does not attempt to query the remote
     // server.
-    Node& operator[](const std::string& id);
+    const Node& operator[](const std::string& id);
 
     // Returns a node from its ID. If the node is not available, throws an
     // out_of_range exception.
     //
     // This method does not attempt to fetch new nodes from the server. Use
     // Node::operator[] instead.
-    Node& at(const std::string& id) const {return *_nodes.at(id);}
+    const Node& at(const std::string& id) const {return *_nodes.at(id);}
 
     /** Returns all the nodes whose name matches the argument.
      */
-    std::set<std::reference_wrapper<Node>> from_name(const std::string& name);
+    std::set<std::reference_wrapper<const Node>> from_name(const std::string& name);
 
     // Returns true if the node exists
     bool has(const std::string& id) const {return _nodes.count(id) != 0;}
