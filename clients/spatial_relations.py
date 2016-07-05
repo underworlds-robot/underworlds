@@ -5,6 +5,8 @@ import underworlds
 from underworlds.helpers.geometry import get_bounding_box_for_node
 from underworlds.types import MESH
 
+import math
+
 import logging; logger = logging.getLogger("underworlds.spatial_reasoning")
 
 EPSILON = 0.005 # 5mm
