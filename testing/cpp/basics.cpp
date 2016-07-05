@@ -6,16 +6,74 @@
 
 using namespace std;
 
-TEST (UnderworldsBasics, Uptime) {
+class UnderworldsTest : public ::testing::Test {
 
-        uwds::Context ctxt("test client", "localhost:50051");
+public:
+    uwds::Context ctxt;
 
-        auto uptime = chrono::duration_cast<chrono::milliseconds>(ctxt.uptime()).count();
-        EXPECT_GT (uptime, 0.);
+    UnderworldsTest():ctxt("test client", "localhost:50051") {}
 
-        auto uptime2 = chrono::duration_cast<chrono::milliseconds>(ctxt.uptime()).count();
+  // virtual void SetUp() {}
 
-        EXPECT_GT (uptime2, uptime);
+  virtual void TearDown() {
+    ctxt.reset();
+  }
+
+};
+
+TEST_F(UnderworldsTest, Uptime) {
+
+    auto uptime = chrono::duration_cast<chrono::milliseconds>(ctxt.uptime()).count();
+    EXPECT_GT (uptime, 0.);
+
+    auto uptime2 = chrono::duration_cast<chrono::milliseconds>(ctxt.uptime()).count();
+
+    EXPECT_GT (uptime2, uptime);
+
+}
+
+///////////// WORLDS
+
+TEST_F(UnderworldsTest, Worlds) {
+
+    auto worlds = ctxt.worlds;
+
+    ASSERT_EQ (worlds.size(), 0);
+
+    auto world1 = worlds["base"];
+
+    EXPECT_EQ (worlds.size(), 1);
+
+    auto world2 = worlds["test"];
+
+    EXPECT_EQ (worlds.size(), 2);
+
+    EXPECT_EQ(world1->name(), "base");
+
+}
+
+TEST_F(UnderworldsTest, WorldsMultiContext) {
+
+    auto worlds = ctxt.worlds;
+
+    ASSERT_EQ (worlds.size(), 0);
+
+    uwds::Context ctxt2("test2 client", "localhost:50051");
+
+    auto worlds2 = ctxt2.worlds;
+
+    ASSERT_EQ (worlds2.size(), 0);
+
+    auto world1 = worlds["base"];
+
+    ASSERT_EQ (worlds.size(), 1);
+    ASSERT_EQ (worlds2.size(), 1);
+}
+
+///////////// NODES
+
+TEST_F(UnderworldsTest, RootNode) {
+
 
 }
 
