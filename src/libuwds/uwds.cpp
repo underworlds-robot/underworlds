@@ -114,9 +114,9 @@ void Context::reset() {
 
 World::World(Context& ctxt, const std::string& name) : _ctxt(ctxt), 
                                                        _name(name),
-                                                       scene(Scene(ctxt, name))
+                                                       _scene(new Scene(ctxt))
 {
-    
+    _scene->initialize(name);
 
 }
 

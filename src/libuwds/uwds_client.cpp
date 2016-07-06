@@ -8,7 +8,7 @@ using namespace std;
 void walk(uwds::Scene& scene, const uwds::Node& node, string ident = " ") {
     cout << ident << "- " << node << endl;
     for (const auto child : node.children()) {
-        walk(scene, scene.nodes[child], ident + " ");
+        walk(scene, child, ident + " ");
     }
 }
 
@@ -25,7 +25,7 @@ int main(int argc, char** argv) {
 
 
     for (const auto& world : topo.worlds) {
-        auto scene = ctxt.worlds[world].scene;
+        auto& scene = ctxt.worlds[world].scene();
         cout << "World <" << world << "> has root node " << scene.root() << endl;
         cout << "Nodes: " << endl;
         walk(scene, scene.root());

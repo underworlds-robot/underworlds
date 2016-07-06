@@ -1,4 +1,5 @@
 #include <chrono>
+#include <utility> // std::move
 #include <system_error>
 
 #include <boost/uuid/uuid_io.hpp>
@@ -13,25 +14,19 @@ using namespace uwds;
 
 
 
-Node::Node() : _id(boost::uuids::to_string(boost::uuids::random_generator()())) {};
-
-Node::Node(const Node&& n) : _id(n._id),
-                      _name(n._name),
-                      _type(n._type),
-                      _parent(n._parent),
-                      _children(n._children),
-                      _transform(n._transform),
-                      _last_update(n._last_update) {}
-
+Node::Node(weak_ptr<Scene> scene) : _id(boost::uuids::to_string(boost::uuids::random_generator()())),
+                                    _scene(scene){};
 
 Node Node::clone() const {
 
-    auto node = Node();
-    node.set_name(_name);
-    node.set_type(_type);
-    node.set_parent(_parent);
-    node.set_children(_children);
-    node.set_transform(_transform);
+    auto node = Node(_scene);
+    node._name = _name;
+    node._type = _type;
+    node._parent = _parent;
+    node._children = _children;
+    node._transform = _transform;
+
+    node._update();
 
     return node;
 }
@@ -53,9 +48,9 @@ underworlds::Node Node::serialize() const {
 }
 
 
-Node Node::deserialize(const underworlds::Node& remoteNode) {
+Node Node::deserialize(const underworlds::Node& remoteNode, weak_ptr<Scene> scene) {
 
-    auto node = Node();
+    auto node = Node(scene);
     node._id = remoteNode.id();
     node._name = remoteNode.name();
     node._type = (NodeType) remoteNode.type();
@@ -70,6 +65,62 @@ Node Node::deserialize(const underworlds::Node& remoteNode) {
 
     return node;
 }
+
+const Node& Node::parent() const {
+    return _scene.lock()->nodes[_parent];
+}
+
+Node& Node::parent() {
+    return _scene.lock()->nodes[_parent];
+}
+
+void Node::set_parent(Node& parent) {
+    _parent=parent.id();
+    parent.append_child(*this);
+    _update();
+}
+
+void Node::clear_parent() {
+    _scene.lock()->nodes[_parent].remove_child(*this);
+    _parent="";
+    _update();
+}
+
+set<reference_wrapper<Node>> Node::children() {
+
+    set<reference_wrapper<Node>> children;
+
+    for (const auto& child : _children) {
+        children.insert(_scene.lock()->nodes[child]);
+    }
+    return children;
+}
+
+const set<reference_wrapper<const Node>> Node::children() const {
+
+    set<reference_wrapper<const Node>> children;
+
+    for (const auto& child : _children) {
+        children.insert(_scene.lock()->nodes[child]);
+    }
+    return children;
+}
+
+void Node::append_child(Node& child) {
+
+    // check if the child was not already there while inserting
+    if(_children.insert(child.id()).second) {
+        child.set_parent(*this);
+        _update();
+    }
+}
+
+void Node::remove_child(Node& child) {
+    child.clear_parent();
+    _children.erase(child.id());
+    _update();
+}
+
 
 void Node::_update() {
     _is_locally_dirty = true;

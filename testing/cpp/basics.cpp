@@ -76,7 +76,19 @@ TEST_F(UnderworldsTest, Scene) {
 
     auto world = ctxt.worlds["base"];
 
-    ASSERT_EQ(world.scene.nodes.size(), 1); // only the root node
+    ASSERT_EQ(world.scene().nodes.size(), 1); // only the root node
+
+}
+
+TEST_F(UnderworldsTest, NodeMirroring) {
+
+    auto& scene = ctxt.worlds["world"].scene();
+    auto& scene2 = ctxt.worlds["world2"].scene();
+
+    auto n1 = scene.new_node();
+    n1.set_parent(scene.root());
+
+    ASSERT_EQ(scene.nodes.size(), 1); // only the root node
 
 }
 
@@ -84,11 +96,11 @@ TEST_F(UnderworldsTest, Scene) {
 
 TEST_F(UnderworldsTest, RootNode) {
 
-    auto world = ctxt.worlds["base"];
+    auto& scene = ctxt.worlds["base"].scene();
 
-    auto& root = world.scene.root();
+    auto& root = scene.root();
 
-    ASSERT_EQ(root, world.scene.nodes[root.id()]);
+    ASSERT_EQ(root, scene.nodes[root.id()]);
 
 }
 

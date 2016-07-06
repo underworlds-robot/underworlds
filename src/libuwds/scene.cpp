@@ -15,17 +15,19 @@ using grpc::Status;
 using namespace std;
 using namespace uwds;
 
-Scene::Scene(Context& ctxt, const std::string& world) :
-                                        _ctxt(ctxt), 
-                                        _world(world), 
-                                        nodes(ctxt, *this) {
+Scene::Scene(Context& ctxt) : _ctxt(ctxt),
+                              nodes(ctxt) {}
 
+void Scene::initialize(const std::string& world) {
+
+    _world = world;
+    nodes._scene = shared_from_this();
 
     ///////////////////////////////////////////////
     // First, get the list of existing nodes
     
     underworlds::Context request;
-    request.set_client(ctxt._myself.id());
+    request.set_client(_ctxt._myself.id());
     request.set_world(world);
 
     underworlds::Nodes reply;
@@ -60,21 +62,20 @@ Scene::Scene(Context& ctxt, const std::string& world) :
 
     // Act upon its status.
     if (status.ok()) {
-        _root = &nodes.at(reply2.id());
+        _root = nodes._nodes.at(reply2.id());
     } else {
         throw system_error(error_code(status.error_code(),generic_category()), status.error_message());
     }
 
 }
 
-const Node& Scene::mirror(const Node& source) {
+Node& Scene::mirror(const Node& source) {
 
-    for (const auto& node : nodes) {
-        if (node == source) return node;
-    }
+    // The source node already exists in the current scene
+    if (nodes.has(source)) return nodes[source.id()];
 
-    // copy the source node
-    Node node = source.clone();
+    // clone the source node
+    auto node = source.clone();
 
     // have we previously mirrored this node?
     if (_mappings.count(source.id())) {
@@ -86,36 +87,39 @@ const Node& Scene::mirror(const Node& source) {
     }
 
     // do we already know about the parent? (ie, the parent has been mirrored)
-    if (_mappings.count(source.parent())) {
-        auto parent = _mappings[source.parent()];
+    if (_mappings.count(source.parent().id())) {
+
+        auto& parent = nodes[_mappings[source.parent().id()]];
+
         // yes, re-parent to the mirrored parent
         node.set_parent(parent);
         // ...and tell the parent we are one of its children
-        nodes[parent].append_child(node.id());
+        parent.append_child(node);
         // push the change to the child to the server
-        commit(nodes[parent]);
+        commit(parent);
+
     } else {
         // no parent for now
-        node.set_parent("");
+        node.clear_parent();
     }
 
 
-    set<string> mirrored_children;
+    // erase all the children (that are refering to nodes in the source world)
+    node._children.clear();
 
-    for(auto source_child : source.children()) {
+    for(auto& source_child : source.children()) {
         // do we already know about the child? (ie, the child has been mirrored)
-        if (_mappings.count(source_child)) {
-            auto child = _mappings[source_child];
+        if (_mappings.count(source_child.get().id())) {
+            auto& child = nodes[_mappings[source_child.get().id()]];
             // yes, add the child to our children
-            mirrored_children.insert(child);
+            node.append_child(child);
             // ...and tell the child we are its parent
-            nodes[child].set_parent(node.id());
+            child.set_parent(node);
             // push the change to the child to the server
-            commit(nodes[child]);
+            commit(child);
 
         }
     }
-    node.set_children(mirrored_children);
 
     // push the node to the server
     commit(node);
