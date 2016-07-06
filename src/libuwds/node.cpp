@@ -13,26 +13,25 @@ using namespace uwds;
 
 
 
-Node::Node() : id(boost::uuids::to_string(boost::uuids::random_generator()())) {};
+Node::Node() : _id(boost::uuids::to_string(boost::uuids::random_generator()())) {};
 
-Node::Node(const Node&& n) : id(n.id),
-                      name(n.name),
-                      type(n.type),
-                      parent(n.parent),
-                      children(n.children),
-                      transform(n.transform),
-                      last_update(n.last_update) {}
+Node::Node(const Node&& n) : _id(n._id),
+                      _name(n._name),
+                      _type(n._type),
+                      _parent(n._parent),
+                      _children(n._children),
+                      _transform(n._transform),
+                      _last_update(n._last_update) {}
 
 
 Node Node::clone() const {
 
     auto node = Node();
-    node.name = name;
-    node.type = type;
-    node.parent = parent;
-    node.children = children;
-    node.transform = transform;
-    node.last_update = chrono::system_clock::now();
+    node.set_name(_name);
+    node.set_type(_type);
+    node.set_parent(_parent);
+    node.set_children(_children);
+    node.set_transform(_transform);
 
     return node;
 }
@@ -40,13 +39,13 @@ Node Node::clone() const {
 underworlds::Node Node::serialize() const {
 
     underworlds::Node node;
-    node.set_id(id);
-    node.set_name(name);
-    node.set_type((underworlds::Node_NodeType) type);
+    node.set_id(_id);
+    node.set_name(_name);
+    node.set_type((underworlds::Node_NodeType) _type);
 
-    node.set_parent(parent);
+    node.set_parent(_parent);
 
-    for (const auto& child : children) {
+    for (const auto& child : _children) {
         node.add_children(child);
     }
 
@@ -57,14 +56,14 @@ underworlds::Node Node::serialize() const {
 Node Node::deserialize(const underworlds::Node& remoteNode) {
 
     auto node = Node();
-    node.id = remoteNode.id();
-    node.name = remoteNode.name();
-    node.type = (NodeType) remoteNode.type();
+    node._id = remoteNode.id();
+    node._name = remoteNode.name();
+    node._type = (NodeType) remoteNode.type();
     
-    node.parent = remoteNode.parent();
+    node._parent = remoteNode.parent();
 
     for(int i = 0; i < remoteNode.children_size(); i++) {
-        node.children.insert(remoteNode.children(i));
+        node._children.insert(remoteNode.children(i));
 
     }
 
@@ -72,10 +71,14 @@ Node Node::deserialize(const underworlds::Node& remoteNode) {
     return node;
 }
 
+void Node::_update() {
+    _is_locally_dirty = true;
+    _last_update = chrono::system_clock::now();
+}
 
 std::ostream& operator<<(std::ostream& os, const uwds::Node& node)
 {
-    os << node.name << " [" << node.id << "]";
+    os << node.name() << " [" << node.id() << "]";
     return os;
 }
 

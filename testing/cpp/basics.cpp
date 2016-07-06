@@ -13,11 +13,11 @@ public:
 
     UnderworldsTest():ctxt("test client", "localhost:50051") {}
 
-  // virtual void SetUp() {}
-
-  virtual void TearDown() {
+  virtual void SetUp() {
     ctxt.reset();
   }
+
+  // virtual void TearDown() {}
 
 };
 
@@ -70,10 +70,25 @@ TEST_F(UnderworldsTest, WorldsMultiContext) {
     ASSERT_EQ (worlds2.size(), 1);
 }
 
+///////////// SCENES
+
+TEST_F(UnderworldsTest, Scene) {
+
+    auto world = ctxt.worlds["base"];
+
+    ASSERT_EQ(world.scene.nodes.size(), 1); // only the root node
+
+}
+
 ///////////// NODES
 
 TEST_F(UnderworldsTest, RootNode) {
 
+    auto world = ctxt.worlds["base"];
+
+    auto& root = world.scene.root();
+
+    ASSERT_EQ(root, world.scene.nodes[root.id()]);
 
 }
 

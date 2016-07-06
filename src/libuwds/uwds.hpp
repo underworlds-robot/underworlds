@@ -66,6 +66,7 @@ static const std::array<std::string,4> NodeTypeName{"undefined", "entity", "mesh
 class Scene;
 
 struct Node {
+    friend class Scene; // give Scene::mirror access to _id
 
     Node();
 
@@ -78,25 +79,57 @@ struct Node {
 
     Node(const Node&&);
 
-    bool operator==(const Node& n) const {return n.id == id;}
-
-    std::string id;
-    std::string name;
-    NodeType type;
-    std::string parent;
-    std::set<std::string> children;
-    Transformation transform;
-    std::chrono::system_clock::time_point last_update;
-
+    bool operator==(const Node& n) const {return n._id == _id;}
+    
     // Creates a new node that is identical to this one, except for the ID
     Node clone() const;
     underworlds::Node serialize() const;
     static Node deserialize(const underworlds::Node&);
+
+    //////////////////////
+    // ACCESSORS
+    std::string id() const {return _id;}
+
+    std::string name() const {return _name;}
+    void set_name(const std::string& name) {_name=name;_update();}
+
+    NodeType type() const {return _type;}
+    void set_type(NodeType type) {_type=type;_update();}
+
+    std::string parent() const {return _parent;}
+    void set_parent(const std::string& parent) {_parent=parent;_update();}
+
+    const std::set<std::string>& children() const {return _children;}
+    void set_children(std::set<std::string> children) {_children=children;_update();}
+    void append_child(const std::string& child) {_children.insert(child);_update();}
+
+    const Transformation& transform() const {return _transform;}
+    void set_transform(Transformation transform) {_transform=transform;_update();}
+
+    std::chrono::system_clock::time_point last_update() const {return _last_update;}
+    ///////////////////
+    
+private:
+    std::string _id;
+    std::string _name;
+    NodeType _type;
+    std::string _parent;
+    std::set<std::string> _children;
+    Transformation _transform;
+    std::chrono::system_clock::time_point _last_update;
+
+    /** True if the node has been updated on the server, but not yet locally
+     */
+    bool _is_remotely_dirty;
+    /** True if the node has been updated locally, but not yet synchronized with the server
+     */
+    bool _is_locally_dirty;
+    void _update();
 };
 
 // make less-than operator a non-member for implicit conversions on from
 // std::reference_wrapper<T> (when storing ref to Node in sets for instance)
-inline bool operator<(const Node& n1, const Node& n2) {return n1.id < n2.id;}
+inline bool operator<(const Node& n1, const Node& n2) {return n1.id() < n2.id();}
 
 /////////////////////////////////////////////////////////////////////////
 ///////////  API

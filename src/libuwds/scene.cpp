@@ -77,51 +77,51 @@ const Node& Scene::mirror(const Node& source) {
     Node node = source.clone();
 
     // have we previously mirrored this node?
-    if (_mappings.count(source.id)) {
+    if (_mappings.count(source.id())) {
         // yes, reuse the original ID
-        node.id = _mappings[source.id];
+        node._id = _mappings[source.id()];
     } else {
         // no, add this new mapping
-        _mappings[source.id] = node.id;
+        _mappings[source.id()] = node.id();
     }
 
     // do we already know about the parent? (ie, the parent has been mirrored)
-    if (_mappings.count(source.parent)) {
-        auto parent = _mappings[source.parent];
+    if (_mappings.count(source.parent())) {
+        auto parent = _mappings[source.parent()];
         // yes, re-parent to the mirrored parent
-        node.parent = parent;
+        node.set_parent(parent);
         // ...and tell the parent we are one of its children
-        nodes[parent].children.insert(node.id);
+        nodes[parent].append_child(node.id());
         // push the change to the child to the server
         commit(nodes[parent]);
     } else {
         // no parent for now
-        node.parent = "";
+        node.set_parent("");
     }
 
-    // erase all the children (that are refering to nodes in the source world)
-    node.children.clear();
 
-    for(auto source_child : source.children) {
+    set<string> mirrored_children;
+
+    for(auto source_child : source.children()) {
         // do we already know about the child? (ie, the child has been mirrored)
         if (_mappings.count(source_child)) {
             auto child = _mappings[source_child];
             // yes, add the child to our children
-            node.children.insert(child);
+            mirrored_children.insert(child);
             // ...and tell the child we are its parent
-            nodes[child].parent = node.id;
+            nodes[child].set_parent(node.id());
             // push the change to the child to the server
             commit(nodes[child]);
 
-        } else {
         }
     }
+    node.set_children(mirrored_children);
 
     // push the node to the server
     commit(node);
 
     // loopback: queries back the server to retrieve the newly mirrored node
-    return nodes[node.id];
+    return nodes[node.id()];
 
 
 

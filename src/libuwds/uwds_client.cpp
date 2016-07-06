@@ -7,7 +7,7 @@ using namespace std;
 
 void walk(uwds::Scene& scene, const uwds::Node& node, string ident = " ") {
     cout << ident << "- " << node << endl;
-    for (const auto child : node.children) {
+    for (const auto child : node.children()) {
         walk(scene, scene.nodes[child], ident + " ");
     }
 }

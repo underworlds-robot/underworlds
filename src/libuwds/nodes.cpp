@@ -35,7 +35,7 @@ set<reference_wrapper<Node>> Nodes::from_name(const string& name) {
     set<reference_wrapper<Node>> result;
 
     for (const auto& kv : _nodes) {
-        if (kv.second->name == name) result.insert(*kv.second);
+        if (kv.second->name() == name) result.insert(*kv.second);
     }
 
     return result;
@@ -60,7 +60,7 @@ shared_ptr<Node> Nodes::_fetch(const string& id) {
     if (status.ok()) {
 
         auto node = make_shared<Node>(Node::deserialize(reply));
-        _nodes[node->id] = node;
+        _nodes[node->id()] = node;
         return node;
 
     } else {
