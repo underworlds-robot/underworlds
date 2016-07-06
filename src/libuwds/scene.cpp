@@ -89,9 +89,9 @@ const Node& Scene::mirror(const Node& source) {
     if (_mappings.count(source.parent)) {
         auto parent = _mappings[source.parent];
         // yes, re-parent to the mirrored parent
-        node.set_parent(parent);
+        node.parent = parent;
         // ...and tell the parent we are one of its children
-        nodes[parent].append_child(node.id);
+        nodes[parent].children.insert(node.id);
         // push the change to the child to the server
         commit(nodes[parent]);
     } else {
@@ -107,9 +107,9 @@ const Node& Scene::mirror(const Node& source) {
         if (_mappings.count(source_child)) {
             auto child = _mappings[source_child];
             // yes, add the child to our children
-            node.append_child(child);
+            node.children.insert(child);
             // ...and tell the child we are its parent
-            nodes[child].set_parent(node.id);
+            nodes[child].parent = node.id;
             // push the change to the child to the server
             commit(nodes[child]);
 

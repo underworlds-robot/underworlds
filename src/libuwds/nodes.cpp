@@ -19,7 +19,7 @@ using namespace uwds;
 
 Nodes::Nodes(Context& ctxt, Scene& scene):_ctxt(ctxt),_scene(scene) {}
 
-const Node& Nodes::operator[](const string& id) {
+Node& Nodes::operator[](const string& id) {
 
     if (!has(id)) {
         auto node = _fetch(id); // side-effect: adds the node to _nodes
@@ -30,7 +30,7 @@ const Node& Nodes::operator[](const string& id) {
 
 }
 
-set<reference_wrapper<const Node>> Nodes::from_name(const string& name) {
+set<reference_wrapper<Node>> Nodes::from_name(const string& name) {
 
     set<reference_wrapper<Node>> result;
 
