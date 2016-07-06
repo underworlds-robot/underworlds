@@ -1,10 +1,21 @@
 #include <chrono>
+#include <thread>
 
 #include "gtest/gtest.h"
 
 #include "uwds.hpp"
 
 using namespace std;
+
+#define WAIT_FOR_PROPAGATION std::this_thread::sleep_for(std::chrono::milliseconds(200))
+
+template<typename T, typename V> bool isIn(const T& container, const V& value) {
+
+    for (const V& v : container) {
+        if (v == value) return true;
+    }
+    return false;
+}
 
 class UnderworldsTest : public ::testing::Test {
 
@@ -103,6 +114,68 @@ TEST_F(UnderworldsTest, RootNode) {
     ASSERT_EQ(root, scene.nodes[root.id()]);
 
 }
+
+TEST_F(UnderworldsTest, Nodes) {
+
+    auto& scene = ctxt.worlds["base"].scene();
+
+    auto n1 = scene.new_node();
+
+    WAIT_FOR_PROPAGATION;
+
+    ASSERT_TRUE(isIn(scene.nodes, n1));
+
+}
+
+TEST_F(UnderworldsTest, NodesMultiContext) {
+
+    auto& scene = ctxt.worlds["base"].scene();
+
+    uwds::Context ctxt2("test2 client", "localhost:50051");
+    auto& scene2 = ctxt2.worlds["base"].scene();
+
+    ASSERT_EQ(scene.root(), scene2.root());
+
+    auto n1 = scene.new_node();
+
+    WAIT_FOR_PROPAGATION;
+
+    
+    ASSERT_TRUE(isIn(scene.nodes, n1));
+    ASSERT_TRUE(isIn(scene2.nodes, n1));
+}
+
+
+TEST_F(UnderworldsTest, Hierarchy) {
+
+    auto& scene = ctxt.worlds["base"].scene();
+
+    auto n1 = scene.new_node();
+    n1.set_parent(scene.root());
+    
+    ASSERT_TRUE(isIn(scene.root().children(), n1));
+
+}
+
+TEST_F(UnderworldsTest, HierarchyMultiContext) {
+
+    auto& scene = ctxt.worlds["base"].scene();
+
+    auto n1 = scene.new_node();
+    n1.set_parent(scene.root());
+    
+    ASSERT_TRUE(isIn(scene.root().children(), n1));
+    ASSERT_FALSE(isIn(n1.children(), scene.root()));
+
+    uwds::Context ctxt2("test2 client", "localhost:50051");
+    auto& scene2 = ctxt2.worlds["base"].scene();
+
+    ASSERT_TRUE(isIn(scene2.root().children(), n1));
+    ASSERT_FALSE(isIn(n1.children(), scene2.root()));
+
+}
+
+
 
 int main(int argc, char **argv) {
       ::testing::InitGoogleTest(&argc, argv);
