@@ -6,6 +6,8 @@
 #include "underworlds.grpc.pb.h"
 
 #include "uwds.hpp"
+#include "scene.hpp"
+
 
 using grpc::Channel;
 using grpc::Status;

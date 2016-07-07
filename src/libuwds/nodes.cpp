@@ -9,6 +9,8 @@
 
 
 #include "uwds.hpp"
+#include "scene.hpp"
+#include "nodes.hpp"
 
 using grpc::Channel;
 using grpc::Status;

@@ -1,4 +1,5 @@
 #include <system_error>
+#include<iostream>
 
 
 #include <grpc++/grpc++.h>
@@ -6,8 +7,8 @@
 #include "underworlds.grpc.pb.h"
 
 #include "uwds.hpp"
+#include "scene.hpp"
 
-#include<iostream>
 
 using grpc::Channel;
 using grpc::Status;

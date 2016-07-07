@@ -5,14 +5,11 @@
 #include <boost/uuid/uuid_io.hpp>
 #include <boost/uuid/uuid_generators.hpp>
 
-#include "underworlds.pb.h"
-
-#include "uwds.hpp"
+#include "node.hpp"
+#include "scene.hpp"
 
 using namespace std;
 using namespace uwds;
-
-
 
 Node::Node(weak_ptr<Scene> scene) : _id(boost::uuids::to_string(boost::uuids::random_generator()())),
                                     _scene(scene){};
