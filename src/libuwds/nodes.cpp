@@ -1,5 +1,6 @@
 #include <stdexcept>
 #include <system_error>
+#include <condition_variable>
 
 #include <boost/range/adaptor/map.hpp>
 
@@ -19,7 +20,17 @@ using grpc::Status;
 using namespace std;
 using namespace uwds;
 
-Nodes::Nodes(Context& ctxt):_ctxt(ctxt) {}
+Nodes::Nodes(Context& ctxt):_ctxt(ctxt),
+                            _remote_communication_running(true),
+                            _remote_communication_thread(&Nodes::_remote_communication, this)
+{
+
+}
+
+Nodes::~Nodes() {
+    _remote_communication_running = false;
+    _remote_communication_thread.join();
+}
 
 ConstNodePtr Nodes::operator[](const string& id) const {
 
@@ -110,3 +121,19 @@ shared_ptr<Node> Nodes::_fetch(const string& id) {
 
 }
 
+void Nodes::_add_node(shared_ptr<Node> node) {
+    _nodes[node->id()] = node;
+}
+
+void Nodes::_remote_communication() {
+
+    while(_remote_communication_running) {
+        
+        weak_ptr<const Node> node;
+        auto res = _locally_dirty_nodes.pop_timed(node, chrono::milliseconds(25));
+
+        if (res != cv_status::timeout) {
+            cout << "Pushing node " << node << endl;
+        }
+    }
+}

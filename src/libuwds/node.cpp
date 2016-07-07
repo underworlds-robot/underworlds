@@ -24,7 +24,7 @@ weak_ptr<Node> Node::clone() const {
     // mark the new node as dirty and update the 'last_update' timestamp
     node->_update();
 
-    _scene.lock()->_add_node(node);
+    _scene.lock()->nodes._add_node(node);
 
     // returns a weak_ptr pointing to the node as stored in Scene::nodes
     return _scene.lock()->nodes[node->id()]; 
@@ -130,7 +130,7 @@ void Node::remove_child(NodePtr child_ptr) {
 
 
 void Node::_update() {
-    _is_locally_dirty = true;
+    _scene.lock()->nodes._locally_dirty_nodes.insert(shared_from_this());
     _last_update = chrono::system_clock::now();
 }
 

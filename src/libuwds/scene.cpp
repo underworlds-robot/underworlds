@@ -73,7 +73,7 @@ void Scene::initialize(const std::string& world) {
 weak_ptr<Node> Scene::new_node() {
     auto node = shared_ptr<Node>(new Node(shared_from_this()));
     node->_update();
-    _add_node(node);
+    nodes._add_node(node);
 
     return nodes[node->id()];
 
@@ -138,29 +138,27 @@ weak_ptr<Node> Scene::mirror(const weak_ptr<const Node> source_ptr) {
 
 }
 
-void Scene::commit(ConstNodePtr node) {
+//void Scene::commit(ConstNodePtr node) {
+//
+//    underworlds::NodeInContext request;
+//    request.mutable_context()->set_client(_ctxt._myself.id());
+//    request.mutable_context()->set_world(_world);
+//
+//    auto gRPCNode = node.lock()->serialize();
+//    request.set_allocated_node(&gRPCNode);
+//
+//    underworlds::Empty reply;
+//
+//    grpc::ClientContext context;
+//
+//    // The actual RPC.
+//    Status status = _ctxt._server->updateNode(&context, request, &reply);
+//
+//    if (!status.ok()) {
+//        throw system_error(error_code(status.error_code(),generic_category()), status.error_message());
+//    }
+//
+//}
 
-    underworlds::NodeInContext request;
-    request.mutable_context()->set_client(_ctxt._myself.id());
-    request.mutable_context()->set_world(_world);
-
-    auto gRPCNode = node.lock()->serialize();
-    request.set_allocated_node(&gRPCNode);
-
-    underworlds::Empty reply;
-
-    grpc::ClientContext context;
-
-    // The actual RPC.
-    Status status = _ctxt._server->updateNode(&context, request, &reply);
-
-    if (!status.ok()) {
-        throw system_error(error_code(status.error_code(),generic_category()), status.error_message());
-    }
-
-}
 
 
-void Scene::_add_node(shared_ptr<Node> node) {
-    nodes._nodes[node->id()] = node;
-}
