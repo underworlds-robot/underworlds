@@ -19,30 +19,34 @@ using namespace uwds;
 
 Nodes::Nodes(Context& ctxt):_ctxt(ctxt) {}
 
-const Node& Nodes::operator[](const string& id) const {
+ConstNodePtr Nodes::operator[](const string& id) const {
 
     if (!has(id)) {
         auto node = _fetch(id); // side-effect: adds the node to _nodes
-        if (!node) throw out_of_range("No such node " + id);
+        if (node) return node; // if !node, the at(id) will throw an out_of_range
     }
     
     return at(id);
 
 }
 
-Node& Nodes::operator[](const string& id) {
+NodePtr Nodes::operator[](const string& id) {
 
-    // cast away the const qualifiers -- see http://stackoverflow.com/questions/856542/elegant-solution-to-duplicate-const-and-non-const-getters
-    return const_cast<Node&>(static_cast<const Nodes*>(this)->operator[](id));
+    if (!has(id)) {
+        auto node = _fetch(id); // side-effect: adds the node to _nodes
+        if (node) return node; // if !node, the at(id) will throw an out_of_range
+    }
+    
+    return at(id);
+
 }
 
+set<weak_ptr<Node>> Nodes::from_name(const string& name) {
 
-set<reference_wrapper<Node>> Nodes::from_name(const string& name) {
-
-    set<reference_wrapper<Node>> result;
+    set<weak_ptr<Node>> result;
 
     for (const auto& kv : _nodes) {
-        if (kv.second->name() == name) result.insert(*kv.second);
+        if (kv.second->name() == name) result.insert(kv.second);
     }
 
     return result;
@@ -99,7 +103,8 @@ shared_ptr<Node> Nodes::_fetch(const string& id) {
         return node;
 
     } else {
-        throw system_error(error_code(status.error_code(),generic_category()), status.error_message());
+        return nullptr;
     }
 
 }
+

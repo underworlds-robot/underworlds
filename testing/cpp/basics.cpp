@@ -6,13 +6,14 @@
 #include "uwds.hpp"
 
 using namespace std;
+using namespace uwds;
 
 #define WAIT_FOR_PROPAGATION std::this_thread::sleep_for(std::chrono::milliseconds(200))
 
-template<typename T, typename V> bool isIn(const T& container, const V& value) {
+template<typename T> bool isIn(const T& container, const Node& value) {
 
-    for (const V& v : container) {
-        if (v == value) return true;
+    for (const auto v : container) {
+        if (NODELOCK(v) == value) return true;
     }
     return false;
 }
@@ -96,7 +97,7 @@ TEST_F(UnderworldsTest, NodeMirroring) {
     auto& scene = ctxt.worlds["world"].scene();
     auto& scene2 = ctxt.worlds["world2"].scene();
 
-    auto n1 = scene.new_node();
+    auto& n1 = NODELOCK(scene.new_node());
     n1.set_parent(scene.root());
 
     ASSERT_EQ(scene.nodes.size(), 1); // only the root node
@@ -109,9 +110,9 @@ TEST_F(UnderworldsTest, RootNode) {
 
     auto& scene = ctxt.worlds["base"].scene();
 
-    auto& root = scene.root();
+    auto& root = NODELOCK(scene.root());
 
-    ASSERT_EQ(root, scene.nodes[root.id()]);
+    ASSERT_EQ(root, NODELOCK(scene.nodes[root.id()]));
 
 }
 
@@ -119,7 +120,7 @@ TEST_F(UnderworldsTest, Nodes) {
 
     auto& scene = ctxt.worlds["base"].scene();
 
-    auto n1 = scene.new_node();
+    auto& n1 = NODELOCK(scene.new_node());
 
     WAIT_FOR_PROPAGATION;
 
@@ -136,7 +137,7 @@ TEST_F(UnderworldsTest, NodesMultiContext) {
 
     ASSERT_EQ(scene.root(), scene2.root());
 
-    auto n1 = scene.new_node();
+    auto& n1 = NODELOCK(scene.new_node());
 
     WAIT_FOR_PROPAGATION;
 
@@ -150,10 +151,10 @@ TEST_F(UnderworldsTest, Hierarchy) {
 
     auto& scene = ctxt.worlds["base"].scene();
 
-    auto n1 = scene.new_node();
+    auto& n1 = NODELOCK(scene.new_node());
     n1.set_parent(scene.root());
     
-    ASSERT_TRUE(isIn(scene.root().children(), n1));
+    ASSERT_TRUE(isIn(NODELOCK(scene.root()).children(), n1));
 
 }
 
@@ -161,17 +162,17 @@ TEST_F(UnderworldsTest, HierarchyMultiContext) {
 
     auto& scene = ctxt.worlds["base"].scene();
 
-    auto n1 = scene.new_node();
+    auto& n1 = NODELOCK(scene.new_node());
     n1.set_parent(scene.root());
     
-    ASSERT_TRUE(isIn(scene.root().children(), n1));
-    ASSERT_FALSE(isIn(n1.children(), scene.root()));
+    ASSERT_TRUE(isIn(NODELOCK(scene.root()).children(), n1));
+    ASSERT_FALSE(isIn(n1.children(), NODELOCK(scene.root())));
 
     uwds::Context ctxt2("test2 client", "localhost:50051");
     auto& scene2 = ctxt2.worlds["base"].scene();
 
-    ASSERT_TRUE(isIn(scene2.root().children(), n1));
-    ASSERT_FALSE(isIn(n1.children(), scene2.root()));
+    ASSERT_TRUE(isIn(NODELOCK(scene2.root()).children(), n1));
+    ASSERT_FALSE(isIn(n1.children(), NODELOCK(scene2.root())));
 
 }
 

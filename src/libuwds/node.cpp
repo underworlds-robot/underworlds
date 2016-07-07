@@ -17,18 +17,20 @@ using namespace uwds;
 Node::Node(weak_ptr<Scene> scene) : _id(boost::uuids::to_string(boost::uuids::random_generator()())),
                                     _scene(scene){};
 
-Node Node::clone() const {
+weak_ptr<Node> Node::clone() const {
 
-    auto node = Node(_scene);
-    node._name = _name;
-    node._type = _type;
-    node._parent = _parent;
-    node._children = _children;
-    node._transform = _transform;
+    // make an exact copy of myself
+    auto node = shared_ptr<Node>(new Node(*this));
+    // generate a new id
+    node->_id = boost::uuids::to_string(boost::uuids::random_generator()());
 
-    node._update();
+    // mark the new node as dirty and update the 'last_update' timestamp
+    node->_update();
 
-    return node;
+    _scene.lock()->_add_node(node);
+
+    // returns a weak_ptr pointing to the node as stored in Scene::nodes
+    return _scene.lock()->nodes[node->id()]; 
 }
 
 underworlds::Node Node::serialize() const {
@@ -66,39 +68,32 @@ Node Node::deserialize(const underworlds::Node& remoteNode, weak_ptr<Scene> scen
     return node;
 }
 
-const Node& Node::parent() const {
+ConstNodePtr Node::parent() const {
     return _scene.lock()->nodes[_parent];
 }
 
-Node& Node::parent() {
+NodePtr Node::parent() {
     return _scene.lock()->nodes[_parent];
 }
 
-void Node::set_parent(Node& parent) {
+void Node::set_parent(NodePtr parent_ptr) {
+
+    auto& parent = NODELOCK(parent_ptr);
+
     _parent=parent.id();
-    parent.append_child(*this);
+    parent.append_child(shared_from_this());
     _update();
 }
 
 void Node::clear_parent() {
-    _scene.lock()->nodes[_parent].remove_child(*this);
+    parent().lock()->remove_child(shared_from_this());
     _parent="";
     _update();
 }
 
-set<reference_wrapper<Node>> Node::children() {
+set<weak_ptr<Node>> Node::children() {
 
-    set<reference_wrapper<Node>> children;
-
-    for (const auto& child : _children) {
-        children.insert(_scene.lock()->nodes[child]);
-    }
-    return children;
-}
-
-const set<reference_wrapper<const Node>> Node::children() const {
-
-    set<reference_wrapper<const Node>> children;
+    set<weak_ptr<Node>> children;
 
     for (const auto& child : _children) {
         children.insert(_scene.lock()->nodes[child]);
@@ -106,16 +101,31 @@ const set<reference_wrapper<const Node>> Node::children() const {
     return children;
 }
 
-void Node::append_child(Node& child) {
+const set<weak_ptr<const Node>> Node::children() const {
+
+    set<weak_ptr<const Node>> children;
+
+    for (const auto& child : _children) {
+        children.insert(_scene.lock()->nodes[child]);
+    }
+    return children;
+}
+
+void Node::append_child(NodePtr child_ptr) {
+
+    auto& child = NODELOCK(child_ptr);
 
     // check if the child was not already there while inserting
     if(_children.insert(child.id()).second) {
-        child.set_parent(*this);
+        child.set_parent(shared_from_this());
         _update();
     }
 }
 
-void Node::remove_child(Node& child) {
+void Node::remove_child(NodePtr child_ptr) {
+
+    auto& child = NODELOCK(child_ptr);
+
     child.clear_parent();
     _children.erase(child.id());
     _update();
@@ -127,9 +137,16 @@ void Node::_update() {
     _last_update = chrono::system_clock::now();
 }
 
-std::ostream& operator<<(std::ostream& os, const uwds::Node& node)
+std::ostream& operator<<(std::ostream& os, const Node& node)
 {
     os << node.name() << " [" << node.id() << "]";
+    return os;
+}
+
+std::ostream& operator<<(std::ostream& os, const weak_ptr<const Node> node)
+{
+    auto nodePtr = node.lock();
+    os << nodePtr->name() << " [" << nodePtr->id() << "]";
     return os;
 }
 

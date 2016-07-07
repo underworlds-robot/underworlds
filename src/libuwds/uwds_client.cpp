@@ -5,9 +5,9 @@
 
 using namespace std;
 
-void walk(uwds::Scene& scene, const uwds::Node& node, string ident = " ") {
+void walk(uwds::Scene& scene, const weak_ptr<uwds::Node> node, string ident = " ") {
     cout << ident << "- " << node << endl;
-    for (const auto child : node.children()) {
+    for (const auto child : NODELOCK(node).children()) {
         walk(scene, child, ident + " ");
     }
 }
