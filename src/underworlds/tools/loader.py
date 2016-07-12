@@ -116,19 +116,21 @@ class ModelLoader:
             self.recur_node(child, model, level + 1)
 
 
-    def load(self, filename, ctx=None, root=None):
+    def load(self, filename, ctx=None, root=None, only_meshes=False):
         """Loads a Collada (or any Assimp compatible model) file in the world.
 
         The kinematic chains are added to the world's geometric state.
         The meshes are added to the meshes repository.
 
-        A new 'load' event is also added the the world timeline.
+        A new 'load' event is also added in the world timeline.
 
         :param string path: the path (relative or absolute) to the Collada resource
         :param Context ctx: an existing underworlds context. If not provided, a
                             new one is created (named 'model loader')
         :param Node root: if given, the loaded nodes will be parented to this
                           node instead of the scene's root.
+        :param bool only_meshes: if true, no node is created. Only the
+        meshes are pushed to the server.
         :returns: the list of loaded underworlds nodes.
         """
 
@@ -179,10 +181,11 @@ class ModelLoader:
 
         logger.info("Sent %d meshes (%d were already available on the server)" % (count_sent, count_notsent))
 
-        # Send the nodes to the server (only the nodes)
-        logger.info("Sending the nodes to the server...")
-        for name, pair in list(self.node_map.items()):
-            nodes.update(pair[1])
+        if not only_meshes:
+            # Send the nodes to the server (only the nodes)
+            logger.info("Sending the nodes to the server...")
+            for name, pair in list(self.node_map.items()):
+                nodes.update(pair[1])
 
 
         pyassimp.release(model)
@@ -194,6 +197,21 @@ class ModelLoader:
 
         return [nodes[1] for _,nodes in self.node_map.items()]
 
+    def load_meshes(self, filename, ctx=None):
+        """Pushes meshes from any Assimp-compatible 3D model to the server's
+        mesh repository.
+
+        A new 'load' event is also added in the world timeline.
+
+        :param string path: the path (relative or absolute) to the 3D model
+        :param Context ctx: an existing underworlds context. If not provided, a
+                            new one is created (named 'model loader')
+        :returns: a dictionary {mesh name: mesh ID} 
+
+        :see: `load` loads the meshes and creates corresponding nodes.
+        """
+
+        return {n.name:n.cad for n in self.load(filename, ctx, None, True) if n.type == MESH}
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
