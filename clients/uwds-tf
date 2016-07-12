@@ -1,0 +1,118 @@
+#!/usr/bin/env python
+#-*- coding: UTF-8 -*-
+
+import underworlds
+from underworlds.helpers import transformations
+from underworlds.types import ENTITY, Node
+
+import logging; logger = logging.getLogger("underworlds.ros_tf_adapter")
+logging.basicConfig(level=logging.DEBUG)
+
+import numpy
+import rospy
+import math
+import tf
+import geometry_msgs.msg
+
+EPSILON = 0.01
+
+def transformation_matrix(t, q):
+
+    translation_mat = transformations.translation_matrix(t)
+
+    rotation_mat = transformations.quaternion_matrix(q)
+
+    return numpy.dot(translation_mat, rotation_mat)
+
+def nearlyequal(t1, t2):
+
+    return numpy.allclose(t1, t2, rtol=0, atol=EPSILON)
+
+if __name__ == "__main__":
+
+    import argparse
+    parser = argparse.ArgumentParser(description="Underworlds ROS TF adapter")
+    parser.add_argument("reference_frame", help="Reference TF frame. Generated Underworlds nodes will be parented to a node with this name.")
+    parser.add_argument("world", help="Underworlds world to feed with the TF frames")
+    #parser.add_argument("-d", "--debug", help="run in interactive, debug mode", action="store_true")
+    args = parser.parse_args()
+
+    rospy.init_node('underworlds_tf_adapter')
+    listener = tf.TransformListener()
+    rate = rospy.Rate(10.0)
+
+    reference_frame = args.reference_frame
+
+    nodes = {}
+
+
+    with underworlds.Context("ROS TF adapter") as ctx:
+
+        scene = ctx.worlds[args.world].scene
+        ref_node = None
+
+        ref_nodes = scene.nodebyname(reference_frame)
+
+        if not ref_nodes:
+            logger.warning("The reference frame %s does not name an existing node in world <%s>. Creating it, parented to the scene root." % (reference_frame, args.world))
+
+            ref_node = Node()
+            ref_node.name = reference_frame
+            ref_node.type = ENTITY
+            ref_node.parent = scene.rootnode.id
+            # use the default transformation (identity)
+            scene.nodes.append(ref_node)
+        else:
+            logger.info("Found an existing node for the reference frame %s" % reference_frame)
+            if len(ref_nodes) > 1:
+                logger.warning("More than one node named after the reference node %s. Using the first one." % reference_frame)
+            ref_node = ref_nodes[0]
+
+
+        while not rospy.is_shutdown():
+
+            frames = listener.getFrameStrings()
+
+            if frames:
+                for frame in frames:
+                    if frame == reference_frame:
+                        continue
+                    try:
+                        t =listener.getLatestCommonTime(frame,reference_frame)
+                        (trans,rot) = listener.lookupTransform(reference_frame, frame, t)
+                        transform = transformation_matrix(trans, rot) 
+
+                        if frame not in nodes:
+                            candidates = scene.nodebyname(frame)
+                            if candidates:
+                                logger.info("Found an existing node for frame %s" % frame)
+                                if len(candidates) > 1:
+                                    logger.warning("More than one node named %s. Updating the first one." % frame)
+                                nodes[frame] = candidates[0]
+
+                                if nodes[frame].parent != ref_node.id:
+                                    logger.info("Reparenting node %s to reference node %s" % (frame, reference_frame))
+                                    nodes[frame].parent = ref_node.id
+                                    scene.nodes.update(nodes[frame])
+
+                            else:
+                                logger.info("Creating a new node for frame %s" % frame)
+                                node = Node()
+                                node.name = frame
+                                node.type = ENTITY
+                                node.parent = ref_node.id
+                                nodes[frame] = node
+                                scene.nodes.append(node)
+
+                        if not nearlyequal(transform, nodes[frame].transformation):
+                            nodes[frame].transformation = transform
+                            scene.nodes.update(nodes[frame])
+                        else:
+                            logger.debug("Frame %s: nearly static" % frame)
+
+                    except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+                        continue
+
+            rate.sleep()
+
+        logger.info("Quitting now")
