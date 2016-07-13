@@ -26,9 +26,8 @@ class ModelLoader:
     # mapping {assimp name: (assimp node, underworld node)}
     node_map = {}
 
-    def __init__(self, world = DEFAULT_WORLD):
-        self.world = world
-
+    def __init__(self):
+        pass
 
     def node_boundingbox(self, node):
         """ Returns the AABB bounding box of an ASSIMP node.
@@ -116,7 +115,7 @@ class ModelLoader:
             self.recur_node(child, model, level + 1)
 
 
-    def load(self, filename, ctx=None, root=None, only_meshes=False):
+    def load(self, filename, ctx=None, world=DEFAULT_WORLD, root=None, only_meshes=False):
         """Loads a Collada (or any Assimp compatible model) file in the world.
 
         The kinematic chains are added to the world's geometric state.
@@ -127,12 +126,16 @@ class ModelLoader:
         :param string path: the path (relative or absolute) to the Collada resource
         :param Context ctx: an existing underworlds context. If not provided, a
                             new one is created (named 'model loader')
+        :param string world: the target world for the creation of nodes
         :param Node root: if given, the loaded nodes will be parented to this
                           node instead of the scene's root.
         :param bool only_meshes: if true, no node is created. Only the
         meshes are pushed to the server.
         :returns: the list of loaded underworlds nodes.
         """
+
+        if not only_meshes and world is None:
+            raise RuntimeError("Can not create nodes if the world is None")
 
         close_ctx_at_end = False
 
@@ -145,12 +148,12 @@ class ModelLoader:
         model = pyassimp.load(filename, aiProcessPreset_TargetRealtime_MaxQuality)
         logger.info("...done")
 
-        world = ctx.worlds[self.world]
-        nodes = world.scene.nodes
-
-        if not root:
-            logger.info("Merging the root nodes")
-            self.node_map[model.rootnode.name] = (model.rootnode, world.scene.rootnode)
+        if not only_meshes:
+            if not root:
+                logger.info("Merging the root nodes")
+                self.node_map[model.rootnode.name] = (model.rootnode, ctx.worlds[world].scene.rootnode)
+        else:
+            self.node_map[model.rootnode.name] = (model.rootnode, Node())
 
         logger.info("Nodes found:")
         self.recur_node(model.rootnode, model)
@@ -182,6 +185,8 @@ class ModelLoader:
         logger.info("Sent %d meshes (%d were already available on the server)" % (count_sent, count_notsent))
 
         if not only_meshes:
+            nodes = ctx.worlds[world].scene.nodes
+
             # Send the nodes to the server (only the nodes)
             logger.info("Sending the nodes to the server...")
             for name, pair in list(self.node_map.items()):
@@ -211,7 +216,7 @@ class ModelLoader:
         :see: `load` loads the meshes and creates corresponding nodes.
         """
 
-        return {n.name:n.cad for n in self.load(filename, ctx, None, True) if n.type == MESH}
+        return {n.name:n.cad for n in self.load(filename, ctx, None, None, True) if n.type == MESH}
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)

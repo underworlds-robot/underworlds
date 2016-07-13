@@ -22,6 +22,6 @@ if args.fulldebug:
 else:
     logging.basicConfig(level=logging.INFO)
 
-ModelLoader(args.world).load(args.model)
+ModelLoader().load(args.model,world=args.world)
 
 
