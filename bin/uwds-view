@@ -377,6 +377,7 @@ class Underworlds3DViewer:
 
             logger.info("Mesh ID %s is now available. Getting it..." % id)
 
+        logger.info("Fetching mesh <%s>" % id)
         mesh = self.ctx.mesh(id) # retrieve the mesh from the server
 
         # Fill the buffer for vertex and normals positions
@@ -420,6 +421,16 @@ class Underworlds3DViewer:
         else:
             return self.get_color_id()
 
+    def is_mesh_updated(self, node):
+        if hasattr(node, "cad"):
+            return node.glmeshes != node.cad
+        elif hasattr(node, "lowres"):
+            return node.glmeshes != node.lowres
+        elif hasattr(node, "hires"):
+            return node.glmeshes != node.hires
+        else:
+            return False
+
     def glize(self, node):
 
         node.selected = False
@@ -437,6 +448,7 @@ class Underworlds3DViewer:
                 node.glmeshes = node.hires
             else:
                 raise StandardError("The node %s has no mesh available!" % node.name)
+
             for mesh in node.glmeshes:
                 self.prepare_gl_buffers(mesh)
 
@@ -763,8 +775,8 @@ class Underworlds3DViewer:
         if node.type == MESH:
 
             # if the node has been recently turned into a mesh, we might not
-            # have the mesh data yet.
-            if not hasattr(node, "glmeshes"):
+            # have the mesh data yet. Likewise, the mesh might have been updated.
+            if not hasattr(node, "glmeshes") or self.is_mesh_updated(self.scene.nodes[node.id]):
                 self.glize(node)
 
             for id in node.glmeshes:
