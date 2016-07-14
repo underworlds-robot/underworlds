@@ -800,7 +800,10 @@ class Underworlds3DViewer:
                     elif mode == SILHOUETTE:
                         glUniform4f( shader.u_materialDiffuse, .0, .0, .0, 1.0 )
                     else:
-                        diffuse = self.meshes[id]["material"]["diffuse"]
+                        if node.selected:
+                            diffuse = (1.0,0.0,0.0,1.0) # selected nodes in red
+                        else:
+                            diffuse = self.meshes[id]["material"]["diffuse"]
                         if len(diffuse) == 3: # RGB instead of expected RGBA
                             diffuse.append(1.0)
                         glUniform4f( shader.u_materialDiffuse, *diffuse )
@@ -872,30 +875,10 @@ class Underworlds3DViewer:
     def loop(self):
 
         pygame.display.flip()
-#        event = pygame.event.poll()
-#        self.keys = [k for k, pressed in enumerate(pygame.key.get_pressed()) if pressed]
-#
-#        if event.type == pygame.KEYDOWN:
-#            if pygame.K_f in self.keys: pygame.display.toggle_fullscreen()
-#            if pygame.K_s in self.keys: self.screenshot()
-#            if pygame.K_v in self.keys: self.check_visibility()
-#            if pygame.K_TAB in self.keys: self.cycle_cameras()
-#            if pygame.K_ESCAPE in self.keys:
-#                return False
-#
-#        if event.type == pygame.MOUSEBUTTONDOWN:
-#
-#            if pygame.mouse.get_pressed()[0]: # left button pressed
-#                mousex, mousey = pygame.mouse.get_pos()
-#                hovered = self.get_hovered_node(mousex, self.h - mousey)
-#                if hovered:
-#                    logger.debug("Node %s selected" % hovered)
-#                    self.select_node(hovered)
-#                else:
-#                    self.select_node(None)
-#            if pygame.mouse.get_pressed()[2]: # right button pressed
-#                self.select_node(None)
-#
+
+        if not self.process_events():
+            return False # ESC has been pressed
+
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
         # Compute FPS
@@ -910,17 +893,10 @@ class Underworlds3DViewer:
 
         return True
 
-    def controls_3d(self):
 
-        camera_updated = False
 
-        #up_key=pygame.K_UP, \
-        #down_key=pygame.K_DOWN, \
-        #left_key=pygame.K_LEFT, \
-        #right_key=pygame.K_RIGHT
+    def process_events(self):
 
-        CAMERA_TRANSLATION_FACTOR = 0.01
-        CAMERA_ROTATION_FACTOR = 0.01
 
         LEFT_BUTTON=1
         MIDDLE_BUTTON=2
@@ -929,14 +905,24 @@ class Underworlds3DViewer:
         WHEEL_DOWN=5
 
         dx, dy = pygame.mouse.get_rel()
+        mousex, mousey = pygame.mouse.get_pos()
 
         zooming_one_shot = False
-        translation = [0,0,0]
-        rotation = [0,0,0]
+
+        ok = True
 
         for evt in pygame.event.get():
             if evt.type == pygame.MOUSEBUTTONDOWN and evt.button == LEFT_BUTTON:
-                self.is_rotating=True
+                hovered = self.get_hovered_node(mousex, self.h - mousey)
+                if hovered:
+                    if self.currently_selected and self.currently_selected == hovered:
+                        self.select_node(None)
+                    else:
+                        logger.info("Node %s selected" % hovered)
+                        self.select_node(hovered)
+                else:
+                    self.select_node(None)
+                    self.is_rotating=True
             if evt.type == pygame.MOUSEBUTTONUP and evt.button == LEFT_BUTTON:
                 self.is_rotating = False
 
@@ -955,6 +941,41 @@ class Underworlds3DViewer:
                 self.is_zooming=True
                 dy = -10 if evt.button == WHEEL_UP else 10
 
+            if evt.type == pygame.KEYDOWN:
+
+                ok = ok and self.process_keystroke(evt.key, evt.mod)
+
+        self.controls_3d(dx, dy, zooming_one_shot)
+
+        return ok
+
+    def process_keystroke(self, key, mod):
+        #up_key=pygame.K_UP, \
+        #down_key=pygame.K_DOWN, \
+        #left_key=pygame.K_LEFT, \
+        #right_key=pygame.K_RIGHT
+
+        if key == pygame.K_f:
+            pygame.display.toggle_fullscreen()
+
+        if key == pygame.K_s:
+            self.screenshot()
+
+        if key == pygame.K_v:
+            self.check_visibility()
+
+        if key == pygame.K_TAB:
+            self.cycle_cameras()
+
+        if key in [pygame.K_ESCAPE, pygame.K_q]:
+            return False
+
+        return True
+
+    def controls_3d(self, dx, dy, zooming_one_shot = False):
+
+        CAMERA_TRANSLATION_FACTOR = 0.01
+        CAMERA_ROTATION_FACTOR = 0.01
 
         if not (self.is_rotating or self.is_panning or self.is_zooming):
             return
@@ -1002,14 +1023,14 @@ class Underworlds3DViewer:
             self.current_cam.transformation = transformations.inverse_matrix(new_inverse).astype(numpy.float32)
 
         if self.is_panning:
-            translation[0] = -dx * CAMERA_TRANSLATION_FACTOR * distance
-            translation[1] = dy * CAMERA_TRANSLATION_FACTOR * distance
-            cam_transform = transformations.translation_matrix(translation).astype(numpy.float32)
+            tx = -dx * CAMERA_TRANSLATION_FACTOR * distance
+            ty = dy * CAMERA_TRANSLATION_FACTOR * distance
+            cam_transform = transformations.translation_matrix((tx, ty, 0)).astype(numpy.float32)
             self.current_cam.transformation = numpy.dot(self.current_cam.transformation, cam_transform)
 
         if self.is_zooming:
-            translation[2] = dy * CAMERA_TRANSLATION_FACTOR * distance
-            cam_transform = transformations.translation_matrix(translation).astype(numpy.float32)
+            tz = dy * CAMERA_TRANSLATION_FACTOR * distance
+            cam_transform = transformations.translation_matrix((0, 0, tz)).astype(numpy.float32)
             self.current_cam.transformation = numpy.dot(self.current_cam.transformation, cam_transform)
 
 
@@ -1083,11 +1104,12 @@ def main():
 
             app.switch_from_overlay()
 
-            ## User interactions
-            app.controls_3d()
-
             # Make sure we do not go over 30fps
             clock.tick(30)
+
+        logger.info("Closing underworlds context...")
+
+    logger.info("Quitting! Bye bye!")
 
 #########################################################################
 #########################################################################
