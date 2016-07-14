@@ -285,6 +285,13 @@ class Underworlds3DViewer:
         self.cycle_cameras()
         self.update_view_camera()
 
+
+        # user interactions
+        self.focal_point = [0,0,0]
+        self.is_rotating = False
+        self.is_panning = False
+        self.is_zooming = False
+
     def prepare_shaders(self):
 
         ### Base shader
@@ -865,30 +872,30 @@ class Underworlds3DViewer:
     def loop(self):
 
         pygame.display.flip()
-        event = pygame.event.poll()
-        self.keys = [k for k, pressed in enumerate(pygame.key.get_pressed()) if pressed]
-
-        if event.type == pygame.KEYDOWN:
-            if pygame.K_f in self.keys: pygame.display.toggle_fullscreen()
-            if pygame.K_s in self.keys: self.screenshot()
-            if pygame.K_v in self.keys: self.check_visibility()
-            if pygame.K_TAB in self.keys: self.cycle_cameras()
-            if pygame.K_ESCAPE in self.keys:
-                return False
-
-        if event.type == pygame.MOUSEBUTTONDOWN:
-
-            if pygame.mouse.get_pressed()[0]: # left button pressed
-                mousex, mousey = pygame.mouse.get_pos()
-                hovered = self.get_hovered_node(mousex, self.h - mousey)
-                if hovered:
-                    logger.debug("Node %s selected" % hovered)
-                    self.select_node(hovered)
-                else:
-                    self.select_node(None)
-            if pygame.mouse.get_pressed()[2]: # right button pressed
-                self.select_node(None)
-
+#        event = pygame.event.poll()
+#        self.keys = [k for k, pressed in enumerate(pygame.key.get_pressed()) if pressed]
+#
+#        if event.type == pygame.KEYDOWN:
+#            if pygame.K_f in self.keys: pygame.display.toggle_fullscreen()
+#            if pygame.K_s in self.keys: self.screenshot()
+#            if pygame.K_v in self.keys: self.check_visibility()
+#            if pygame.K_TAB in self.keys: self.cycle_cameras()
+#            if pygame.K_ESCAPE in self.keys:
+#                return False
+#
+#        if event.type == pygame.MOUSEBUTTONDOWN:
+#
+#            if pygame.mouse.get_pressed()[0]: # left button pressed
+#                mousex, mousey = pygame.mouse.get_pos()
+#                hovered = self.get_hovered_node(mousex, self.h - mousey)
+#                if hovered:
+#                    logger.debug("Node %s selected" % hovered)
+#                    self.select_node(hovered)
+#                else:
+#                    self.select_node(None)
+#            if pygame.mouse.get_pressed()[2]: # right button pressed
+#                self.select_node(None)
+#
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
         # Compute FPS
@@ -903,69 +910,113 @@ class Underworlds3DViewer:
 
         return True
 
-    def controls_3d(self,
-                    mouse_button=1, \
-                    up_key=pygame.K_UP, \
-                    down_key=pygame.K_DOWN, \
-                    left_key=pygame.K_LEFT, \
-                    right_key=pygame.K_RIGHT):
+    def controls_3d(self):
 
-        mouse_dx,mouse_dy = pygame.mouse.get_rel()
-        pressed_buttons = pygame.mouse.get_pressed()
+        camera_updated = False
 
-        update_camera = False
+        #up_key=pygame.K_UP, \
+        #down_key=pygame.K_DOWN, \
+        #left_key=pygame.K_LEFT, \
+        #right_key=pygame.K_RIGHT
+
+        CAMERA_TRANSLATION_FACTOR = 0.01
+        CAMERA_ROTATION_FACTOR = 0.01
+
+        LEFT_BUTTON=1
+        MIDDLE_BUTTON=2
+        RIGHT_BUTTON=3
+        WHEEL_UP=4
+        WHEEL_DOWN=5
+
+        dx, dy = pygame.mouse.get_rel()
+
+        zooming_one_shot = False
+        translation = [0,0,0]
+        rotation = [0,0,0]
+
+        for evt in pygame.event.get():
+            if evt.type == pygame.MOUSEBUTTONDOWN and evt.button == LEFT_BUTTON:
+                self.is_rotating=True
+            if evt.type == pygame.MOUSEBUTTONUP and evt.button == LEFT_BUTTON:
+                self.is_rotating = False
+
+            if evt.type == pygame.MOUSEBUTTONDOWN and evt.button == MIDDLE_BUTTON:
+                self.is_panning=True
+            if evt.type == pygame.MOUSEBUTTONUP and evt.button == MIDDLE_BUTTON:
+                self.is_panning = False
+
+            if evt.type == pygame.MOUSEBUTTONDOWN and evt.button == RIGHT_BUTTON:
+                self.is_zooming=True
+            if evt.type == pygame.MOUSEBUTTONUP and evt.button == RIGHT_BUTTON:
+                self.is_zooming = False
+
+            if evt.type == pygame.MOUSEBUTTONDOWN and evt.button in [WHEEL_UP, WHEEL_DOWN]:
+                zooming_one_shot=True
+                self.is_zooming=True
+                dy = -10 if evt.button == WHEEL_UP else 10
 
 
-        if pressed_buttons[mouse_button]:
+        if not (self.is_rotating or self.is_panning or self.is_zooming):
+            return
 
-            rotate_x = -mouse_dx * 0.1
-            rotate_y = mouse_dy * 0.1
-            update_camera = True
-        else:
-            rotate_x = rotate_y = 0
+        current_pos = self.current_cam.transformation[:3, 3].copy()
+        distance = numpy.linalg.norm(self.focal_point-current_pos)
 
-        if up_key in self.keys:
-            up = .1
-        elif down_key in self.keys:
-            up = -.1
-        else:
-            up = 0
+        if self.is_rotating:
+            """ Orbiting the camera is implemented the following way:
 
-        if left_key in self.keys:
-            strafe = .1
-        elif right_key in self.keys:
-            strafe = -.1
-        else:
-            strafe = 0
+            - the rotation is split into a rotation around the *world* Z axis
+              (controlled by the horizontal mouse motion along X) and a
+              rotation around the *X* axis of the camera (pitch) *shifted to
+              the focal origin* (the world origin for now). This is controlled
+              by the vertical motion of the mouse (Y axis).
 
-        if up or strafe:
-            if not self.currently_selected:
-                update_camera = True
-            else:
-                if not self.moving:
-                    self.moving_situation = Situation("motion of %s" % self.currently_selected.name, type = MOTION)
-                    self.world.timeline.start(self.moving_situation)
-                self.moving = True
-                self.move_selected_node(up, strafe)
-        else:
-            if self.moving:
-                self.world.timeline.end(self.moving_situation)
-                self.moving = False
+            - as a result, the resulting transformation of the camera in the
+              world frame C' is:
+                C' = (T · Rx · T⁻¹ · (Rz · C)⁻¹)⁻¹
 
-        if update_camera:
+              where:
+                - C is the original camera transformation in the world frame,
+                - Rz is the rotation along the Z axis (in the world frame)
+                - T is the translation camera -> world (ie, the inverse of the
+                  translation part of C
+                - Rx is the rotation around X in the (translated) camera frame
+            """
 
-            cam_transform = transformations.euler_matrix(rotate_y * math.pi/180.0,
-                                                         -rotate_x * math.pi/180.0,
-                                                         0).astype(numpy.float32)
-            cam_transform[0,3] = -strafe
-            cam_transform[1,3] = up
-            #cam_transform[2,3] = fwd
+            rotation_camera_x = dy * CAMERA_ROTATION_FACTOR
+            rotation_world_z = dx * CAMERA_ROTATION_FACTOR
+            world_z_rotation = transformations.euler_matrix(0,0,rotation_world_z)
+            cam_x_rotation = transformations.euler_matrix(rotation_camera_x,0,0)
 
+            after_world_z_rotation = numpy.dot(world_z_rotation,self.current_cam.transformation)
+
+            inverse_transformation = transformations.inverse_matrix(after_world_z_rotation)
+
+            translation = transformations.translation_matrix(transformations.decompose_matrix(inverse_transformation)[3])
+            inverse_translation = transformations.inverse_matrix(translation)
+
+            new_inverse = numpy.dot(inverse_translation,inverse_transformation)
+            new_inverse = numpy.dot(cam_x_rotation,new_inverse)
+            new_inverse = numpy.dot(translation,new_inverse)
+
+            self.current_cam.transformation = transformations.inverse_matrix(new_inverse).astype(numpy.float32)
+
+        if self.is_panning:
+            translation[0] = -dx * CAMERA_TRANSLATION_FACTOR * distance
+            translation[1] = dy * CAMERA_TRANSLATION_FACTOR * distance
+            cam_transform = transformations.translation_matrix(translation).astype(numpy.float32)
             self.current_cam.transformation = numpy.dot(self.current_cam.transformation, cam_transform)
 
-            self.broadcast_node_transform(self.current_cam)
+        if self.is_zooming:
+            translation[2] = dy * CAMERA_TRANSLATION_FACTOR * distance
+            cam_transform = transformations.translation_matrix(translation).astype(numpy.float32)
+            self.current_cam.transformation = numpy.dot(self.current_cam.transformation, cam_transform)
 
-            update_camera = False
+
+        if zooming_one_shot:
+            self.is_zooming = False
+
+        self.broadcast_node_transform(self.current_cam)
 
         self.update_view_camera()
 
@@ -1033,7 +1084,7 @@ def main():
             app.switch_from_overlay()
 
             ## User interactions
-            app.controls_3d(0)
+            app.controls_3d()
 
             # Make sure we do not go over 30fps
             clock.tick(30)
