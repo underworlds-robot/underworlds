@@ -272,19 +272,18 @@ class Underworlds3DViewer:
         self.moving = False
         self.moving_situation = None
 
-        self.cameras = []
+        self.default_camera = DefaultCamera(self.w,self.h,fov=70)
+        self.cameras = [self.default_camera]
+
         self.current_cam_index = 0
+        self.current_cam = self.default_camera
+        self.set_camera_projection()
 
         self.load_world()
 
         # for FPS computation
         self.frames = 0
         self.last_fps_time = glutGet(GLUT_ELAPSED_TIME)
-
-
-        self.cycle_cameras()
-        self.update_view_camera()
-
 
         # user interactions
         self.focal_point = [0,0,0]
@@ -494,14 +493,10 @@ class Underworlds3DViewer:
         logger.info("World <%s> ready for 3D rendering." % self.world)
 
     def cycle_cameras(self):
-        if not self.cameras:
-            logger.info("No camera in the scene. Adding a default one")
-            self.cameras = [DefaultCamera(self.w,self.h,fov=75)]
 
         self.current_cam_index = (self.current_cam_index + 1) % len(self.cameras)
         self.current_cam = self.cameras[self.current_cam_index]
         self.set_camera_projection(self.current_cam)
-        self.update_view_camera()
         logger.info("Switched to camera <%s>" % self.current_cam)
 
     def set_overlay_projection(self):
@@ -515,7 +510,7 @@ class Underworlds3DViewer:
     def set_camera_projection(self, camera = None):
 
         if not camera:
-            camera = self.cameras[self.current_cam_index]
+            camera = self.current_cam
 
         znear = camera.clipplanenear
         zfar = camera.clipplanefar
@@ -1038,12 +1033,21 @@ class Underworlds3DViewer:
         if zooming_one_shot:
             self.is_zooming = False
 
-        self.broadcast_node_transform(self.current_cam)
+
+        # Only broadcast the camera transformation if it is not
+        # our 'local' default camera
+        if self.current_cam != self.default_camera:
+            self.scene.nodes.update(self.current_cam)
 
         self.update_view_camera()
 
 
     def update_view_camera(self):
+
+        # Update the camera position from the server if it is not
+        # our 'local' camera
+        if self.current_cam != self.default_camera:
+            self.current_cam = self.scene.nodes[self.current_cam.id]
 
         self.view_matrix = linalg.inv(self.current_cam.transformation)
 
@@ -1055,11 +1059,7 @@ class Underworlds3DViewer:
         self.currently_selected.transformation[0][3] += strafe
         self.currently_selected.transformation[2][3] += up
 
-        self.broadcast_node_transform(self.currently_selected)
-
-
-    def broadcast_node_transform(self, node):
-        self.scene.nodes.update(node)
+        self.scene.nodes.update(self.currently_selected)
 
 
     def showtext(self, text, x=0, y=0, z=0, size=20):
@@ -1088,6 +1088,8 @@ def main():
         clock = pygame.time.Clock()
 
         while app.loop():
+
+            app.update_view_camera()
 
             ## Main rendering
             app.render()
