@@ -2,42 +2,37 @@ import unittest
 import time
 
 import underworlds
-from underworlds.server import Server
+import underworlds.server
 from underworlds.tools.loader import ModelLoader
+from underworlds.tools.visibility import VisibilityMonitor
 
 class TestVisibility(unittest.TestCase):
 
     def setUp(self):
-        self.server = Server()
-        self.server.start()
+        self.server = underworlds.server.start()
         time.sleep(0.1) # leave some time to the server to start
 
         self.ctx = underworlds.Context("unittest - visibility")
 
     def test_visibility(self):
         world = self.ctx.worlds["base"]
-        ModelLoader(world.name).load("res/base_visibility.dae")
 
-        self.bs = world.get_state()
+        ModelLoader().load("res/visibility.blend", world="base")
 
+        cube1 = world.scene.nodebyname("Cube1")[0]
+        cube2 = world.scene.nodebyname("Cube2")[0]
+        visibility = VisibilityMonitor(self.ctx, world)
 
+        results = visibility.compute_all()
 
-        self.assertTrue(False, "This test is not expected to run... 'visibility_monitor' should first be turned into some sort of library.")
-        self.assertTrue(underworlds.services.visibility(self.bs, "Cube1", "Camera1"))
-        self.assertFalse(underworlds.services.visibility(self.bs, "Cube2", "Camera1"))
+        self.assertItemsEqual(["Camera1", "Camera2", "Camera3", "Camera4", "Camera5"], \
+                              results.keys())
 
-        self.assertTrue(underworlds.services.visibility(self.bs, "Cube1", "Camera2"))
-        self.assertTrue(underworlds.services.visibility(self.bs, "Cube2", "Camera2"))
-
-        self.assertTrue(underworlds.services.visibility(self.bs, "Cube2", "Camera3"))
-
-        self.assertFalse(underworlds.services.visibility(self.bs, "Cube2", "Camera4"))
-
-        self.assertFalse(underworlds.services.visibility(self.bs, "Cube1", "Camera5"))
-        self.assertFalse(underworlds.services.visibility(self.bs, "Cube2", "Camera5"))
-
-        self.assertFalse(underworlds.services.visibility(self.bs, "Cube1", "Camera6"))
-        self.assertTrue(underworlds.services.visibility(self.bs, "Cube2", "Camera6"))
+        self.assertItemsEqual([cube1, cube2], results["Camera1"])
+        self.assertItemsEqual([cube1, cube2], results["Camera2"])
+        self.assertItemsEqual([cube2], results["Camera3"])
+        self.assertItemsEqual([cube1], results["Camera4"])
+        self.assertListEqual([], results["Camera5"])
 
 def test_suite():
      suite = unittest.TestLoader().loadTestsFromTestCase(TestVisibility)
