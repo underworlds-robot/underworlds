@@ -10,7 +10,7 @@ import logging
 logger = logging.getLogger("underworlds.client")
 
 from grpc.beta import implementations
-from grpc.framework.interfaces.face.face import ExpirationError,NetworkError
+from grpc.framework.interfaces.face.face import ExpirationError,NetworkError,AbortionError
 import underworlds.underworlds_pb2 as gRPC
 
 from underworlds.types import World, Node, Situation, Mesh
@@ -266,6 +266,10 @@ class NodesProxy(threading.Thread):
                 logger.warning("The server timed out while trying to update node"
                                " invalidations")
 
+            except AbortionError:
+                logger.warning("...no server anymore... Closing now!")
+                self._running = False
+
 
 class SceneProxy(object):
 
@@ -430,6 +434,9 @@ class TimelineProxy(threading.Thread):
             except ExpirationError:
                 logger.warning("The server timed out while trying to update timeline"
                                " invalidations")
+            except AbortionError:
+                logger.warning("...no server anymore... Closing now!")
+                self._running = False
 
 
 
