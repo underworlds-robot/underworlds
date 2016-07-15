@@ -19,8 +19,11 @@ def main(world, camera = None):
         frames = 0
         last_fps_time = glutGet(GLUT_ELAPSED_TIME)
 
+        sys.stdout.write("\x1b[s") # saves cursor position
+
         try:
             while True:
+                sys.stdout.write('\x1b[0J') # clear terminal to bottom of screen.
 
                 if benchmark:
                     # Compute FPS
@@ -34,6 +37,7 @@ def main(world, camera = None):
                         update_delay = (delta / frames)
 
                         print("\x1b[1FUpdate every %.2fms - %.0f fps" % (update_delay, fps))
+
                         frames = 0
                         last_fps_time = gl_time
 
@@ -42,15 +46,13 @@ def main(world, camera = None):
                 else:
                     objs = visibility.compute_all()
 
-                printed_lines = 0
+
                 for c, seen in objs.items():
-                    printed_lines += 1
                     print("Camera %s:\t\t%d objects visible" % (c, len(seen)))
                     for n in seen:
-                        printed_lines += 1
                         print(" - %s" % n)
 
-                print('\x1b[%dF' % (printed_lines + 1)) # move the console cursor up.
+                sys.stdout.write('\x1b[u') # move the console cursor back to initial position
 
                 if not benchmark:
                     visibility.scene.waitforchanges(0.2)
@@ -58,7 +60,8 @@ def main(world, camera = None):
         except KeyboardInterrupt:
             pass
 
-        print("\x1b[%dE" % len(visibility.cameras))
+        sys.stdout.write('\x1b[u') # move the console cursor back to initial position
+        sys.stdout.write('\x1b[0J') # clear terminal to bottom of screen.
         print("Quitting")
 
 if __name__ == '__main__':
