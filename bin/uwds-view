@@ -229,9 +229,10 @@ void main(void){
 """
 
 
-class DefaultCamera(Node):
+class DefaultCamera():
     def __init__(self, w, h, fov):
-        super(DefaultCamera, self).__init__(name="default camera", type=CAMERA)
+        self.name="default camera"
+        self.type=CAMERA
         self.clipplanenear = 0.001
         self.clipplanefar = 100000.0
         self.aspect = w/h
@@ -240,6 +241,8 @@ class DefaultCamera(Node):
                                [ 0.73,  0.31, -0.61, -6.51],
                                [-0.01,  0.89,  0.44,  5.34],
                                [ 0.,    0.,    0.,    1.  ]], dtype=numpy.float32)
+    def __str__(self):
+        return self.name
 
 class Underworlds3DViewer:
 
@@ -459,15 +462,9 @@ class Underworlds3DViewer:
                 self.prepare_gl_buffers(mesh)
 
         elif node.type == CAMERA:
-            if node not in self.cameras:
-                logger.info("Added camera <%s>" % node.name)
-                logger.info("Camera position: %.3f, %.3f, %.3f" % tuple(node.transformation[:,3][:3].tolist()))
-            else:
-                self.cameras.remove(node)
+            logger.info("Added camera <%s>" % node.name)
+            logger.info("Camera position: %.3f, %.3f, %.3f" % tuple(node.transformation[:,3][:3].tolist()))
             self.cameras.append(node)
-            self.current_cam = self.cameras[self.current_cam_index]
-
-
 
     def load_world(self):
         logger.info("Preparing world <%s> for 3D rendering..." % self.world)
