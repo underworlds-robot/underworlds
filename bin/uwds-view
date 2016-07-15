@@ -501,6 +501,7 @@ class Underworlds3DViewer:
         self.current_cam_index = (self.current_cam_index + 1) % len(self.cameras)
         self.current_cam = self.cameras[self.current_cam_index]
         self.set_camera_projection(self.current_cam)
+        self.update_view_camera()
         logger.info("Switched to camera <%s>" % self.current_cam)
 
     def set_overlay_projection(self):
