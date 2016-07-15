@@ -77,10 +77,7 @@ class VisibilityMonitor:
         self.node2colorid = {} # stores a color ID for each node. Useful for mouse picking and visibility checking
         self.colorid2node = {} # reverse dict of node2colorid
 
-        self.currently_selected = None
-
         self.cameras = []
-        self.current_cam_index = 0
 
         self.load_world()
 
@@ -203,7 +200,16 @@ class VisibilityMonitor:
 
         logger.info("World <%s> ready for visibility monitoring." % self.world)
 
-    def set_camera(self, camera):
+    def set_camera(self, name):
+
+        camera = None
+        for c in self.cameras:
+            if c.name == name:
+                camera = c
+                break
+
+        if camera is None:
+            raise RuntimeError("Camera <%s> does not exist in world <%s>" % (name, self.world.name))
 
         znear = camera.clipplanenear
         zfar = camera.clipplanefar
@@ -250,7 +256,7 @@ class VisibilityMonitor:
 
         glUseProgram( 0 )
 
-    def compute(self):
+    def compute_all(self):
         """
         :returns: dictionary {camera: [visible nodes]}
         Attention: The performances of this method relies heavily on the size of the display!
@@ -258,38 +264,41 @@ class VisibilityMonitor:
         visible_objects = {}
 
         for c in self.cameras:
-                
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-            self.set_camera(c)
-            self.render_colors()
-            # Capture image from the OpenGL buffer
-            buf = ( GLubyte * (3 * self.w * self.h) )(0)
-            glReadPixels(0, 0, self.w, self.h, GL_RGB, GL_UNSIGNED_BYTE, buf)
-
-            #Reinterpret the RGB pixel buffer as a 1-D array of 24bits colors
-            a = numpy.ndarray(len(buf), numpy.dtype('>u1'), buf)
-            colors = numpy.zeros(len(buf) / 3, numpy.dtype('<u4'))
-            for i in range(3):
-                colors.view(dtype='>u1')[i::4] = a.view(dtype='>u1')[i::3]
-
-            seen = numpy.unique(colors)
-            seen.sort()
-            seen = seen[1:] # remove the 0 for background
-
-            visible_objects[c] = [self.colorid2node[i] for i in seen]
-
-            #colors = colors[numpy.nonzero(colors)] #discard black background
-            
-            #if colors.any():
-            #    bins = numpy.bincount(colors)
-            #    ii = numpy.nonzero(bins)[0]
-
-            #    for i in ii:
-            #        print ("Node %s is visible (%d pix)" % (self.colorid2node[i], bins[i]))
-            #else:
-            #    print("Nothing visible!")
+            visible_objects[c.name] = self.from_camera(c.name)
 
         return visible_objects
+
+    def from_camera(self, camera):
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+        self.set_camera(camera)
+        self.render_colors()
+        # Capture image from the OpenGL buffer
+        buf = ( GLubyte * (3 * self.w * self.h) )(0)
+        glReadPixels(0, 0, self.w, self.h, GL_RGB, GL_UNSIGNED_BYTE, buf)
+
+        #Reinterpret the RGB pixel buffer as a 1-D array of 24bits colors
+        a = numpy.ndarray(len(buf), numpy.dtype('>u1'), buf)
+        colors = numpy.zeros(len(buf) / 3, numpy.dtype('<u4'))
+        for i in range(3):
+            colors.view(dtype='>u1')[i::4] = a.view(dtype='>u1')[i::3]
+
+        seen = numpy.unique(colors)
+        seen.sort()
+        seen = seen[1:] # remove the 0 for background
+
+        return [self.colorid2node[i] for i in seen]
+
+        #colors = colors[numpy.nonzero(colors)] #discard black background
+        
+        #if colors.any():
+        #    bins = numpy.bincount(colors)
+        #    ii = numpy.nonzero(bins)[0]
+
+        #    for i in ii:
+        #        print ("Node %s is visible (%d pix)" % (self.colorid2node[i], bins[i]))
+        #else:
+        #    print("Nothing visible!")
+
 
     def recursive_render(self, node, shader):
         """ Main recursive rendering method.

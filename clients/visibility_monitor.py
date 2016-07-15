@@ -9,7 +9,7 @@ import underworlds
 from underworlds.tools.visibility import VisibilityMonitor
 
 
-def main(world):
+def main(world, camera = None):
     benchmark = False
 
     with underworlds.Context("Visibility Monitor") as ctx:
@@ -37,7 +37,10 @@ def main(world):
                         frames = 0
                         last_fps_time = gl_time
 
-                objs = visibility.compute()
+                if camera:
+                    objs = {camera: visibility.from_camera(camera)}
+                else:
+                    objs = visibility.compute_all()
 
                 printed_lines = 0
                 for c, seen in objs.items():
@@ -62,8 +65,9 @@ if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("world", help="Underworlds world to monitor")
+    parser.add_argument("--camera", "-c", default=None, help="The camera to check visibility from (default: all)")
     args = parser.parse_args()
 
-    main(args.world)
+    main(args.world, args.camera)
 
 
