@@ -211,6 +211,9 @@ class VisibilityMonitor:
         if camera is None:
             raise RuntimeError("Camera <%s> does not exist in world <%s>" % (name, self.world.name))
 
+        # Update the camera position from the server
+        camera = self.scene.nodes[camera.id]
+
         znear = camera.clipplanenear
         zfar = camera.clipplanefar
         aspect = camera.aspect
