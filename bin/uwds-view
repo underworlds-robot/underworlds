@@ -727,6 +727,65 @@ class Underworlds3DViewer:
 
         glPopMatrix();
 
+    def render_camera(self, camera, transformation):
+
+        m = transformation.transpose() # OpenGL row major
+
+        aspect = camera.aspect
+
+        u = 0.1 # unit size (in m)
+        l = 3 * u # lenght of the camera cone
+        f = 3 * u # aperture of the camera cone
+
+        glPushMatrix()
+        glMultMatrixf(m)
+
+        glLineWidth(2)
+        glBegin(GL_LINE_STRIP)
+
+        glColor3f(.2, .2, .2)
+
+        glVertex3f(u, u, -u)
+        glVertex3f(u, -u, -u)
+        glVertex3f(-u, -u, -u)
+        glVertex3f(-u, u, -u)
+        glVertex3f(u, u, -u)
+
+        glVertex3f(u, u, 0.0)
+        glVertex3f(u, -u, 0.0)
+        glVertex3f(-u, -u, 0.0)
+        glVertex3f(-u, u, 0.0)
+        glVertex3f(u, u, 0.0)
+
+        glVertex3f(f * aspect, f, l)
+        glVertex3f(f * aspect, -f, l)
+        glVertex3f(-f * aspect, -f, l)
+        glVertex3f(-f * aspect, f, l)
+        glVertex3f(f * aspect, f, l)
+
+        glEnd()
+
+        glBegin(GL_LINE_STRIP)
+        glVertex3f(u, -u, -u)
+        glVertex3f(u, -u, 0.0)
+        glVertex3f(f * aspect, -f, l)
+        glEnd()
+
+        glBegin(GL_LINE_STRIP)
+        glVertex3f(-u, -u, -u)
+        glVertex3f(-u, -u, 0.0)
+        glVertex3f(-f * aspect, -f, l)
+        glEnd()
+
+        glBegin(GL_LINE_STRIP)
+        glVertex3f(-u, u, -u)
+        glVertex3f(-u, u, 0.0)
+        glVertex3f(-f * aspect, f, l)
+        glEnd()
+
+        glPopMatrix();
+
+
     def render_grid(self):
 
         glLineWidth(1)
@@ -765,6 +824,9 @@ class Underworlds3DViewer:
             #if node.type == ENTITY:
             self.render_axis(m,
                              label=node.name if node != self.scene.rootnode else None)
+
+            if node.type == CAMERA:
+                self.render_camera(node, m)
 
             for child in node.children:
                 try:
@@ -1100,7 +1162,7 @@ def main():
 
             ## GUI text display
             app.switch_to_overlay()
-            app.showtext("world <%s>"% app.world, 10, app.h - 30)
+            app.showtext("world <%s> -- camera <%s>"% (app.world, str(app.current_cam)), 10, app.h - 30)
             if app.currently_selected:
                 app.showtext("node <%s>"% app.currently_selected, 10, app.h - 50)
                 pos = app.h - 70
