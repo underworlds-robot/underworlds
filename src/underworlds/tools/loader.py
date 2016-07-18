@@ -13,11 +13,13 @@ except BaseException as ae:
     logger.error("pyassimp could not be loaded: %s" % ae)
     pass
 
-
+import math
 import underworlds
 from underworlds.types import *
+from underworlds.helpers import transformations
 
 DEFAULT_WORLD = "base"
+ROTATION_180_X = numpy.array([[1,0,0,0],[0,-1,0,0],[0,0,-1,0],[0,0,0,1]], dtype=numpy.float32)
 
 class ModelLoader:
 
@@ -94,6 +96,14 @@ class ModelLoader:
             underworlds_node.type = CAMERA
             underworlds_node.clipplanenear = cam.clipplanenear
             underworlds_node.clipplanefar = cam.clipplanefar
+
+            if numpy.allclose(cam.lookat, [0,0,-1]) and numpy.allclose(cam.up, [0,1,0]): # Cameras in .blend files
+
+                # Rotate by 180deg around X to have Z pointing forward
+                underworlds_node.transformation = numpy.dot(underworlds_node.transformation, ROTATION_180_X)
+            else:
+                raise RuntimeError("I do not know how to normalize this camera orientation: lookat=%s, up=%s" % (cam.lookat, cam.up))
+
             if cam.aspect == 0.0:
                 logger.warning("Camera aspect not set. Setting to default 4:3")
                 underworlds_node.aspect = 1.333
@@ -102,7 +112,7 @@ class ModelLoader:
 
             underworlds_node.horizontalfov = cam.horizontalfov
 
-            underworlds_node.lookat = [round(a, 5) for a in cam.lookat]
+            #underworlds_node.lookat = [round(a, 5) for a in cam.lookat]
         else:
             underworlds_node.type = ENTITY
 
