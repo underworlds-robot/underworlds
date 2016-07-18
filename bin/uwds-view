@@ -262,7 +262,7 @@ class Underworlds3DViewer:
         pygame.display.set_caption(self.base_name)
         pygame.display.set_mode((w,h), pygame.OPENGL | pygame.DOUBLEBUF)
 
-        glClearColor(0.7,0.7,0.6,1.0)
+        glClearColor(0.18,0.18,0.18,1.0)
 
         self.prepare_shaders()
 
@@ -1136,7 +1136,7 @@ class Underworlds3DViewer:
 
         font = pygame.font.Font (None, size)
         textSurface = font.render(text, True, (10,10,10,255), 
-                                              (255*0.7,255*0.7,255*0.6,255))
+                                              (255*0.18,255*0.18,255*0.18,0))
         textData = pygame.image.tostring(textSurface, "RGBA", True)
         glRasterPos3d(x,y,z)
         glDrawPixels(textSurface.get_width(),
