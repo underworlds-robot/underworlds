@@ -1,0 +1,29 @@
+#!/usr/bin/env python
+#-*- coding: UTF-8 -*-
+
+import os
+import sys
+import argparse
+
+uwds_execs=[]
+
+for path in os.environ["PATH"].split(":"):
+    if os.path.exists(path):
+        uwds_execs += [bin for bin in os.listdir(path) if bin.startswith("uwds")]
+
+
+
+parser = argparse.ArgumentParser(description="Underworlds")
+subparsers = parser.add_subparsers(help='sub-command help')
+
+for e in uwds_execs:
+    subcmd = e.split("-")[1]
+    subparser = subparsers.add_parser(subcmd, help='%s sub-command' % subcmd)
+    subparser.add_argument("options", nargs='*', help="sub-command options")
+    subparser.set_defaults(which=subcmd)
+
+args = parser.parse_args()
+
+os.execvp("uwds-" + args.which, args.options)
+
+
