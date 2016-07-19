@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 #-*- coding: UTF-8 -*-
+# PYTHON_ARGCOMPLETE_OK
 
 import os
 import sys
 import argparse
+
 
 uwds_execs=[]
 
@@ -11,10 +13,28 @@ for path in os.environ["PATH"].split(":"):
     if os.path.exists(path):
         uwds_execs += [bin for bin in os.listdir(path) if bin.startswith("uwds-")]
 
+parser = argparse.ArgumentParser(description="Cascading Situation Assessment for "
+                            "social robots.Underworlds is an application that "
+                            "represents the spatial and temporal 'worlds' of the "
+                            "robot, and offers a range of tools to manipulate them.")
 
+subparsers = parser.add_subparsers()
 
-parser = argparse.ArgumentParser(description="Underworlds")
-subparsers = parser.add_subparsers(help='sub-command help')
+########### SERVER
+
+start = subparsers.add_parser("start", help='Starts the Underworlds server')
+start.set_defaults(which="server", cmd="start")
+
+stop = subparsers.add_parser("stop", help='Stops the Underworlds server')
+stop.set_defaults(which="server", cmd="stop")
+
+restart = subparsers.add_parser("restart", help='Restarts the Underworlds server')
+restart.set_defaults(which="server", cmd="restart")
+
+foreground = subparsers.add_parser("foreground", help='Starts the Underworlds server in the foreground')
+foreground.set_defaults(which="server", cmd="foreground")
+
+########### CLIENTS
 
 for e in uwds_execs:
     subcmd = e[5:]
@@ -22,9 +42,19 @@ for e in uwds_execs:
     subparser.add_argument("options", nargs='*', help="sub-command options")
     subparser.set_defaults(which=subcmd)
 
+#############################################
+
+# if argcomplete is available, use it to get bash/zsh completion
+import argcomplete
+argcomplete.autocomplete(parser)
+
 args = parser.parse_args()
 
-os.execvp("uwds-%s" % args.which, ["uwds-%s" % args.which] + [o for o in args.options])
+if args.which == "server":
+    os.execvp("underworlded", ["underworlded", args.cmd])
+
+else:
+    os.execvp("uwds-%s" % args.which, ["uwds-%s" % args.which] + [o for o in args.options])
 
 
 
