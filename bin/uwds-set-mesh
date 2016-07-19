@@ -1,0 +1,58 @@
+#!/usr/bin/env python
+#-*- coding: UTF-8 -*-
+
+import re
+
+import underworlds
+from underworlds.helpers import transformations
+from underworlds.types import MESH, Node
+from underworlds.tools.loader import ModelLoader
+from underworlds.tools.primitives_3d import Cube
+
+import logging; logger = logging.getLogger("underworlds.set_mesh")
+logging.basicConfig(level=logging.INFO)
+
+if __name__ == "__main__":
+
+    import argparse
+    parser = argparse.ArgumentParser(description="Underworlds Mesh setter: associate a mesh to a given node (or set thereof) by creating a new MESH node and parenting it")
+    parser.add_argument("world", help="Underworlds world to process")
+    parser.add_argument("regex", help="A regex that match the desired node(s) names")
+    parser.add_argument("model", default="cube_30", help="Path to the 3D model or 'cube_<size>' to load a cube of the given size in mm.")
+    args = parser.parse_args()
+
+
+    with underworlds.Context("Mesh setter") as ctx:
+
+        mesh_ids = []
+
+        if args.model.startswith("cube_"):
+            size = int(args.model.split("_")[1])
+            logger.info("Creating a cube mesh of %dmm" % size)
+            cube = Cube.create(size)
+            ctx.push_mesh(cube)
+            mesh_ids = [cube.id]
+        else:
+            meshes = ModelLoader().load_meshes(args.model, ctx=ctx)
+            for m in meshes.values():
+                mesh_ids = mesh_ids + m
+
+
+        scene = ctx.worlds[args.world].scene
+
+        new_nodes = []
+
+        for node in scene.nodes:
+            if re.match(args.regex, node.name):
+                logger.info("Creating a MESH node for <%s> with meshes %s" % (str(node), str(mesh_ids)))
+                mesh_node = Node()
+                mesh_node.type = MESH
+                mesh_node.cad = mesh_ids
+                mesh_node.name = "mesh_" + node.name
+                mesh_node.parent = node.id
+                new_nodes.append(mesh_node)
+
+        for node in new_nodes:
+            scene.nodes.append(node)
+
+
