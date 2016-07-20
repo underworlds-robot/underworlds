@@ -13,6 +13,7 @@ import rospy
 import math
 import tf
 import geometry_msgs.msg
+import re
 
 EPSILON = 0.01
 
@@ -32,16 +33,21 @@ if __name__ == "__main__":
 
     import argparse
     parser = argparse.ArgumentParser(description="Underworlds ROS TF adapter")
-    parser.add_argument("reference_frame", help="Reference TF frame. Generated Underworlds nodes will be parented to a node with this name.")
+    parser.add_argument("-r", "--reference", default="map", help="Reference TF frame. Generated nodes will be parented to a node with this name (default: map).")
     parser.add_argument("world", help="Underworlds world to feed with the TF frames")
+    parser.add_argument("frames", nargs='+', help="list of frames (or regex) to keep. If none, all TF frames are used")
     #parser.add_argument("-d", "--debug", help="run in interactive, debug mode", action="store_true")
     args = parser.parse_args()
+
+    frames_to_keep = [re.compile(n) for n in args.frames]
+    if frames_to_keep:
+        logger.info("Keeping only TF frames matching one of these patterns: %s" % [p.pattern for p in frames_to_keep])
 
     rospy.init_node('underworlds_tf_adapter')
     listener = tf.TransformListener()
     rate = rospy.Rate(10.0)
 
-    reference_frame = args.reference_frame
+    reference_frame = args.reference
 
     nodes = {}
 
@@ -77,6 +83,15 @@ if __name__ == "__main__":
                 for frame in frames:
                     if frame == reference_frame:
                         continue
+                    if frames_to_keep:
+                        found = False
+                        for pattern in frames_to_keep:
+                            if pattern.match(frame):
+                                found = True
+                                break
+                        if not found:
+                            continue
+
                     try:
                         t =listener.getLatestCommonTime(frame,reference_frame)
                         (trans,rot) = listener.lookupTransform(reference_frame, frame, t)
