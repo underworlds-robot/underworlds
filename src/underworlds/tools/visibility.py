@@ -55,7 +55,9 @@ void main() {
 class VisibilityMonitor:
 
 
-    def __init__(self, ctx, world, w=80, h=60, create_surface=True):
+    def __init__(self, ctx, world, w=80, h=60, create_surface=True, debug=False):
+
+        self.debug = debug
 
         self.w = w
         self.h = h
@@ -63,8 +65,11 @@ class VisibilityMonitor:
         if create_surface:
             import pygame
             pygame.init()
-            pygame.display.set_mode((w,h), pygame.OPENGL | pygame.DOUBLEBUF)
-            pygame.display.iconify()
+            if debug:
+                pygame.display.set_mode((w,h), pygame.OPENGL | pygame.DOUBLEBUF)
+                pygame.display.iconify()
+            else:
+                pygame.display.set_mode((w,h), pygame.OPENGL | pygame.DOUBLEBUF | pygame.RESIZABLE)
 
         self.prepare_shaders()
 
@@ -272,6 +277,7 @@ class VisibilityMonitor:
         return visible_objects
 
     def from_camera(self, camera):
+        import pdb;pdb.set_trace()
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         self.set_camera(camera)
         self.render_colors()
@@ -288,6 +294,9 @@ class VisibilityMonitor:
         seen = numpy.unique(colors)
         seen.sort()
         seen = seen[1:] # remove the 0 for background
+
+        if self.debug:
+            raw_input()
 
         return [self.colorid2node[i] for i in seen]
 

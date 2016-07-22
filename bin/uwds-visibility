@@ -4,73 +4,98 @@
 import sys
 from OpenGL.GLUT import * # to get time and compute FPS
 
-
 import underworlds
 from underworlds.tools.visibility import VisibilityMonitor
 
+import logging; logger = logging.getLogger("underworlds.visibility")
 
-def main(world, camera = None):
-    benchmark = False
+def console_output(visibility, benchmark, camera):
 
-    with underworlds.Context("Visibility Monitor") as ctx:
-        visibility = VisibilityMonitor(ctx, ctx.worlds[world])
+    # for FPS computation
+    frames = 0
+    last_fps_time = glutGet(GLUT_ELAPSED_TIME)
 
-        # for FPS computation
-        frames = 0
-        last_fps_time = glutGet(GLUT_ELAPSED_TIME)
+    sys.stdout.write("\x1b[s") # saves cursor position
 
-        sys.stdout.write("\x1b[s") # saves cursor position
+    while True:
+        sys.stdout.write('\x1b[0J') # clear terminal to bottom of screen.
 
-        try:
-            while True:
-                sys.stdout.write('\x1b[0J') # clear terminal to bottom of screen.
+        if benchmark:
+            # Compute FPS
+            gl_time = glutGet(GLUT_ELAPSED_TIME)
+            frames += 1
+            delta = gl_time - last_fps_time
 
-                if benchmark:
-                    # Compute FPS
-                    gl_time = glutGet(GLUT_ELAPSED_TIME)
-                    frames += 1
-                    delta = gl_time - last_fps_time
-                
+            if delta >= 1000:
+                fps = (frames * 1000 / delta)
+                update_delay = (delta / frames)
 
-                    if delta >= 1000:
-                        fps = (frames * 1000 / delta)
-                        update_delay = (delta / frames)
+                print("\x1b[1FUpdate every %.2fms - %.0f fps" % (update_delay, fps))
 
-                        print("\x1b[1FUpdate every %.2fms - %.0f fps" % (update_delay, fps))
+                frames = 0
+                last_fps_time = gl_time
 
-                        frames = 0
-                        last_fps_time = gl_time
-
-                if camera:
-                    objs = {camera: visibility.from_camera(camera)}
-                else:
-                    objs = visibility.compute_all()
+        if camera:
+            objs = {camera: visibility.from_camera(camera)}
+        else:
+            objs = visibility.compute_all()
 
 
-                for c, seen in objs.items():
-                    print("Camera %s:\t\t%d objects visible" % (c, len(seen)))
-                    for n in seen:
-                        print(" - %s" % n)
-
-                sys.stdout.write('\x1b[u') # move the console cursor back to initial position
-
-                if not benchmark:
-                    visibility.scene.waitforchanges(0.2)
-
-        except KeyboardInterrupt:
-            pass
+        for c, seen in objs.items():
+            print("Camera %s:\t\t%d objects visible" % (c, len(seen)))
+            for n in seen:
+                print(" - %s" % n)
 
         sys.stdout.write('\x1b[u') # move the console cursor back to initial position
-        sys.stdout.write('\x1b[0J') # clear terminal to bottom of screen.
-        print("Quitting")
+
+        if not benchmark:
+            visibility.scene.waitforchanges(0.2)
 
 if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("world", help="Underworlds world to monitor")
+    parser.add_argument("--debug", "-d", action="store_true", help="Debug mode (show the OpenGL rendering")
     parser.add_argument("--camera", "-c", default=None, help="The camera to check visibility from (default: all)")
+    parser.add_argument("--benchmark", action="store_true", help="Benchmark mode: tries to compute visibility as fast as possible")
+    parser.add_argument("--kb", action="store_true", help="Export visibility results to a KB-API knowledge base")
+    parser.add_argument("--host", default="localhost", help="The host of the knowledge base (only used in combination with --kb, default: localhost)")
+    parser.add_argument("--port", default="6969", help="The port of the knowledge base (only used in combination with --kb, default: 6969)")
     args = parser.parse_args()
 
-    main(args.world, args.camera)
+    world = args.world
+    camera = args.camera
+
+    with_kb = args.kb
+
+    benchmark = args.benchmark
+
+    with underworlds.Context("Visibility Monitor") as ctx:
+        try:
+            visibility = VisibilityMonitor(ctx, ctx.worlds[world], debug=args.debug)
+        except RuntimeError as re:
+            logger.error("Can not start the visibility monitor: %s" % re)
+            sys.exit(1)
+
+        try:
+            if with_kb:
+                try:
+                    import kb
+                except ImportError:
+                    logger.error("pykb is not installed: pip install pykb first.")
+
+                with kb.KB(args.host, int(args.port)) as kb:
+                    print(kb.stats())
+
+            else:
+                console_output(visibility, benchmark, camera)
+
+        except KeyboardInterrupt:
+            pass
+
+        if not with_kb:
+            sys.stdout.write('\x1b[u') # move the console cursor back to initial position
+            sys.stdout.write('\x1b[0J') # clear terminal to bottom of screen.
+            print("Quitting")
 
 
