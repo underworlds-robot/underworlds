@@ -6,8 +6,8 @@ from underworlds.tools.loader import ModelLoader
 import argparse
 
 parser = argparse.ArgumentParser()
-parser.add_argument("model", help="3D model to load. See ASSIMP doc for acceptable formats")
 parser.add_argument("world", help="Underworlds world where to load the model")
+parser.add_argument("model", help="3D model to load. See ASSIMP doc for acceptable formats")
 parser.add_argument("-d", "--debug", help="debug mode", action="store_true")
 parser.add_argument("-dd", "--fulldebug", help="debug mode (verbose)", action="store_true")
 args = parser.parse_args()
