@@ -70,6 +70,9 @@ if __name__ == '__main__':
 
     benchmark = args.benchmark
 
+    if args.debug:
+        logger.warning("Visibility Monitor is running in debug mode!")
+
     with underworlds.Context("Visibility Monitor") as ctx:
         try:
             visibility = VisibilityMonitor(ctx, ctx.worlds[world], debug=args.debug)

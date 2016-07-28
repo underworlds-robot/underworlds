@@ -9,6 +9,7 @@ from OpenGL.GLU import *
 from OpenGL.arrays import vbo
 from OpenGL.GL import shaders
 
+import time
 import math, random
 import numpy
 from numpy import linalg
@@ -50,7 +51,9 @@ void main() {
     gl_FragColor = v_color;
 }
 """
-
+ROTATION_180_X = numpy.array([[1,0,0,0],[0,-1,0,0],[0,0,-1,0],[0,0,0,1]], dtype=numpy.float32)
+DEFAULT_CLIP_PLANE_NEAR = 0.001
+DEFAULT_CLIP_PLANE_FAR = 1000.0
 
 class VisibilityMonitor:
 
@@ -65,7 +68,7 @@ class VisibilityMonitor:
         if create_surface:
             import pygame
             pygame.init()
-            if debug:
+            if not debug:
                 pygame.display.set_mode((w,h), pygame.OPENGL | pygame.DOUBLEBUF)
                 pygame.display.iconify()
             else:
@@ -219,8 +222,8 @@ class VisibilityMonitor:
         # Update the camera position from the server
         camera = self.scene.nodes[camera.id]
 
-        znear = camera.clipplanenear
-        zfar = camera.clipplanefar
+        znear = camera.clipplanenear or DEFAULT_CLIP_PLANE_NEAR
+        zfar = camera.clipplanefar or DEFAULT_CLIP_PLANE_FAR
         aspect = camera.aspect
         fov = camera.horizontalfov
 
@@ -240,6 +243,9 @@ class VisibilityMonitor:
         self.projection_matrix = glGetFloatv( GL_PROJECTION_MATRIX).transpose()
 
         self.view_matrix = linalg.inv(camera.transformation)
+
+        # Rotate by 180deg around X to have Z pointing backward (OpenGL convention)
+        self.view_matrix = numpy.dot(ROTATION_180_X, self.view_matrix)
 
         glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
@@ -277,7 +283,6 @@ class VisibilityMonitor:
         return visible_objects
 
     def from_camera(self, camera):
-        import pdb;pdb.set_trace()
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         self.set_camera(camera)
         self.render_colors()
@@ -296,7 +301,9 @@ class VisibilityMonitor:
         seen = seen[1:] # remove the 0 for background
 
         if self.debug:
-            raw_input()
+            import pygame
+            pygame.display.flip()
+            time.sleep(1)
 
         return [self.colorid2node[i] for i in seen]
 
