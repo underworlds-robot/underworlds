@@ -41,7 +41,6 @@ import numpy
 from numpy import linalg
 
 import underworlds
-from underworlds import situations
 from underworlds.types import *
 from underworlds.helpers.geometry import transform, get_scene_bounding_box, get_world_transform
 from underworlds.helpers import transformations
