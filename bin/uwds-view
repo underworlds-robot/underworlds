@@ -28,7 +28,7 @@ import OpenGL
 from OpenGL.GL import *
 from OpenGL.error import GLError
 from OpenGL.GLU import *
-from OpenGL.GLUT import *
+#from OpenGL.GLUT import *
 from OpenGL.arrays import vbo
 from OpenGL.GL import shaders
 
@@ -292,7 +292,7 @@ class Underworlds3DViewer:
 
         # for FPS computation
         self.frames = 0
-        self.last_fps_time = glutGet(GLUT_ELAPSED_TIME)
+        #self.last_fps_time = glutGet(GLUT_ELAPSED_TIME)
 
         # user interactions
         self.focal_point = [0,0,0]
@@ -947,13 +947,13 @@ class Underworlds3DViewer:
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
         # Compute FPS
-        gl_time = glutGet(GLUT_ELAPSED_TIME)
-        self.frames += 1
-        if gl_time - self.last_fps_time >= 1000:
-            current_fps = self.frames * 1000 / (gl_time - self.last_fps_time)
-            pygame.display.set_caption(self.base_name + " - %.0f fps" % current_fps)
-            self.frames = 0
-            self.last_fps_time = gl_time
+        #gl_time = glutGet(GLUT_ELAPSED_TIME)
+        #self.frames += 1
+        #if gl_time - self.last_fps_time >= 1000:
+        #    current_fps = self.frames * 1000 / (gl_time - self.last_fps_time)
+        #    pygame.display.set_caption(self.base_name + " - %.0f fps" % current_fps)
+        #    self.frames = 0
+        #    self.last_fps_time = gl_time
 
 
         return True
