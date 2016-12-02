@@ -39,16 +39,21 @@ Then:
 > python setup.py install
 ```
 
+Installation on windows
+-----------------------
+
+
+
 First tests with Underworlds
 ----------------------------
 
-1- Start the `underworlds` daemon:
+1. Start the `underworlds` daemon:
 
 ```
 > underworlded start
 ```
 
-2- Load some model:
+2. Load some model:
 
 ```
 > uwds-load testing/res/monkey_mat.dae test
@@ -56,7 +61,7 @@ First tests with Underworlds
 
 This loads 3 monkey heads in the 'test' world.
 
-3- Get a 3D view of this world:
+3. Get a 3D view of this world:
 
 ```
 > uwds-view test
