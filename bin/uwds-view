@@ -447,7 +447,7 @@ class Underworlds3DViewer:
 
     def glize(self, node):
 
-        node.selected = False
+        node.selected = True if self.currently_selected and self.currently_selected == node else False
 
         if node.type == MESH:
             colorid = self.get_color_id()
@@ -981,7 +981,6 @@ class Underworlds3DViewer:
                         logger.info("Node %s selected" % hovered)
                         self.select_node(hovered)
                 else:
-                    self.select_node(None)
                     self.is_rotating=True
             if evt.type == pygame.MOUSEBUTTONUP and evt.button == LEFT_BUTTON:
                 self.is_rotating = False
@@ -1002,18 +1001,29 @@ class Underworlds3DViewer:
                 dy = -10 if evt.button == WHEEL_UP else 10
 
             if evt.type == pygame.KEYDOWN:
-
-                ok = ok and self.process_keystroke(evt.key, evt.mod)
+                ok = (ok and self.process_keystroke(evt.key, evt.mod))
 
         self.controls_3d(dx, dy, zooming_one_shot)
 
         return ok
 
     def process_keystroke(self, key, mod):
-        #up_key=pygame.K_UP, \
-        #down_key=pygame.K_DOWN, \
-        #left_key=pygame.K_LEFT, \
-        #right_key=pygame.K_RIGHT
+
+        # process arrow keys if an object is selected
+        if self.currently_selected:
+            up = 0
+            strafe = 0
+
+            if key == pygame.K_UP:
+                up = 1
+            if key == pygame.K_DOWN:
+                up = -1
+            if key == pygame.K_LEFT:
+                strafe = -1
+            if key == pygame.K_RIGHT:
+                strafe = 1
+
+            self.move_selected_node(up, strafe)
 
         if key == pygame.K_f:
             pygame.display.toggle_fullscreen()
@@ -1168,6 +1178,11 @@ def main(world, host, port):
             if app.currently_selected:
                 app.showtext("node <%s>"% app.currently_selected, 10, app.h - 50)
                 pos = app.h - 70
+
+                app.showtext("(%sm, %sm, %sm)" % (app.currently_selected.transformation[0,3],
+                                                  app.currently_selected.transformation[1,3],
+                                                  app.currently_selected.transformation[2,3]), 30, pos)
+                pos -= 20
                 for key, value in app.currently_selected.properties.items():
 
                     app.showtext("%s: %s" % (key, value), 30, pos)
