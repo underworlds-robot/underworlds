@@ -12,6 +12,7 @@ Based on:
 - ASSIMP's C++ SimpleOpenGL viewer
 """
 import sys
+import argparse
 
 import logging
 logger = logging.getLogger("underworlds.3d_viewer")
@@ -1146,9 +1147,10 @@ class Underworlds3DViewer:
 
         #glDisable(GL_BLEND)
 
-def main():
-    with underworlds.Context("3D viewer") as ctx:
-        app = Underworlds3DViewer(ctx, world = sys.argv[1])
+def main(world, host, port):
+
+    with underworlds.Context("3D viewer", host=host, port=port) as ctx:
+        app = Underworlds3DViewer(ctx, world=world)
 
 
         clock = pygame.time.Clock()
@@ -1184,10 +1186,13 @@ def main():
 #########################################################################
 
 if __name__ == '__main__':
-    if not len(sys.argv) > 1:
-        print("Usage: " + __file__ + " <world name>")
-        sys.exit(2)
 
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("world", help="underworlds world to display")
+    parser.add_argument("--host", help="underworlds daemon host (default: localhost)", default="localhost")
+    parser.add_argument("--port", help="underworlds daemon port (default: 50051)", default=50051, type=int)
+    args = parser.parse_args()
+
+    main(args.world, args.host, args.port)
 
 

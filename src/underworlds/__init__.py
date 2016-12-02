@@ -523,7 +523,7 @@ class Context(object):
         channel = implementations.insecure_channel(host, port)
         self.rpc = gRPC.beta_create_Underworlds_stub(channel)
 
-        logger.info("Connecting to the underworlds server...")
+        logger.info("Connecting to the underworlds server on %s:%s..." % (host, port))
         try:
             self.id = self.rpc.helo(gRPC.Name(name=name), _TIMEOUT_SECONDS).id
         except NetworkError:
