@@ -218,14 +218,16 @@ in vec3 a_normal; // xyz - normal
 
 uniform mat4 u_modelMatrix;
 uniform mat4 u_viewProjectionMatrix;
+uniform mat4 u_modelViewMatrix;
 uniform vec4 u_materialDiffuse;
-uniform float u_offset; // offset along normal
+uniform float u_bordersize; // width of the border
 
 out vec4 v_color;
 
 void main(void){
    v_color = u_materialDiffuse;
-   vec4 tPos   = vec4(a_vertex + a_normal * u_offset, 1.0);
+   float distToCamera = -(u_modelViewMatrix * vec4(a_vertex, 1.0)).z;
+   vec4 tPos   = vec4(a_vertex + a_normal * u_bordersize * distToCamera, 1.0);
    gl_Position = u_viewProjectionMatrix * u_modelMatrix * tPos;
 }
 """
@@ -331,8 +333,9 @@ class Underworlds3DViewer:
 
         self.set_shader_accessors( ('u_modelMatrix',
                                     'u_viewProjectionMatrix',
+                                    'u_modelViewMatrix',
                                     'u_materialDiffuse',
-                                    'u_offset'  # width of the silhouette
+                                    'u_bordersize'  # width of the silhouette
                                     ), 
                                     ('a_vertex',
                                       'a_normal'), self.silhouette_shader)
@@ -652,7 +655,7 @@ class Underworlds3DViewer:
             glCullFace (GL_FRONT) # cull front faces
 
             glUseProgram(shader)
-            glUniform1f( shader.u_offset, 0.1)
+            glUniform1f( shader.u_bordersize, 0.01)
 
             glUniformMatrix4fv( shader.u_viewProjectionMatrix, 1, GL_TRUE,
                                 numpy.dot(self.projection_matrix,self.view_matrix))
@@ -852,6 +855,9 @@ class Underworlds3DViewer:
 
                 if node.selected and mode == SILHOUETTE:
                     glUniform4f( shader.u_materialDiffuse, 1.0, 0.0, 0.0, 1.0 )
+                    glUniformMatrix4fv( shader.u_modelViewMatrix, 1, GL_TRUE,
+                                        numpy.dot(self.view_matrix,m))
+
                 else:
                     if mode == COLORS:
                             colorid = self.node2colorid[node]
