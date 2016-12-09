@@ -7,7 +7,7 @@ import underworlds
 from underworlds.helpers import transformations
 from underworlds.types import MESH, Node
 from underworlds.tools.loader import ModelLoader
-from underworlds.tools.primitives_3d import Cube
+from underworlds.tools.primitives_3d import Box
 
 import logging; logger = logging.getLogger("underworlds.set_mesh")
 logging.basicConfig(level=logging.INFO)
@@ -29,7 +29,7 @@ if __name__ == "__main__":
         if args.model.startswith("cube_"):
             size = int(args.model.split("_")[1])
             logger.info("Creating a cube mesh of %dmm" % size)
-            cube = Cube.create(size)
+            cube = Box.create(size,size,size)
             ctx.push_mesh(cube)
             mesh_ids = [cube.id]
         else:
