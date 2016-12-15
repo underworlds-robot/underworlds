@@ -695,17 +695,38 @@ class Underworlds3DViewer:
 
         glUseProgram( 0 )
 
+    def draw_gizmo(self,x,y,z,size,orientation=(1,1,1)):
+        """ Must be called inside a glBegin()/glEnd()!
+        """
+
+        # draw line for x axis
+        glVertex3f(x, y, z)
+        glVertex3f(x + orientation[0] * size, y, z)
+
+        # draw line for y axis
+        glVertex3f(x, y, z)
+        glVertex3f(x, y + orientation[1] * size, z)
+
+        # draw line for Z axis
+        glVertex3f(x, y, z)
+        glVertex3f(x, y, z + orientation[2] * size)
+
 
     def render_axis(self,
                     transformation = numpy.identity(4, dtype=numpy.float32),
+                    bb=None,
                     label=None,
-                    size = 0.2):
+                    size = 0.2,
+                    selected=False):
         m = transformation.transpose() # OpenGL row major
 
         glPushMatrix()
         glMultMatrixf(m)
 
-        glLineWidth(3)
+        glLineWidth(3 if selected else 1)
+
+        size = 2 * size if selected else size
+
         glBegin(GL_LINES)
 
         # draw line for x axis
@@ -727,6 +748,34 @@ class Underworlds3DViewer:
 
         if label:
             self.showtext(label)
+
+        # bounding box
+        if bb:
+            glLineWidth(2 if selected else 1)
+            glBegin(GL_LINES)
+
+            if selected:
+                glColor3f(.5, .5, .5)
+            else:
+                glColor3f(.4, .4, .4)
+
+            bb_min, bb_max = bb
+            x_min, y_min, z_min = bb_min
+            x_max, y_max, z_max = bb_max
+
+
+            self.draw_gizmo(*bb_min,size=size)
+            self.draw_gizmo(*bb_max,size=size,orientation=(-1,-1,-1))
+            self.draw_gizmo(x_min,y_max,z_max,size=size,orientation=(1,-1,-1))
+            self.draw_gizmo(x_min,y_min,z_max,size=size,orientation=(1,1,-1))
+            self.draw_gizmo(x_max,y_min,z_max,size=size,orientation=(-1,1,-1))
+            self.draw_gizmo(x_max,y_min,z_min,size=size,orientation=(-1,1,1))
+            self.draw_gizmo(x_max,y_max,z_min,size=size,orientation=(-1,-1,1))
+            self.draw_gizmo(x_min,y_max,z_min,size=size,orientation=(1,-1,1))
+
+
+
+            glEnd()
 
         glPopMatrix();
 
@@ -826,7 +875,9 @@ class Underworlds3DViewer:
         if mode == HELPERS:
             #if node.type == ENTITY:
             self.render_axis(m,
-                             label=node.name if node != self.scene.rootnode else None)
+                             bb=node.aabb,
+                             label=node.name if node != self.scene.rootnode else None,
+                             selected=node.selected)
 
             if node.type == CAMERA:
                 self.render_camera(node, m)
