@@ -877,7 +877,7 @@ class Underworlds3DViewer:
             self.render_axis(m,
                              bb=node.aabb,
                              label=node.name if node != self.scene.rootnode else None,
-                             selected=node.selected)
+                             selected=node.selected if hasattr(node, "selected") else False)
 
             if node.type == CAMERA:
                 self.render_camera(node, m)
