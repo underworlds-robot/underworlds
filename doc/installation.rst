@@ -1,5 +1,8 @@
-Installation on Ubuntu/Debian
-=============================
+Installation
+============
+
+Ubuntu/Debian
+-------------
 
 The only mandatory prerequisite is the Python bindings of ``ZeroMQ``.
 
@@ -16,8 +19,8 @@ Then::
 
     python setup.py install
 	
-Installation on Windows
-=======================
+Windows
+-------
 
 You will need to install python 2.7.x (where x is over version 9 otherwise pip
 will also need to be installed seperately). Make sure to add python to your 
@@ -31,13 +34,14 @@ In your underworld directory run the following command::
 
 	python setup.py install
 
-Ensure that the ``tmp`` folder exists in the C:\ directory.
+Ensure that the ``tmp`` folder exists in the C:\\ directory.
 
 The following is optional but you will most likely want to install these to
-allow you to load objects and view the 3D world. This will require 'CMake' and 
+allow you to load objects and view the 3D world. This will require ``CMake`` and 
 ``Assimp``:
 
 https://github.com/assimp/assimp
+
 https://github.com/assimp/assimp/blob/master/
 
 Install ``pyassimp``::
@@ -46,7 +50,7 @@ Install ``pyassimp``::
 
 You will need to copy the assimp dll from where has been compiled into::
 
-	Python Dir>\Lib\site-packages\pyassimp
+	<Python Dir>\Lib\site-packages\pyassimp
 
 Install ``pygame``, ``PyOpenGL`` and ``twisted``::
 

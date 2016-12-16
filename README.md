@@ -65,6 +65,7 @@ allow you to load objects and view the 3D world. This will require 'CMake' and
 `Assimp`:
 
 https://github.com/assimp/assimp
+
 https://github.com/assimp/assimp/blob/master/
 
 Install `pyassimp`:
