@@ -21,8 +21,8 @@ some objects filtered out, models that are physically consistent, etc.
 This package provides the library, and a small set of core clients that are
 useful for inspection and debugging.
 
-Installation
-------------
+Installation on Ubuntu
+----------------------
 
 The only mandatory prerequisite is the Python bindings of `gRPC`:
 ```
@@ -39,18 +39,69 @@ Then:
 > python setup.py install
 ```
 
-Installation on windows
+Installation on Windows
 -----------------------
 
+You will need to install python 2.7.x (where x is over version 9 otherwise pip
+will also need to be installed seperately). Make sure to add python to your 
+system path. `gRPC` and `numpy` is necessary for undeworlds to work. To install 
+gRPC and numpy run the following from your command prompt:
 
+```
+> python -m pip install grpcio
+> python -m pip install numpy
+```
+
+In your underworld directory run the following command:
+
+```
+> python setup.py install
+```
+
+Ensure that the `tmp` folder exists in the C:\ directory.
+
+The following is optional but you will most likely want to install these to
+allow you to load objects and view the 3D world. This will require 'CMake' and 
+`Assimp`:
+
+https://github.com/assimp/assimp
+https://github.com/assimp/assimp/blob/master/
+
+Install `pyassimp`:
+
+```
+> python -m pip install pyassimp
+```
+
+You will need to copy the assimp dll from where has been compiled into:
+
+```
+<Python Dir>\Lib\site-packages\pyassimp
+```
+
+Install `pygame`, `PyOpenGL` and `twisted`:
+
+```
+> python -m pip install pygame
+> python -m pip install PyOpenGL
+> python -m pip install twisted
+```
 
 First tests with Underworlds
 ----------------------------
 
 1. Start the `underworlds` daemon:
 
+On Ubuntu
+
 ```
 > underworlded start
+```
+
+On Windows. Note as well that on windows you need to run these scripts from within the bin folder in your underworlds directory.
+
+```
+> underworlded foreground
 ```
 
 2. Load some model:
@@ -84,4 +135,3 @@ Documentation
 -------------
 
 [Head to readthedocs](http://underworlds.readthedocs.org). Sparse for now.
-
