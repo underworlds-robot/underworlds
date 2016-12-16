@@ -4,11 +4,11 @@ Installation
 Ubuntu/Debian
 -------------
 
-The only mandatory prerequisite is the Python bindings of ``ZeroMQ``.
+The only mandatory prerequisite is the Python bindings of ``gRPC``.
 
 On Ubuntu/Debian::
 
-    apt-get install python-zmq
+    pip install grpcio
 
 ``pyassimp``, ``python-OpenGL`` and ``pygame`` are also necessary to use the 3D mesh
 loader and the 3D scene viewer. On Ubuntu/Debian::
