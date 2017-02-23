@@ -5,48 +5,22 @@ This guide explains how to build underworlds application in Python.
 
 It assumes that underworld is installed (otherwise, check `installation`).
 
-General
-~~~~~~~
+First client: listing the nodes in a world
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The following simple snippet of code is a good starting point for many
-underworlds Python applications:
+``underworlds`` Python applications:
 
-.. code-block:: python
+.. literalinclude:: samples/01-list-nodes.py
+    :language: python
     :linenos:
+    :caption:
 
-    import logging; logger = logging.getLogger("underworlds.myapp")
-    import underworlds
-
-    # Define here the classes and functions you need
-    # ...
-
-    if __name__ == "__main__":
-
-        logging.basicConfig(level=logging.INFO)
-
-        # Manage command line options
-        import argparse
-        parser = argparse.ArgumentParser(description="My Cool App"))
-        parser.add_argument("world", help="Underworlds world to monitor")
-        args = parser.parse_args()
-
-
-        with underworlds.Context("myapp") as ctx:
-
-            world = ctx.worlds[args.world]
-
-            # world.scene.nodes gives access to all the nodes present in this
-            # world
-
-            # world.scene.rootnode is the root node of the scene
-
-            # world.timeline gives access to the world's timeline
-
-
-Let see now one 'real world' example.
 
 Implementing a filter
 ~~~~~~~~~~~~~~~~~~~~~
+
+Let see now one 'real world' example.
 
 *Filters* are a common pattern in a underworlds-based system. We call a
 *filter* an application that monitors a world A, processes somehow

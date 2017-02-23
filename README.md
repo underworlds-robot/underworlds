@@ -40,3 +40,11 @@ Documentation
 -------------
 
 [Head to readthedocs](http://underworlds.readthedocs.org). Sparse for now.
+
+See also
+--------
+
+- M.  Naef,  E. Lamboray,  O. Staadt,  and M.  Gross, **The  blue-c  distributed scene graph**
+- Bustos, Pablo, et al. **A Unified Internal Representation of the Outer World
+  for Social Robotics.** Robot 2015: Second Iberian Robotics Conference. Springer
+  International Publishing, 2016.
