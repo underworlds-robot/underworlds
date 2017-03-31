@@ -242,7 +242,7 @@ class VisibilityMonitor:
 
         self.projection_matrix = glGetFloatv( GL_PROJECTION_MATRIX).transpose()
 
-        self.view_matrix = linalg.inv(camera.transformation)
+        self.view_matrix = linalg.inv(get_world_transform(self.scene,camera))
 
         # Rotate by 180deg around X to have Z pointing backward (OpenGL convention)
         self.view_matrix = numpy.dot(ROTATION_180_X, self.view_matrix)
