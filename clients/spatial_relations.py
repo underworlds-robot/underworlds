@@ -59,6 +59,15 @@ def range_overlap(a_min, a_max, b_min, b_max):
     http://codereview.stackexchange.com/questions/31352/overlapping-rectangles
     '''
     return (a_min <= b_max) and (b_min <= a_max)
+    
+def weakly_cont(rect1, rect2):
+    '''Obj1 is weakly contained if the base of the object is surrounded
+    by Obj2
+    '''
+    (l1,b1), (r1,t1) = rect1
+    (l2,b2), (r2,t2) = rect2
+    
+    return (l1 >= l2) and (b1 >= b2) and (r1 <= r2) and (t1 <= t2)
 
 def isabove(bb1, bb2):
     """ For obj 1 to be above obj 2:
@@ -109,6 +118,28 @@ def isclose(bb1, bb2):
 
     return dist < 2 * dim2
 
+def isin(bb1, bb2):
+	""" Returns True if bb1 is in bb2. 
+	
+	To be 'in' bb1 is weakly contained by bb2 and the bottom of bb1 is lower 
+	than the top of bb2 and higher than the bottom of bb2.
+	"""
+    bb1_min, _ = bb1
+    bb2_min, bb2_max = bb2
+    
+    x1,y1,z1 = bb1_min
+    x2,y2,z2 = bb2_max
+    x3,y3,z3 = bb2_min
+    
+    if z1 > z2 + EPSILON:
+        return False
+
+    if z1 < z3 - EPSILON:
+        return False
+
+    return weakly_cont(bb_footprint(bb1),
+                   bb_footprint(bb2))
+
 def compute_relations(scene):
 
     boundingboxes = {n: get_bounding_box_for_node(scene, n) for n in scene.nodes if n.type == MESH}
@@ -128,6 +159,9 @@ def allocentric_relations(nodes):
 
             if isclose(bb, bb2):
                 logger.info("%s is close of %s" % (n, n2))
+                
+            if isin(bb, bb2):
+                logger.info("%s is in %s" % (n, n2))
 
 if __name__ == "__main__":
 
