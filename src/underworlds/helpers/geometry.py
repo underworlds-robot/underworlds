@@ -5,6 +5,7 @@ import logging; logger = logging.getLogger("underworlds.helpers.geometry")
 
 from ..types import MESH
 from functools import reduce
+from math import *
 
 def transform(vector3, matrix4x4):
     """ Apply a transformation matrix on a 3D vector.
@@ -84,3 +85,42 @@ def transformed_aabb(scene, node):
     
     return transform(node.aabb[0], global_transformation), \
            transform(node.aabb[1], global_transformation)
+           
+def calc_trans_matrix(x, y, z, xrot, yrot, zrot, xScale, yScale, zScale, rotConv):
+    """ Takes in the scaling, translation and rotation parameters and returns the required
+    transformation matrix.
+    Rotation angles should be provided in radians.
+    """
+    
+    trans = numpy.zeros( (4,4) )
+    trans2 = numpy.zeros( (4,4) )
+    
+    #Scale object
+    trans[0][0] = xScale
+    trans[1][1] = yScale
+    trans[2][2] = zScale
+    trans[3][3] = 1
+    
+    #Rotate object
+    if rotConv == "xConv":
+        #Euler rotation maxtrix - X convention - this is the common convention
+        trans2[0][0] = (cos(yrot) * cos(zrot)) - (cos(xrot) * sin(zrot) * sin(yrot))
+        trans2[0][1] = (cos(yrot) * sin(zrot)) + (cos(xrot) * cos(zrot) * sin(yrot))
+        trans2[0][2] = sin(yrot) * sin(xrot)
+        trans2[1][0] = ((-sin(yrot)) * cos(zrot)) - (cos(xrot) * sin(zrot) * cos(yrot))
+        trans2[1][1] = ((-sin(yrot)) * sin(zrot)) + (cos(xrot) * cos(zrot) * cos(yrot))
+        trans2[1][2] = cos(yrot) * sin(xrot)
+        trans2[2][0] = sin(xrot) * sin(zrot)
+        trans2[2][1] = (-sin(xrot)) * cos(zrot)
+        trans2[2][2] = cos(xrot)
+        trans2[3][3] = 1
+    else:
+        print "TODO: Implement other rotation conventions"
+        
+    trans = numpy.dot(trans,trans2)
+    
+    trans[0][3] = x
+    trans[1][3] = y
+    trans[2][3] = z
+    
+    return trans
