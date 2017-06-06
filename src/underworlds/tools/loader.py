@@ -23,13 +23,12 @@ ROTATION_180_X = numpy.array([[1,0,0,0],[0,-1,0,0],[0,0,-1,0],[0,0,0,1]], dtype=
 
 class ModelLoader:
 
-    meshes = {}
-
-    # mapping {assimp name: (assimp node, underworld node)}
-    node_map = {}
-
     def __init__(self):
-        pass
+
+        self.meshes = {}
+
+        # mapping {assimp name: (assimp node, underworld node)}
+        self.node_map = {}
 
     def node_boundingbox(self, node):
         """ Returns the AABB bounding box of an ASSIMP node.
@@ -143,6 +142,9 @@ class ModelLoader:
         meshes are pushed to the server.
         :returns: the list of loaded underworlds nodes.
         """
+
+        self.meshes = {}
+        self.node_map = {}
 
         if not only_meshes and world is None:
             raise RuntimeError("Can not create nodes if the world is None")
