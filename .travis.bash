@@ -12,9 +12,11 @@ mkdir -p ${UWDS_PREFIX}
 echo "Installing pyassimp"
 
 cd ${HOME}
-git clone --depth=1 https://github.com/assimp/assimp.git
+if [ ! -d "assimp" ]; then
+    git clone --depth=1 https://github.com/assimp/assimp.git
+fi
 cd assimp
-mkdir build
+mkdir -p build
 cd build
 cmake -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DASSIMP_BUILD_ASSIMP_TOOLS=OFF ..
 make -j4
@@ -23,7 +25,7 @@ sudo make install
 cd ../port/PyAssimp
 
 # workaround for bug introduced in assimp's 33bd5cfcfb0f27794a333273b20b60a7a550d184
-mkdir ../../lib
+mkdir -p ../../lib
 
 python setup.py install --prefix=${UWDS_PREFIX}
 
