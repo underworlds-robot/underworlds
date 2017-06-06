@@ -65,7 +65,7 @@ class TestSingleUser(unittest.TestCase):
         self.assertFalse(world is world2)
         self.assertFalse(nodes is nodes2)
 
-        self.assertEquals(len(nodes2), 2)
+        self.assertEquals(len(nodes), 2)
         self.assertEquals(len(nodes2), 2)
 
         names = [n.name for n in nodes2]

@@ -3,6 +3,8 @@ import json
 
 from underworlds.types import Node, MESH
 
+import underworlds.underworlds_pb2
+
 class TestCore(unittest.TestCase):
 
     def test_nodes(self):
@@ -14,7 +16,7 @@ class TestCore(unittest.TestCase):
         n.name = "test"
         n.type = MESH
 
-        serialized = n.serialize()
+        serialized = n.serialize(underworlds.underworlds_pb2.Node)
 
         n2 = Node.deserialize(serialized)
 
