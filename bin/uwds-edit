@@ -122,8 +122,9 @@ if __name__ == "__main__":
                                     meshes = ModelLoader().load_meshes(args.model, ctx=ctx)
                                     for m in meshes.values():
                                         mesh_ids = mesh_ids + m
-                                new_node.type=MESH    
-                                new_node.cad=mesh_ids
+                                new_node.type = MESH
+                                new_node.hires += mesh_ids
+                                new_node.cad += mesh_ids
                                 updated_nodes.append(new_node)
                                 logger.info("Adding MESH for <%s : %s> with meshes %s" % (str(new_node),str(new_node.id), str(mesh_ids)))
                                 
