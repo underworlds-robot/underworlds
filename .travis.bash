@@ -4,18 +4,23 @@ echo "============================="
 lsb_release -a; uname -a
 
 UWDS_CLONE_PATH=`pwd`
-UWDS_PREFIX=~/underworlds_install
+UWDS_PREFIX=${HOME}/dev
 mkdir -p ${UWDS_PREFIX}
 
 
+# manually install assimp as the version packaged in trusty is too old
 echo "Installing pyassimp"
-
-# create this symbolic link otherwise pyassimp does not find libassimp
-sudo ln -s /usr/lib/libassimp.so.3 /usr/lib/libassimp.so
 
 cd ${HOME}
 git clone --depth=1 https://github.com/assimp/assimp.git
-cd assimp/port/PyAssimp
+cd assimp
+mkdir build
+cd build
+cmake -DCMAKE_INSTALL_PREFIX=${UWDS_PREFIX} -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DASSIMP_BUILD_ASSIMP_TOOLS=OFF ..
+make -j4
+make install
+
+cd ../port/PyAssimp
 
 # workaround for bug introduced in assimp's 33bd5cfcfb0f27794a333273b20b60a7a550d184
 mkdir ../../lib
