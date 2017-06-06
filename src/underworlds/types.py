@@ -96,7 +96,7 @@ class Node(object):
         return self.id < node.id
 
     def __eq__(self, node):
-        return self.id == node.id
+        return hasattr(node, "id") and self.id == node.id
 
     def __hash__(self):
         return hash(self.id)

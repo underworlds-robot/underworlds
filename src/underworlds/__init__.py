@@ -176,7 +176,7 @@ class NodesProxy(threading.Thread):
                     self._get_node_from_remote(key)
                 except ValueError:
                     #The node does not exist!!
-                    raise KeyError("The node %s does not exist" % key)
+                    raise KeyError("The node ID %s does not exist" % key)
                 return self._nodes[key]
 
     def __len__(self):

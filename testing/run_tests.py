@@ -100,7 +100,7 @@ import nodes, \
        topology, \
        visibility, \
        basic_server_interaction, \
-       root_anchoring_issue
+       model_loading
 
 modules = [
     nodes, \
@@ -109,7 +109,7 @@ modules = [
     #timeline, \ # not passing -- timeline functions not implemented with gRPC
     topology, \
     basic_server_interaction, \
-    root_anchoring_issue]
+    model_loading]
 
 # add the tests which require OpenGL support
 if not nogl:
