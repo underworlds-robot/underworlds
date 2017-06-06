@@ -1,0 +1,12 @@
+sudo: required
+dist: trusty
+
+language: generic
+
+before_install:
+ - sudo apt-get update -qq
+ - sudo apt-get install -qq python-pyassimp python-opengl python-pygame libgl1-mesa-dev xvfb
+ - sudo pip install grpcio
+
+script: "time ./.travis.bash"
+

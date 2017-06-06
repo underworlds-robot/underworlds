@@ -129,3 +129,4 @@ for name in results:
 print(("| TOTAL                    |  % 4d    |   % 4d    |   % 3d    |  % 3d   || % 3d |" % (tuple(total))))
 print("==============================================================================")
 
+sys.exit(0 if total[1] == total[4] else 1)
