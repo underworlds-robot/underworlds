@@ -16,5 +16,7 @@ export PYTHONPATH=${UWDS_PREFIX}/lib/python2.7/site-packages:$PYTHONPATH
 
 echo "Run tests"
 cd testing
-xvfb-run --auto-servernum --server-args="-screen 0 160x120x16" python2 ./run_tests.py
+
+# launch all tests, except OpenGL tests
+python2 ./run_tests.py --nogl
 

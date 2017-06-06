@@ -16,6 +16,7 @@ Usage:
 run_tests [OPTIONS]
   -h, --help               Displays this message and exits
   -f, --failfast           Stops at first failure or error
+  --nogl                   Do not run tests requiring OpenGL support
   -l, --log=[file|stdout]  Where to log: file (in """ + LOG_FILENAME + """) 
                            or stdout (default).
 """)
@@ -31,9 +32,10 @@ log_handler = logging.StreamHandler()
 formatter = logging.Formatter("%(message)s")
 
 failfast = False
+nogl = False
 
 try:
-    optlist, args = getopt.getopt(sys.argv[1:], 'hfl:', ['help', 'failfast', 'log='])
+    optlist, args = getopt.getopt(sys.argv[1:], 'hfl:', ['help', 'failfast', 'log=', 'nogl'])
 except getopt.GetoptError as err:
     # print help information and exit:
     print(str(err)) # will print something like "option -a not recognized"
@@ -47,6 +49,9 @@ for o, a in optlist:
     if o in ("-f", "--failfast"):
         print("Failfast mode enabled.")
         failfast = True
+    elif o == "--nogl":
+        print("Running without OpenGL support.")
+        nogl = True
     elif o in ("-l", "--log"):
         if a == "file":
             print(("The output of the unit-tests will be saved in " + LOG_FILENAME))
@@ -80,6 +85,8 @@ def runtest(module):
 
     results[module.__name__] = (suite.countTestCases(), result.testsRun, len(result.failures) , len(result.errors), result.testsRun - len(result.failures) - len(result.errors))
 
+    time.sleep(0.5)
+
     return result.wasSuccessful()
 
 ########################################################################
@@ -101,10 +108,12 @@ modules = [
     single_user, \
     #timeline, \ # not passing -- timeline functions not implemented with gRPC
     topology, \
-    visibility, \
     basic_server_interaction, \
     root_anchoring_issue]
 
+# add the tests which require OpenGL support
+if not nogl:
+    modules += [visibility]
 
 
 for m in modules:
