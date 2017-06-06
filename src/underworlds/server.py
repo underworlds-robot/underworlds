@@ -292,7 +292,7 @@ class Server(gRPC.BetaUnderworldsServicer):
 
         # tells everyone about the change
         logger.debug("Sent invalidation action [delete]")
-        self._add_node_invalidation(world, nodeInCtxt.node.id, gRPC.DELETE)
+        self._add_node_invalidation(world, nodeInCtxt.node.id, gRPC.NodeInvalidation.DELETE)
 
         # Also remove the node for its parent's children
         parent = scene.node(node.parent)
