@@ -3,13 +3,15 @@
 
 import re
 import os
+import sys
 import underworlds
+import math
 from underworlds.helpers import transformations
 from underworlds.types import *
 from underworlds.tools.loader import ModelLoader
 from underworlds.tools.primitives_3d import Box
 
-import logging; logger = logging.getLogger("underworlds.edit")
+import logging; logger = logging.getLogger("underworlds.uwds-edit")
 logging.basicConfig(level=logging.INFO)
 
 if __name__ == "__main__":
@@ -68,120 +70,137 @@ if __name__ == "__main__":
     if args.cmd in commands:
         cmd = commands[args.cmd]
 
-    try:
-        with underworlds.Context("uwds-edit") as ctx:
+    with underworlds.Context("uwds-edit") as ctx:
 
-            target = ctx.worlds[args.world]
+        target_world = ctx.worlds[args.world]
 
-            updated_nodes = []
-            removed_nodes = []
+        ############################################################
+        ### ADD NODE
+        ############################################################
+        if args.cmd == "add-node":
+            new_node = Node()
+            new_node.name = args.name
+            new_node.type = ENTITY
+            if args.parent != "root":
+                try:
+                    parent = target_world.scene.nodes[args.parent]
+                except KeyError as e:
+                    logger.error(str(e))
+                    sys.exit(1)
 
-            if args.cmd == "add-node":
-                ############################################################
-                ### ADD NODE
-                ############################################################
-                new_node = Node()
-                new_node.name = args.name
-                new_node.type = ENTITY
-                if args.parent != "root":
-                    nodes = target.scene.nodebyname(args.parent)
-                    if len(nodes) > 0:
-                        new_node.parent = nodes[0].id
-                else:
-                    new_node.parent = target.scene.rootnode.id
-                logger.info("Creating NODE <%s : %s>"%(str(new_node),str(new_node.id)))
-                updated_nodes.append(new_node)
+                new_node.parent = parent.id
+
             else:
-                for node in target.scene.nodes :
-                    found = False
-                    if args.cmd == "parent" :
-                        if node.name == args.child :
-                            found = True
-                    else:
-                        if node.name == args.node :
-                            found = True
-                    if found == True :
+                new_node.parent = target_world.scene.rootnode.id
 
-                        logger.info("Node <%s> found"%node.name)
-                        if args.which == "adder":
-                            if args.cmd == "add-mesh":
-                                ############################################################
-                                ### ADD MESH
-                                ############################################################
-                                new_node = node
-                                mesh_ids = []
-                                sizes = []
-                                if args.model.startswith("box_"):
-                                    for size in args.model.split("_")[1:]:
-                                        sizes.append(float(size))
-                                    logger.info("Creating a box mesh of "+ str(sizes)+ " m")
-                                    box = Box.create(sizes[0],sizes[1],sizes[2])
-                                    ctx.push_mesh(box)
-                                    mesh_ids = [box.id]
-                                else:
-                                    meshes = ModelLoader().load_meshes(args.model, ctx=ctx)
-                                    for m in meshes.values():
-                                        mesh_ids = mesh_ids + m
-                                new_node.type = MESH
-                                new_node.hires += mesh_ids
-                                new_node.cad += mesh_ids
-                                updated_nodes.append(new_node)
-                                logger.info("Adding MESH for <%s : %s> with meshes %s" % (str(new_node),str(new_node.id), str(mesh_ids)))
-                                
-                        elif args.which == "remover":
-                            if args.cmd == "rm-mesh":
-                                ############################################################
-                                ### REMOVE MESH
-                                ############################################################
-                                new_node = node
-                                logger.info("Removing MESH %s for <%s : %s >" % (str(new_node.cad),str(new_node),str(new_node.id)))
-                                new_node.cad = []
-                                new_node.type = ENTITY
-                                updated_nodes.append(new_node)
-                            else:
-                                ############################################################
-                                ### REMOVE NODE
-                                ############################################################
-                                new_node = node
-                                logger.info("Removing <%s : %s> NODE" % (str(new_node),str(new_node.id)))
-                                removed_nodes.append(new_node)
-                        else:
-                            if args.cmd == "parent":
-                                ############################################################
-                                ### PARENT
-                                ############################################################
-                                new_node = node
-                                if args.parent != "root":
-                                    nodes = target.scene.nodebyname(args.parent)
-                                    if len(nodes)>0:
-                                        new_node.parent = nodes[0].id
-                                else:
-                                    new_node.parent = target.scene.rootnode.id
-                                updated_nodes.append(new_node)
-                            else:
-                                ############################################################
-                                ### TRANSFORM
-                                ############################################################
-                                axis = {}
-                                axis["x"] = numpy.array([1.0, 0.0, 0.0])
-                                axis["y"] = numpy.array([0.0, 1.0, 0.0])
-                                axis["z"] = numpy.array([0.0, 0.0, 1.0])
-                                values = []
-                                values = float(args.transform.split("_"))
-                                rx = transformations.rotation_matrix(math.radians(values[3]),axis['x'],None)
-                                ry = transformations.rotation_matrix(math.radians(values[4]),axis['y'],None)
-                                rz = transformations.rotation_matrix(math.radians(values[5]),axis['z'],None)
-                                r = euler_matrix(rx, rz, ry, 'rxyz')
-                                t = translation_matrix((values[0],values[1],values[2]))
-                                new_node = node
-                                new_node.transformation = concatenate_matrices(t,r)
-                                updated_nodes.append(new_node)
+            logger.info("Creating NODE <%s : %s>"%(str(new_node),str(new_node.id)))
+            target_world.scene.nodes.append(new_node)
 
-            for node in updated_nodes:
-                target.scene.nodes.update(node)
+            sys.exit(0)
 
-            for node in removed_nodes:
-                target.scene.nodes.remove(node)
 
-    except Exception, e:
-                logger.error("Error occured : %s"%e)
+        updated_nodes = []
+        removed_nodes = []
+
+        try:
+            node = target_world.scene.nodes[args.node]
+        except KeyError as e:
+            logger.error(str(e))
+            sys.exit(1)
+
+        logger.info("Modifying node <%s>" % node.name)
+
+        ############################################################
+        ### ADD MESH
+        ############################################################
+        if args.cmd == "add-mesh":
+            new_node = node
+            mesh_ids = []
+            sizes = []
+            if args.model.startswith("box_"):
+                for size in args.model.split("_")[1:]:
+                    sizes.append(float(size))
+                logger.info("Creating a box mesh of "+ str(sizes)+ " m")
+                box = Box.create(sizes[0],sizes[1],sizes[2])
+                ctx.push_mesh(box)
+                mesh_ids = [box.id]
+            else:
+                meshes = ModelLoader().load_meshes(args.model, ctx=ctx)
+                for m in meshes.values():
+                    mesh_ids = mesh_ids + m
+            new_node.type = MESH
+            new_node.hires += mesh_ids
+            new_node.cad += mesh_ids
+            updated_nodes.append(new_node)
+            logger.info("Adding MESH for <%s : %s> with meshes %s" % (str(new_node),str(new_node.id), str(mesh_ids)))
+
+        ############################################################
+        ### REMOVE MESH
+        ############################################################
+        elif args.cmd == "rm-mesh":
+            new_node = node
+            logger.info("Removing MESH %s for <%s : %s >" % (str(new_node.cad),str(new_node),str(new_node.id)))
+            new_node.cad = []
+            new_node.type = ENTITY
+            updated_nodes.append(new_node)
+
+        ############################################################
+        ### REMOVE NODE
+        ############################################################
+        elif args.cmd == "rm-node":
+            new_node = node
+            logger.info("Removing <%s : %s> NODE" % (str(new_node),str(new_node.id)))
+            removed_nodes.append(new_node)
+
+        ############################################################
+        ### PARENT
+        ############################################################
+        elif args.cmd == "parent":
+                new_node = node
+                if args.parent != "root":
+                    try:
+                        parent = target_world.scene.nodes[args.parent]
+                    except KeyError as e:
+                        logger.error(str(e))
+                        sys.exit(1)
+
+                    new_node.parent = parent.id
+
+                else:
+                    new_node.parent = target_world.scene.rootnode.id
+
+                updated_nodes.append(new_node)
+
+        ############################################################
+        ### TRANSFORM
+        ############################################################
+        elif args.cmd == "transform":
+            axis = {}
+            axis["x"] = numpy.array([1.0, 0.0, 0.0])
+            axis["y"] = numpy.array([0.0, 1.0, 0.0])
+            axis["z"] = numpy.array([0.0, 0.0, 1.0])
+            values = []
+            x,y,z,rx,ry,rz = [float(i) for i in args.transform.split("_")]
+            #rx = transformations.rotation_matrix(math.radians(values[3]),axis['x'],None)
+            #ry = transformations.rotation_matrix(math.radians(values[4]),axis['y'],None)
+            #rz = transformations.rotation_matrix(math.radians(values[5]),axis['z'],None)
+            r = transformations.euler_matrix(rx, rz, ry, 'rxyz')
+            t = transformations.translation_matrix((x,y,z))
+            new_node = node
+            new_node.transformation = transformations.concatenate_matrices(t,r)
+            updated_nodes.append(new_node)
+
+        ############################################################
+        ### UNKNOWN :-(
+        ############################################################
+        else:
+            logger.error("Unknown command.")
+            sys.exit(1)
+
+
+        for node in updated_nodes:
+            target_world.scene.nodes.update(node)
+
+        for node in removed_nodes:
+            target_world.scene.nodes.remove(node)
+
