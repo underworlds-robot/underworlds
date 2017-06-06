@@ -20,97 +20,97 @@ if __name__ == "__main__":
 
     subparsers = parser.add_subparsers()
 
-    commands={}
+    commands = {}
 
     parent = subparsers.add_parser("parent", help="re-parent a node")
     parent.set_defaults(which="editor", cmd="parent")
     parent.add_argument("world", help="world to edit")
     parent.add_argument("node",help="ID of the node to re-parent")
     parent.add_argument("parent",help="ID of the new parent")
-    commands["parent"]=parent
+    commands["parent"] = parent
 
     add_node = subparsers.add_parser("add-node", help="creates a new node")
     add_node.set_defaults(which="adder", cmd="add-node")
     add_node.add_argument("world", help="world to edit")
     add_node.add_argument("name",help="name of the new node to add")
     add_node.add_argument("-p","--parent",default="root",help="ID of the new node's parent (default to root)")
-    commands["add-node"]=add_node
+    commands["add-node"] = add_node
 
     rm_node = subparsers.add_parser("rm-node", help="remove a node")
     rm_node.set_defaults(which="remover", cmd="rm-node")
     rm_node.add_argument("world", help="world to edit")
     rm_node.add_argument("node",help="ID of the node to remove")
-    commands["rm-node"]=rm_node
+    commands["rm-node"] = rm_node
 
     add_mesh = subparsers.add_parser("add-mesh", help="append meshes to a node")
     add_mesh.set_defaults(which="adder", cmd="add-mesh")
     add_mesh.add_argument("world", help="world to edit")
     add_mesh.add_argument("node",help="ID of the node to edit")
     add_mesh.add_argument("model",help="path to the 3D model to load (all the meshes are appended to the node). Alternatively, 'box_<x>_<y>_<z>' to add a box of the given size in [m]")
-    commands["add-mesh"]=add_mesh
+    commands["add-mesh"] = add_mesh
 
     rm_mesh = subparsers.add_parser("rm-mesh", help="clear all the meshes from a node")
     rm_mesh.set_defaults(which="remover", cmd="rm-mesh")
     rm_mesh.add_argument("world", help="world to edit")
     rm_mesh.add_argument("node",help="ID of the node to edit")
-    commands["rm-mesh"]=rm_mesh
+    commands["rm-mesh"] = rm_mesh
 
     transform = subparsers.add_parser("transform", help="set the transform of a node")
     transform.set_defaults(which="editor", cmd="transform")
     transform.add_argument("world", help="world to edit")
     transform.add_argument("node",help="ID of the node to edit")
     transform.add_argument("transform",help="desired transform, as <x>_<y>_<z>_<rx>_<ry>_<rz> (in meters & rad)")
-    commands["transform"]=transform
+    commands["transform"] = transform
 
     args = parser.parse_args()
 
-    cmd=None
+    cmd = None
     if args.cmd in commands:
-        cmd=commands[args.cmd]
+        cmd = commands[args.cmd]
 
     try:
-        with underworlds.Context("editor") as ctx:
-            
-            target=ctx.worlds[args.world]
-            
-            updated_nodes=[]
-            removed_nodes=[]
+        with underworlds.Context("uwds-edit") as ctx:
 
-            if args.cmd=="add-node":
+            target = ctx.worlds[args.world]
+
+            updated_nodes = []
+            removed_nodes = []
+
+            if args.cmd == "add-node":
                 ############################################################
                 ### ADD NODE
                 ############################################################
-                new_node=Node()
-                new_node.name=args.name
-                new_node.type=ENTITY
-                if args.parent !="root":
-                    nodes=target.scene.nodebyname(args.parent)
-                    if len(nodes)>0:
-                        new_node.parent=nodes[0].id
+                new_node = Node()
+                new_node.name = args.name
+                new_node.type = ENTITY
+                if args.parent != "root":
+                    nodes = target.scene.nodebyname(args.parent)
+                    if len(nodes) > 0:
+                        new_node.parent = nodes[0].id
                 else:
-                    new_node.parent=target.scene.rootnode.id
+                    new_node.parent = target.scene.rootnode.id
                 logger.info("Creating NODE <%s : %s>"%(str(new_node),str(new_node.id)))
                 updated_nodes.append(new_node)
             else:
                 for node in target.scene.nodes :
-                    found=False
-                    if args.cmd=="parent" :
-                        if node.name==args.child :
-                            found=True
+                    found = False
+                    if args.cmd == "parent" :
+                        if node.name == args.child :
+                            found = True
                     else:
-                        if node.name==args.node :
-                            found=True
-                    if found==True :
-                        
+                        if node.name == args.node :
+                            found = True
+                    if found == True :
+
                         logger.info("Node <%s> found"%node.name)
-                        if args.which=="adder":
-                            if args.cmd=="add-mesh":
+                        if args.which == "adder":
+                            if args.cmd == "add-mesh":
                                 ############################################################
                                 ### ADD MESH
                                 ############################################################
-                                new_node=node
-                                mesh_ids=[]
-                                sizes=[]
+                                new_node = node
+                                mesh_ids = []
+                                sizes = []
                                 if args.model.startswith("box_"):
                                     for size in args.model.split("_")[1:]:
                                         sizes.append(float(size))
@@ -128,53 +128,53 @@ if __name__ == "__main__":
                                 updated_nodes.append(new_node)
                                 logger.info("Adding MESH for <%s : %s> with meshes %s" % (str(new_node),str(new_node.id), str(mesh_ids)))
                                 
-                        elif args.which=="remover":
-                            if args.cmd=="rm-mesh":
+                        elif args.which == "remover":
+                            if args.cmd == "rm-mesh":
                                 ############################################################
                                 ### REMOVE MESH
                                 ############################################################
-                                new_node=node
+                                new_node = node
                                 logger.info("Removing MESH %s for <%s : %s >" % (str(new_node.cad),str(new_node),str(new_node.id)))
-                                new_node.cad=[]
-                                new_node.type=ENTITY
+                                new_node.cad = []
+                                new_node.type = ENTITY
                                 updated_nodes.append(new_node)
                             else:
                                 ############################################################
                                 ### REMOVE NODE
                                 ############################################################
-                                new_node=node
+                                new_node = node
                                 logger.info("Removing <%s : %s> NODE" % (str(new_node),str(new_node.id)))
                                 removed_nodes.append(new_node)
                         else:
-                            if args.cmd=="parent":
+                            if args.cmd == "parent":
                                 ############################################################
                                 ### PARENT
                                 ############################################################
-                                new_node=node
-                                if args.parent !="root":
-                                    nodes=target.scene.nodebyname(args.parent)
+                                new_node = node
+                                if args.parent != "root":
+                                    nodes = target.scene.nodebyname(args.parent)
                                     if len(nodes)>0:
-                                        new_node.parent=nodes[0].id
+                                        new_node.parent = nodes[0].id
                                 else:
-                                    new_node.parent=target.scene.rootnode.id
+                                    new_node.parent = target.scene.rootnode.id
                                 updated_nodes.append(new_node)
                             else:
                                 ############################################################
                                 ### TRANSFORM
                                 ############################################################
-                                axis={}
-                                axis["x"]=numpy.array([1.0, 0.0, 0.0])
-                                axis["y"]=numpy.array([0.0, 1.0, 0.0])
-                                axis["z"]=numpy.array([0.0, 0.0, 1.0])
-                                values=[]
-                                values=float(args.transform.split("_"))
-                                rx=transformations.rotation_matrix(math.radians(values[3]),axis['x'],None)
-                                ry=transformations.rotation_matrix(math.radians(values[4]),axis['y'],None)
-                                rz=transformations.rotation_matrix(math.radians(values[5]),axis['z'],None)
-                                r=euler_matrix(rx, rz, ry, 'rxyz')
-                                t=translation_matrix((values[0],values[1],values[2]))
-                                new_node=node
-                                new_node.transformation=concatenate_matrices(t,r)
+                                axis = {}
+                                axis["x"] = numpy.array([1.0, 0.0, 0.0])
+                                axis["y"] = numpy.array([0.0, 1.0, 0.0])
+                                axis["z"] = numpy.array([0.0, 0.0, 1.0])
+                                values = []
+                                values = float(args.transform.split("_"))
+                                rx = transformations.rotation_matrix(math.radians(values[3]),axis['x'],None)
+                                ry = transformations.rotation_matrix(math.radians(values[4]),axis['y'],None)
+                                rz = transformations.rotation_matrix(math.radians(values[5]),axis['z'],None)
+                                r = euler_matrix(rx, rz, ry, 'rxyz')
+                                t = translation_matrix((values[0],values[1],values[2]))
+                                new_node = node
+                                new_node.transformation = concatenate_matrices(t,r)
                                 updated_nodes.append(new_node)
 
             for node in updated_nodes:
