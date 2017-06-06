@@ -15,50 +15,51 @@ logging.basicConfig(level=logging.INFO)
 if __name__ == "__main__":
 
     import argparse
-    parser = argparse.ArgumentParser(description="Underworlds editor : The swiss army knife for editing")
+    parser = argparse.ArgumentParser(description="Manipulates underworlds worlds from the command-line." \
+                                                 "Type uwds-edit <sub-command> --help for detailed help.")
 
     subparsers = parser.add_subparsers()
 
     commands={}
 
-    parent = subparsers.add_parser("parent", help="Parent the given node")
+    parent = subparsers.add_parser("parent", help="re-parent a node")
     parent.set_defaults(which="editor", cmd="parent")
-    parent.add_argument("world", help="The underworlds world to process")
-    parent.add_argument("parent",help="The desired parent node")
-    parent.add_argument("child",help="The desired child node to parent")
+    parent.add_argument("world", help="world to edit")
+    parent.add_argument("node",help="ID of the node to re-parent")
+    parent.add_argument("parent",help="ID of the new parent")
     commands["parent"]=parent
 
-    add_node = subparsers.add_parser("add-node", help="Add the given node")
+    add_node = subparsers.add_parser("add-node", help="creates a new node")
     add_node.set_defaults(which="adder", cmd="add-node")
-    add_node.add_argument("world", help="The underworlds world to process")
-    add_node.add_argument("node",help="The desired node to add")
-    add_node.add_argument("-p","--parent",default="root",help="The desired parent node (default to root)")
+    add_node.add_argument("world", help="world to edit")
+    add_node.add_argument("name",help="name of the new node to add")
+    add_node.add_argument("-p","--parent",default="root",help="ID of the new node's parent (default to root)")
     commands["add-node"]=add_node
 
-    rm_node = subparsers.add_parser("rm-node", help="Remove the given node")
+    rm_node = subparsers.add_parser("rm-node", help="remove a node")
     rm_node.set_defaults(which="remover", cmd="rm-node")
-    rm_node.add_argument("world", help="The underworlds world to process")
-    rm_node.add_argument("node",help="The desired node to remove")
+    rm_node.add_argument("world", help="world to edit")
+    rm_node.add_argument("node",help="ID of the node to remove")
     commands["rm-node"]=rm_node
 
-    add_mesh = subparsers.add_parser("add-mesh", help="Add the given mesh to the given node")
+    add_mesh = subparsers.add_parser("add-mesh", help="append meshes to a node")
     add_mesh.set_defaults(which="adder", cmd="add-mesh")
-    add_mesh.add_argument("world", help="The underworlds world to process")
-    add_mesh.add_argument("node",help="The desired node to edit")
-    add_mesh.add_argument("model",help="The desired model to add, or box_<x>_<y>_<z> to add a box of the given size in [m]")
+    add_mesh.add_argument("world", help="world to edit")
+    add_mesh.add_argument("node",help="ID of the node to edit")
+    add_mesh.add_argument("model",help="path to the 3D model to load (all the meshes are appended to the node). Alternatively, 'box_<x>_<y>_<z>' to add a box of the given size in [m]")
     commands["add-mesh"]=add_mesh
 
-    rm_mesh = subparsers.add_parser("rm-mesh", help="Remove the mesh to the given node")
+    rm_mesh = subparsers.add_parser("rm-mesh", help="clear all the meshes from a node")
     rm_mesh.set_defaults(which="remover", cmd="rm-mesh")
-    rm_mesh.add_argument("world", help="The underworlds world to process")
-    rm_mesh.add_argument("node",help="The desired node to remove the mesh")
+    rm_mesh.add_argument("world", help="world to edit")
+    rm_mesh.add_argument("node",help="ID of the node to edit")
     commands["rm-mesh"]=rm_mesh
 
-    transform = subparsers.add_parser("transform", help="Modifiy the transformation of the given node")
+    transform = subparsers.add_parser("transform", help="set the transform of a node")
     transform.set_defaults(which="editor", cmd="transform")
-    transform.add_argument("world", help="The underworlds world to process")
-    transform.add_argument("node",help="The desired node to edit")
-    transform.add_argument("transform",help="The desired transform, format : <x>_<y>_<z>_<rx>_<ry>_<rz>")
+    transform.add_argument("world", help="world to edit")
+    transform.add_argument("node",help="ID of the node to edit")
+    transform.add_argument("transform",help="desired transform, as <x>_<y>_<z>_<rx>_<ry>_<rz> (in meters & rad)")
     commands["transform"]=transform
 
     args = parser.parse_args()
@@ -80,7 +81,7 @@ if __name__ == "__main__":
                 ### ADD NODE
                 ############################################################
                 new_node=Node()
-                new_node.name=args.node
+                new_node.name=args.name
                 new_node.type=ENTITY
                 if args.parent !="root":
                     nodes=target.scene.nodebyname(args.parent)
