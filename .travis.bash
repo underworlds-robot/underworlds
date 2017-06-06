@@ -12,7 +12,7 @@ echo "Build and install underwords"
 python setup.py install --prefix=${UWDS_PREFIX}
 
 export PATH=${PATH}:${UWDS_PREFIX}/bin
-export PYTHONPATH=${UWDS_PREFIX}/lib/python2.7/dist-packages:$PYTHONPATH
+export PYTHONPATH=${UWDS_PREFIX}/lib/python2.7/site-packages:$PYTHONPATH
 
 echo "Run tests"
 cd testing
