@@ -44,16 +44,18 @@ class TestRootAnchoring(unittest.TestCase):
 
         # ...loading another model reset the transformation of our original
         # model
-        nodes = ModelLoader().load(path.join("res","monkey_mat.blend"), world="test")
+        nodes = ModelLoader().load(path.join("res","cow.blend"), world="test")
         
         time.sleep(PROPAGATION_TIME)
         self.assertEqual(world.scene.nodes[tree.id].transformation[0,3], 2)
-        
 
     def tearDown(self):
         self.ctx.close()
         self.server.stop(0)
-        
-    
+
+def test_suite():
+     suite = unittest.TestLoader().loadTestsFromTestCase(TestRootAnchoring)
+     return suite
+
 if __name__ == '__main__':
     unittest.main()
