@@ -29,7 +29,9 @@ mkdir -p ../../lib
 
 python setup.py install --prefix=${UWDS_PREFIX}
 
-echo "Build and install underwords"
+################################################################################
+################################################################################
+echo "Build and install underworlds"
 cd ${UWDS_CLONE_PATH}
 
 
@@ -38,6 +40,8 @@ python setup.py install --prefix=${UWDS_PREFIX}
 export PATH=${PATH}:${UWDS_PREFIX}/bin
 export PYTHONPATH=${UWDS_PREFIX}/lib/python2.7/site-packages:$PYTHONPATH
 
+################################################################################
+################################################################################
 echo "Run tests"
 cd testing
 
