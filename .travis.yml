@@ -12,5 +12,5 @@ cache:
     directories:
     - $HOME/assimp
 
-script: "time ./.travis.bash"
+script: "./.travis.bash"
 

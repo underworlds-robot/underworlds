@@ -16,9 +16,9 @@ git clone --depth=1 https://github.com/assimp/assimp.git
 cd assimp
 mkdir build
 cd build
-cmake -DCMAKE_INSTALL_PREFIX=${UWDS_PREFIX} -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DASSIMP_BUILD_ASSIMP_TOOLS=OFF ..
+cmake -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DASSIMP_BUILD_ASSIMP_TOOLS=OFF ..
 make -j4
-make install
+sudo make install
 
 cd ../port/PyAssimp
 
@@ -40,5 +40,5 @@ echo "Run tests"
 cd testing
 
 # launch all tests, except OpenGL tests
-python2 ./run_tests.py --nogl
+time python2 ./run_tests.py --nogl
 
