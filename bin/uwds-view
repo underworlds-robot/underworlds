@@ -1166,8 +1166,8 @@ class Underworlds3DViewer:
 
         # Only broadcast the camera transformation if it is not
         # our 'local' default camera
-        if self.current_cam != self.default_camera:
-            self.scene.nodes.update(self.current_cam)
+        #if self.current_cam != self.default_camera:
+        #    self.scene.nodes.update(self.current_cam)
 
         self.update_view_camera()
 
@@ -1179,7 +1179,10 @@ class Underworlds3DViewer:
         if self.current_cam != self.default_camera:
             self.current_cam = self.scene.nodes[self.current_cam.id]
 
-        self.view_matrix = linalg.inv(self.current_cam.transformation)
+        if self.current_cam != self.default_camera:
+            self.view_matrix = linalg.inv(get_world_transform(self.scene,self.current_cam))
+        else:
+            self.view_matrix = linalg.inv(self.current_cam.transformation)
 
         # Rotate by 180deg around X to have Z pointing backward (OpenGL convention)
         self.view_matrix = numpy.dot(ROTATION_180_X, self.view_matrix)
