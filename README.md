@@ -46,6 +46,9 @@ Documentation
 See also
 --------
 
+- `underworlds` is one of the child of LAAS' `SPARK`
+  [(publication)](https://academia.skadge.org/publis/lemaignan2016artificial.pdf)
+- The situation assessment framework [`toaster`](https://github.com/laas/toaster) is another child of SPARK, developed at LAAS
 - M.  Naef,  E. Lamboray,  O. Staadt,  and M.  Gross, **The  blue-c  distributed scene graph**
 - Bustos, Pablo, et al. **A Unified Internal Representation of the Outer World
   for Social Robotics.** Robot 2015: Second Iberian Robotics Conference. Springer
