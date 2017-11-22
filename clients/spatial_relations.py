@@ -68,6 +68,11 @@ def weakly_cont(rect1, rect2):
     (l2,b2), (r2,t2) = rect2
     
     return (l1 >= l2) and (b1 >= b2) and (r1 <= r2) and (t1 <= t2)
+    
+def iswklycont(bb1, bb2):
+    '''Takes a bounding boxes and then return the value of weakly_cont
+    '''
+    return weakly_cont(bb_footprint(bb1), bb_footprint(bb2))
 
 def isabove(bb1, bb2):
     """ For obj 1 to be above obj 2:
