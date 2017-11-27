@@ -124,11 +124,11 @@ def isclose(bb1, bb2):
     return dist < 2 * dim2
 
 def isin(bb1, bb2):
-	""" Returns True if bb1 is in bb2. 
-	
-	To be 'in' bb1 is weakly contained by bb2 and the bottom of bb1 is lower 
-	than the top of bb2 and higher than the bottom of bb2.
-	"""
+    """ Returns True if bb1 is in bb2. 
+
+    To be 'in' bb1 is weakly contained by bb2 and the bottom of bb1 is lower 
+    than the top of bb2 and higher than the bottom of bb2.
+    """
     bb1_min, _ = bb1
     bb2_min, bb2_max = bb2
     
