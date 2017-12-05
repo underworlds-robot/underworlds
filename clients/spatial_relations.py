@@ -19,11 +19,30 @@ def bb_center(bb):
     return x1+x2/2, y1+y2/2, z1+z2/2
 
 def bb_footprint(bb):
-
+    """ Returns a rectangle that defines the bottom face of a bounding box
+    """
     x1,y1,z1 = bb[0]
     x2,y2,z2 = bb[1]
 
     return (x1,y1), (x2,y2)
+    
+def bb_frontprint(bb):
+    """ Returns a rectangle that defines the front face of a bounding box.
+    """
+    
+    x1,y1,z1 = bb[0]
+    x2,y2,z2 = bb[1]
+
+    return (x1,z1), (x2,z2)
+    
+def bb_sideprint(bb):
+    """ Returns a rectangle that defines the side face of a bounding box
+    """
+    x1,y1,z1 = bb[0]
+    x2,y2,z2 = bb[1]
+
+    return (y1,z1), (y2,z2)
+    
 
 def characteristic_dimension(bb):
     """ Returns the length of the bounding box diagonal
@@ -70,9 +89,25 @@ def weakly_cont(rect1, rect2):
     return (l1 >= l2) and (b1 >= b2) and (r1 <= r2) and (t1 <= t2)
     
 def iswklycont(bb1, bb2):
-    '''Takes a bounding boxes and then return the value of weakly_cont
+    '''Takes two bounding boxes and then return the value of weakly_cont
     '''
     return weakly_cont(bb_footprint(bb1), bb_footprint(bb2))
+    
+def islower(bb1, bb2):
+    """ Returns true if obj 1 is lower than obj2.
+    
+        For obj 1 to be lower than obj 2:
+         - The the top of its bounding box must be lower than the bottom 
+           of obj 2's bounding box
+    """
+    
+    _, bb1_max = bb1
+    bb2_min, _ = bb2
+    
+    x1,y1,z1 = bb1_max
+    x2,y2,z2 = bb2_min
+    
+    return z1 < z2
 
 def isabove(bb1, bb2):
     """ For obj 1 to be above obj 2:
@@ -92,6 +127,19 @@ def isabove(bb1, bb2):
 
     return overlap(bb_footprint(bb1),
                    bb_footprint(bb2))
+                   
+def isbelow(bb1, bb2):
+    """ Returns true if ob1 is below obj 2.
+    
+        For obj 1 to be below obj 2:
+         - obj 1 is lower than obj 2
+         - the bounding box footbrint of both objects must overlap
+    """
+    
+    if islower(bb1, bb2):
+        return overlap(bb_footprint(bb1), bb_footprint(bb2))
+        
+    return False
 
 def isontop(bb1, bb2):
     """ For obj 1 to be on top of obj 2:
@@ -122,6 +170,122 @@ def isclose(bb1, bb2):
     dim2 = characteristic_dimension(bb2)
 
     return dist < 2 * dim2
+    
+def isnorth(bb1, bb2):
+    """ Returns True if bb1 is north of bb2
+        
+        For obj1 to be north of obj2
+            - The min Y of bb1 is greater than the max Y of bb2
+    """
+    
+    bb1_min, _ = bb1
+    _, bb2_max = bb2
+    
+    x1,y1,z1 = bb1_min
+    x2,y2,z2 = bb2_max
+    
+    return y1 > y2
+    
+    
+def iseast(bb1, bb2):
+    """ Returns True if bb1 is east of bb2
+        
+        For obj1 to be east of obj2
+            - The min X of bb1 is greater than the max X of bb2
+    """
+    
+    bb1_min, _ = bb1
+    _, bb2_max = bb2
+    
+    x1,y1,z1 = bb1_min
+    x2,y2,z2 = bb2_max
+    
+    return x1 > x2
+    
+def issouth(bb1, bb2):
+    """ Returns True if bb1 is south of bb2
+        
+        For obj1 to be south of obj2
+            - The max Y of bb1 is less than the min Y of bb2
+    """
+    
+    _,bb1_max = bb1
+    bb2_min,_ = bb2
+    
+    x1,y1,z1 = bb1_max
+    x2,y2,z2 = bb2_min
+    
+    return y1 < y2
+    
+def iswest(bb1, bb2):
+    """ Returns True if bb1 is west of bb2
+        
+        For obj1 to be west of obj2
+            - The max X of bb1 is less than the min X of bb2
+    """
+    
+    _,bb1_max = bb1
+    bb2_min,_ = bb2
+    
+    x1,y1,z1 = bb1_max
+    x2,y2,z2 = bb2_min
+    
+    return x1 < x2
+    
+def istonorth(bb1, bb2):
+    """ Returns True if bb1 is to the north of bb2.
+    
+    For obj1 to be to north of obj2:
+        - obj1 is close to obj2
+        - The side faces for obj1 and obj2 overlap
+        - obj1 is north obj2
+    """
+    
+    if isclose(bb1, bb2):
+        if overlap(bb_frontprint(bb1), bb_frontprint(bb2)):
+            return isnorth(bb1, bb2)
+    return False
+    
+def istoeast(bb1, bb2):
+    """ Returns True if bb1 is to the east of bb2.
+    
+    For obj1 to be to east of obj2:
+        - obj1 is close to obj2
+        - The side faces for obj1 and obj2 overlap
+        - obj1 is east obj2
+    """
+    
+    if isclose(bb1, bb2):
+        if overlap(bb_sideprint(bb1), bb_sideprint(bb2)):
+            return iseast(bb1, bb2)
+    return False
+    
+def istosouth(bb1, bb2):
+    """ Returns True if bb1 is to the south of bb2.
+    
+    For obj1 to be to south of obj2:
+        - obj1 is close to obj2
+        - The side faces for obj1 and obj2 overlap
+        - obj1 is south obj2
+    """
+    
+    if isclose(bb1, bb2):
+        if overlap(bb_frontprint(bb1), bb_frontprint(bb2)):
+            return issouth(bb1, bb2)
+    return False
+    
+def istowest(bb1, bb2):
+    """ Returns True if bb1 is to the west of bb2.
+    
+    For obj1 to be to west of obj2:
+        - obj1 is close to obj2
+        - The side faces for obj1 and obj2 overlap
+        - obj1 is west obj2
+    """
+    if isclose(bb1, bb2):
+        if overlap(bb_sideprint(bb1), bb_sideprint(bb2)):
+            return iswest(bb1, bb2)
+    return False
 
 def isin(bb1, bb2):
     """ Returns True if bb1 is in bb2. 
