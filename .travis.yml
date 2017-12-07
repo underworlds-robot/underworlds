@@ -6,7 +6,7 @@ language: generic
 before_install:
  - sudo apt-get update -qq
  - sudo apt-get install -qq python-opengl python-pygame libgl1-mesa-dev xvfb
- - sudo pip install grpcio
+ - sudo pip install grpcio==1.4.0 #grpcio >= 1.6.0 has an issue with load balancing: https://github.com/grpc/grpc/issues/12506
 
 #cache:
 #    directories:
