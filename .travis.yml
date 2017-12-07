@@ -1,16 +1,16 @@
 sudo: required
-dist: trusty
+dist: xenial
 
 language: generic
 
 before_install:
  - sudo apt-get update -qq
- - sudo apt-get install -qq python-pyassimp python-opengl python-pygame libgl1-mesa-dev xvfb
+ - sudo apt-get install -qq python-opengl python-pygame libgl1-mesa-dev xvfb
  - sudo pip install grpcio
 
-cache:
-    directories:
-    - $HOME/assimp
+#cache:
+#    directories:
+#    - $HOME/assimp
 
 script: "./.travis.bash"
 
