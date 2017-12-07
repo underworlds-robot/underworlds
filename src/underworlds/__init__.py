@@ -522,7 +522,7 @@ class Context(object):
 
         self.name = name
 
-        if "UWDS_SERVER" in os.environ:
+        if "UWDS_SERVER" in os.environ and os.environ["UWDS_SERVER"] != "":
             if ":" in os.environ["UWDS_SERVER"]:
                 host, port = os.environ["UWDS_SERVER"].split(":")
                 port = int(port)
@@ -537,9 +537,9 @@ class Context(object):
 
             self.id = self.rpc.helo(gRPC.Name(name=name), _TIMEOUT_SECONDS).id
         except (NetworkError, AbortionError) as e:
-            logger.fatal("Underworld server unreachable! Is it started?\n"
+            logger.fatal("Underworld server unreachable on %s:%d! Is it started?\n"
                          "Set UWDS_SERVER=host:port if underworlded is running on a different machine.\n"
-                         "Original error: %s" % str(e))
+                         "Original error: %s" % (host, port, str(e)))
             sys.exit(1)
 
         logger.info("<%s> connected to the underworlds server." % self.name)
