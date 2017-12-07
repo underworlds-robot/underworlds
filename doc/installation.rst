@@ -10,21 +10,21 @@ On Ubuntu/Debian::
 
     pip install grpcio
 
-``pyassimp``, ``python-OpenGL`` and ``pygame`` are also necessary to use the 3D mesh
-loader and the 3D scene viewer. On Ubuntu/Debian::
+``pyassimp``, ``python-OpenGL``, ``pygame`` and ``argcomplete`` are also
+necessary to use the 3D mesh loader and the 3D scene viewer. On Ubuntu/Debian::
 
-    apt-get install python-pyassimp python-opengl python-pygame
+    apt-get install python-pyassimp python-opengl python-pygame python-argcomplete
 
 Then::
 
     python setup.py install
-	
+
 Windows
 -------
 
 You will need to install python 2.7.x (where x is over version 9 otherwise pip
 will also need to be installed seperately). Make sure to add python to your 
-system path. ``gRPC`` and ``numpy`` is necessary for undeworlds to work. To install 
+system path. ``gRPC`` and ``numpy`` is necessary for underworlds to work. To install 
 gRPC and numpy run the following from your command prompt::
 
 	python -m pip install grpcio
