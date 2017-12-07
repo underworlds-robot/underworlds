@@ -16,6 +16,13 @@ For debugging purposes, you can start it in the foreground::
 
     $ underworlded foreground
 
+
+.. note::
+
+    The ``underworlded`` server does not have to run on the same physical machine as the clients.
+    In this case, you need to export the environment variable ``UWDS_SERVER=<host>[:<port>]`` prior to
+    the launch of each of the client.
+
 uwds-ls
 ~~~~~~~
 

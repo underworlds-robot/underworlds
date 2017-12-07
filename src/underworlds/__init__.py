@@ -1,4 +1,6 @@
 
+import os # for the UWDS_SERVER environment variable
+import sys
 
 import time
 import copy
@@ -520,14 +522,25 @@ class Context(object):
 
         self.name = name
 
-        channel = implementations.insecure_channel(host, port)
-        self.rpc = gRPC.beta_create_Underworlds_stub(channel)
+        if "UWDS_SERVER" in os.environ:
+            if ":" in os.environ["UWDS_SERVER"]:
+                host, port = os.environ["UWDS_SERVER"].split(":")
+                port = int(port)
+            else:
+                host = os.environ["UWDS_SERVER"]
 
         logger.info("Connecting to the underworlds server on %s:%s..." % (host, port))
+
         try:
+            channel = implementations.insecure_channel(host, port)
+            self.rpc = gRPC.beta_create_Underworlds_stub(channel)
+
             self.id = self.rpc.helo(gRPC.Name(name=name), _TIMEOUT_SECONDS).id
-        except NetworkError:
-            raise RuntimeError("Underworld server unreachable! Is it started?")
+        except (NetworkError, AbortionError) as e:
+            logger.fatal("Underworld server unreachable! Is it started?\n"
+                         "Set UWDS_SERVER=host:port if underworlded is running on a different machine.\n"
+                         "Original error: %s" % str(e))
+            sys.exit(1)
 
         logger.info("<%s> connected to the underworlds server." % self.name)
 
