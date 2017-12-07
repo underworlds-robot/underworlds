@@ -477,8 +477,9 @@ def start():
                      "I can not start the server.")
         return server
 
-    logger.info("Starting the server.")
+    logger.info("Starting the server...")
     server.start()
+    logger.info("Server started.")
 
     return server
 
