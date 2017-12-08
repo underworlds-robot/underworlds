@@ -100,17 +100,23 @@ import basic_server_interaction, \
        parenting, \
        waitforchanges, \
        timeline, \
-       model_loading
+       topology, \
+       visibility, \
+       basic_server_interaction, \
+       model_loading, \
+       spatial_relations_test
 
 modules = [
     basic_server_interaction, \
+<<<<<<< HEAD
     topology, \
     core, \
     nodes, \
     parenting, \
     waitforchanges, \
     timeline, \
-    model_loading]
+    model_loading, \
+    spatial_relations_test]
 
 # add the tests which require OpenGL support
 if not nogl:
