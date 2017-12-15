@@ -171,12 +171,18 @@ def isclose(bb1, bb2):
 
     return dist < 2 * dim2
     
-def isnorth(bb1, bb2):
+def isnorth(bb1, bb2, north_vector=[0,1,0]):
     """ Returns True if bb1 is north of bb2
         
-        For obj1 to be north of obj2
+        For obj1 to be north of obj2 if we assume a north_vector of [0,1,0]
             - The min Y of bb1 is greater than the max Y of bb2
     """
+    
+    #Currently a North Vector of 0,1,0 (North is in the positive Y direction)
+    #is assumed. At some point this should be updated to allow for non-traditional
+    #North to be taken and to allow for directions based on perspective.
+    if north_vector != [0,1,0]:
+		raise NotImplementedError
     
     bb1_min, _ = bb1
     _, bb2_max = bb2
@@ -187,12 +193,18 @@ def isnorth(bb1, bb2):
     return y1 > y2
     
     
-def iseast(bb1, bb2):
+def iseast(bb1, bb2, north_vector=[0,1,0]):
     """ Returns True if bb1 is east of bb2
         
-        For obj1 to be east of obj2
+        For obj1 to be east of obj2 if we assume a north_vector of [0,1,0]
             - The min X of bb1 is greater than the max X of bb2
     """
+    
+    #Currently a North Vector of 0,1,0 (North is in the positive Y direction)
+    #is assumed. At some point this should be updated to allow for non-traditional
+    #North to be taken and to allow for directions based on perspective.
+    if north_vector != [0,1,0]:
+		raise NotImplementedError
     
     bb1_min, _ = bb1
     _, bb2_max = bb2
@@ -202,12 +214,18 @@ def iseast(bb1, bb2):
     
     return x1 > x2
     
-def issouth(bb1, bb2):
+def issouth(bb1, bb2, north_vector=[0,1,0]):
     """ Returns True if bb1 is south of bb2
         
-        For obj1 to be south of obj2
+        For obj1 to be south of obj2 if we assume a north_vector of [0,1,0]
             - The max Y of bb1 is less than the min Y of bb2
     """
+    
+    #Currently a North Vector of 0,1,0 (North is in the positive Y direction)
+    #is assumed. At some point this should be updated to allow for non-traditional
+    #North to be taken and to allow for directions based on perspective.
+    if north_vector != [0,1,0]:
+		raise NotImplementedError
     
     _,bb1_max = bb1
     bb2_min,_ = bb2
@@ -217,12 +235,18 @@ def issouth(bb1, bb2):
     
     return y1 < y2
     
-def iswest(bb1, bb2):
+def iswest(bb1, bb2, north_vector=[0,1,0]):
     """ Returns True if bb1 is west of bb2
         
-        For obj1 to be west of obj2
+        For obj1 to be west of obj2 if we assume a north_vector of [0,1,0]
             - The max X of bb1 is less than the min X of bb2
     """
+    
+    #Currently a North Vector of 0,1,0 (North is in the positive Y direction)
+    #is assumed. At some point this should be updated to allow for non-traditional
+    #North to be taken and to allow for directions based on perspective.
+    if north_vector != [0,1,0]:
+		raise NotImplementedError
     
     _,bb1_max = bb1
     bb2_min,_ = bb2
@@ -232,7 +256,7 @@ def iswest(bb1, bb2):
     
     return x1 < x2
     
-def istonorth(bb1, bb2):
+def istonorth(bb1, bb2, north_vector=[0,1,0]):
     """ Returns True if bb1 is to the north of bb2.
     
     For obj1 to be to north of obj2:
@@ -241,12 +265,18 @@ def istonorth(bb1, bb2):
         - obj1 is north obj2
     """
     
+    #Currently a North Vector of 0,1,0 (North is in the positive Y direction)
+    #is assumed. At some point this should be updated to allow for non-traditional
+    #North to be taken and to allow for directions based on perspective.
+    if north_vector != [0,1,0]:
+		raise NotImplementedError
+    
     if isclose(bb1, bb2):
         if overlap(bb_frontprint(bb1), bb_frontprint(bb2)):
-            return isnorth(bb1, bb2)
+            return isnorth(bb1, bb2, north_vector)
     return False
     
-def istoeast(bb1, bb2):
+def istoeast(bb1, bb2, north_vector=[0,1,0]):
     """ Returns True if bb1 is to the east of bb2.
     
     For obj1 to be to east of obj2:
@@ -255,12 +285,18 @@ def istoeast(bb1, bb2):
         - obj1 is east obj2
     """
     
+    #Currently a North Vector of 0,1,0 (North is in the positive Y direction)
+    #is assumed. At some point this should be updated to allow for non-traditional
+    #North to be taken and to allow for directions based on perspective.
+    if north_vector != [0,1,0]:
+		raise NotImplementedError
+    
     if isclose(bb1, bb2):
         if overlap(bb_sideprint(bb1), bb_sideprint(bb2)):
-            return iseast(bb1, bb2)
+            return iseast(bb1, bb2, north_vector)
     return False
     
-def istosouth(bb1, bb2):
+def istosouth(bb1, bb2, north_vector=[0,1,0]):
     """ Returns True if bb1 is to the south of bb2.
     
     For obj1 to be to south of obj2:
@@ -269,12 +305,18 @@ def istosouth(bb1, bb2):
         - obj1 is south obj2
     """
     
+    #Currently a North Vector of 0,1,0 (North is in the positive Y direction)
+    #is assumed. At some point this should be updated to allow for non-traditional
+    #North to be taken and to allow for directions based on perspective.
+    if north_vector != [0,1,0]:
+		raise NotImplementedError
+    
     if isclose(bb1, bb2):
         if overlap(bb_frontprint(bb1), bb_frontprint(bb2)):
-            return issouth(bb1, bb2)
+            return issouth(bb1, bb2, north_vector)
     return False
     
-def istowest(bb1, bb2):
+def istowest(bb1, bb2, north_vector=[0,1,0]):
     """ Returns True if bb1 is to the west of bb2.
     
     For obj1 to be to west of obj2:
@@ -282,9 +324,16 @@ def istowest(bb1, bb2):
         - The side faces for obj1 and obj2 overlap
         - obj1 is west obj2
     """
+    
+    #Currently a North Vector of 0,1,0 (North is in the positive Y direction)
+    #is assumed. At some point this should be updated to allow for non-traditional
+    #North to be taken and to allow for directions based on perspective.
+    if north_vector != [0,1,0]:
+		raise NotImplementedError
+    
     if isclose(bb1, bb2):
         if overlap(bb_sideprint(bb1), bb_sideprint(bb2)):
-            return iswest(bb1, bb2)
+            return iswest(bb1, bb2, north_vector)
     return False
 
 def isin(bb1, bb2):
