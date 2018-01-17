@@ -1,7 +1,9 @@
+#! /usr/bin/env python
+
 import time
 import unittest
 
-import logging; logger = logging.getLogger("underworlds")
+import logging; logger = logging.getLogger("underworlds.testing.single_user")
 logging.basicConfig(level=logging.DEBUG)
 
 import underworlds

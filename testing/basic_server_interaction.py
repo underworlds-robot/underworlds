@@ -1,7 +1,9 @@
+#! /usr/bin/env python
+
 import time
 import unittest
 
-import logging; logger = logging.getLogger("underworlds")
+import logging; logger = logging.getLogger("underworlds.testing.basic_server_interaction")
 logging.basicConfig(level=logging.DEBUG)
 
 import underworlds
