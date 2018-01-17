@@ -1,3 +1,5 @@
+#! /usr/bin/env python
+
 import unittest
 import time
 
@@ -21,6 +23,7 @@ class TestVisibility(unittest.TestCase):
 
         cube1 = world.scene.nodebyname("Cube1")[0]
         cube2 = world.scene.nodebyname("Cube2")[0]
+        #visibility = VisibilityMonitor(self.ctx, world, debug=True)
         visibility = VisibilityMonitor(self.ctx, world)
 
         results = visibility.compute_all()

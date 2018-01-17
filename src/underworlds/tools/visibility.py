@@ -298,9 +298,10 @@ class VisibilityMonitor:
 
         seen = numpy.unique(colors)
         seen.sort()
-        seen = seen[1:] # remove the 0 for background
+        seen = seen[1:] if seen[0] == 0 else seen # remove the 0 for background
 
         if self.debug:
+            print("World seen from camera %s" % camera)
             import pygame
             pygame.display.flip()
             time.sleep(1)
