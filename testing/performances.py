@@ -1,7 +1,8 @@
 #! /usr/bin/env python
 
 import time
-import unittest
+
+import yappi
 
 import threading
 from concurrent.futures import ThreadPoolExecutor
@@ -14,7 +15,10 @@ import underworlds.server
 from underworlds.types import Node
 import underworlds.underworlds_pb2 as gRPC
 
+OUT_FILE = '/tmp/underworlds.profile'
+
 running = True
+starttime = None
 
 def ms(duration):
     return "%.1fms" % (duration * 1000)
@@ -31,6 +35,7 @@ def passthrough(world1, world2):
 
         while running:
             id, op = world1.scene.waitforchanges(0.5)
+            print("+%.1f -- Propagating from %s to %s" % ((time.time() - starttime)*1000, world1, world2))
             world2.scene.update_and_propagate(world1.scene.nodes[id])
         print("Stopping passthrough")
 
@@ -48,6 +53,7 @@ def wait_for_changes(world):
 
     
 def test_propagation_time(nb_worlds):
+    global starttime
 
     executor = ThreadPoolExecutor(max_workers=nb_worlds)
 
@@ -60,17 +66,22 @@ def test_propagation_time(nb_worlds):
     exit_world = ctx.worlds["world%d" % (nb_worlds-1)]
 
 
+    #yappi.start()
     future = executor.submit(wait_for_changes, exit_world)
-    time.sleep(0.1)
 
     n = Node()
     n.name = "test"
 
     print("Propagating a change from world %s..." % entry_world)
+
+    starttime=time.time()
+
     entry_world.scene.append_and_propagate(n)
 
     change, duration = future.result()
-    duration -= 0.1
+    #yappi.stop()
+    #finish_yappi()
+
     print("It took %s to be notified of the change in world %s" % (ms(duration), exit_world))
 
     if change is None:
@@ -83,10 +94,36 @@ def test_propagation_time(nb_worlds):
 
     return duration
 
+def finish_yappi():
+    print('[YAPPI STOP]')
+
+    print('[YAPPI WRITE]')
+
+    stats = yappi.get_func_stats()
+
+    for stat_type in ['pstat', 'callgrind', 'ystat']:
+      print('writing {}.{}'.format(OUT_FILE, stat_type))
+      stats.save('{}.{}'.format(OUT_FILE, stat_type), type=stat_type)
+
+    print('\n[YAPPI FUNC_STATS]')
+
+    print('writing {}.func_stats'.format(OUT_FILE))
+    with open('{}.func_stats'.format(OUT_FILE), 'wb') as fh:
+      stats.print_all(out=fh)
+
+    print('\n[YAPPI THREAD_STATS]')
+
+    print('writing {}.thread_stats'.format(OUT_FILE))
+    tstats = yappi.get_thread_stats()
+    with open('{}.thread_stats'.format(OUT_FILE), 'wb') as fh:
+      tstats.print_all(out=fh)
+
+    print('[YAPPI OUT]')
+
 if __name__ == '__main__':
     durations = []
 
-    for nb in range(2,12):
+    for nb in range(12,13):
         print("\n\n\n-- %d worlds --\n" % nb)
 
         server = underworlds.server.start()
