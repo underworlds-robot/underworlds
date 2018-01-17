@@ -96,6 +96,7 @@ def runtest(module):
 import nodes, \
        core, \
        single_user, \
+       waitforchanges, \
        timeline, \
        topology, \
        visibility, \
@@ -106,6 +107,7 @@ modules = [
     nodes, \
     core, \
     single_user, \
+    waitforchanges, \
     #timeline, \ # not passing -- timeline functions not implemented with gRPC
     topology, \
     basic_server_interaction, \

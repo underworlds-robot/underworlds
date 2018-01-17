@@ -60,6 +60,8 @@ class NodesProxy(threading.Thread):
  
         self.waitforchanges = threading.Condition()
 
+        self.lastchange = None
+
         self._running = True
         self.cv = threading.Condition()
 
@@ -77,8 +79,22 @@ class NodesProxy(threading.Thread):
             self._updated_ids.append(id)
 
         self.waitforchanges.acquire()
+        self.lastchange = (id, gRPC.NodeInvalidation.UPDATE)
         self.waitforchanges.notify_all()
         self.waitforchanges.release()
+
+    def _on_remotely_added_node(self, id):
+
+        self._len += 1 # not atomic, but still fine since I'm the only one to write it
+
+        if id not in self._updated_ids:
+            self._updated_ids.append(id)
+
+        self.waitforchanges.acquire()
+        self.lastchange = (id, gRPC.NodeInvalidation.NEW)
+        self.waitforchanges.notify_all()
+        self.waitforchanges.release()
+
 
     def _on_remotely_deleted_node(self, id):
 
@@ -86,6 +102,7 @@ class NodesProxy(threading.Thread):
         self._deleted_ids.append(id)
 
         self.waitforchanges.acquire()
+        self.lastchange = (id, gRPC.NodeInvalidation.DELETE)
         self.waitforchanges.notify_all()
         self.waitforchanges.release()
 
@@ -252,13 +269,13 @@ class NodesProxy(threading.Thread):
                 for invalidation in self._ctx.rpc.getNodeInvalidations(self._server_ctx, _TIMEOUT_SECONDS):
                     action, id = invalidation.type, invalidation.id
 
+
                     if action == gRPC.NodeInvalidation.UPDATE:
                         logger.debug("Server notification: update node: " + id)
                         self._on_remotely_updated_node(id)
                     elif action == gRPC.NodeInvalidation.NEW:
                         logger.debug("Server notification: add node: " + id)
-                        self._len += 1 # not atomic, but still fine since I'm the only one to write it
-                        self._on_remotely_updated_node(id)
+                        self._on_remotely_added_node(id)
                     elif action == gRPC.NodeInvalidation.DELETE:
                         logger.debug("Server notification: delete node: " + id)
                         self._on_remotely_deleted_node(id)
@@ -291,10 +308,19 @@ class SceneProxy(object):
         added or removed) or the timeout is over.
 
         :param timeout: timeout in seconds (float value)
+        :returns: the change that occured as a pair [node id, operation]
+        (operation is one of gRPC.NodeInvalidation.UPDATE,
+        gRPC.NodeInvalidation.NEW, gRPC.NodeInvalidation.DELETE) or None if the
+        timeout has been reached.
         """
+        lastchange = None
         self.nodes.waitforchanges.acquire()
         self.nodes.waitforchanges.wait(timeout)
+        lastchange = self.nodes.lastchange
+        self.nodes.lastchange = None
         self.nodes.waitforchanges.release()
+
+        return lastchange
 
 
     def nodebyname(self, name):
