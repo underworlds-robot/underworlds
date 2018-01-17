@@ -101,6 +101,14 @@ class Node(object):
     def __hash__(self):
         return hash(self.id)
 
+    def translate(self, vector):
+        """ Translates the node by a vector. The change is not propagated
+        automatically (you must call nodes.update(...)).
+        """
+        self.transformation[0,3] = vector[0]
+        self.transformation[1,3] = vector[1]
+        self.transformation[2,3] = vector[2]
+
     def copy(self):
         """ Performs a deep-copy of myself, and return the copy.
         The copy *has a new, different, unique ID* (ie, the ID is not copied).
