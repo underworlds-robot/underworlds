@@ -306,6 +306,22 @@ class SceneProxy(object):
                 nodes.append(n)
         return nodes
 
+    def append_and_propagate(self, node):
+        """An alias for NodesProxy.append
+        """
+        self.nodes.append(node)
+
+    def update_and_propagate(self, node):
+        """An alias for NodesProxy.update
+        """
+        self.nodes.update(node)
+
+    def remove_and_propagate(self, node):
+        """An alias for NodesProxy.remove
+        """
+        self.nodes.remove(node)
+
+
     def finalize(self):
         self.nodes._running = False
         self.nodes.join()
