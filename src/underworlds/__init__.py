@@ -5,6 +5,7 @@ import sys
 import time
 import copy
 import threading
+import random
 
 from collections import deque
 
@@ -19,13 +20,13 @@ from underworlds.types import World, Node, Situation, Mesh
 
 _TIMEOUT_SECONDS = 1
 _TIMEOUT_SECONDS_MESH_LOADING = 20
-_INVALIDATION_PERIOD = 0.02 # 10 ms
+_SLEEP_PERIOD = 0.1 #s
+_INVALIDATION_PERIOD = 0.02 #s
 
 #TODO: inherit for a collections.MutableSequence? what is the benefit?
-class NodesProxy(threading.Thread):
+class NodesProxy:
 
     def __init__(self, context, world):
-        threading.Thread.__init__(self)
 
         self._ctx = context # current underworlds context (useful to know the client name)
         self._world = world
@@ -62,38 +63,32 @@ class NodesProxy(threading.Thread):
 
         self.lastchange = None
 
-        self._running = True
         self.cv = threading.Condition()
-
-        self.start()
-        # leave a bit of time for the invalidation monitoring thread to start
-        # and register with the server (otherwise updates may be missed)
-        time.sleep(0.1)
-
-    def __del__(self):
-        self._running = False
 
     def _on_remotely_updated_node(self, id):
 
         if id not in self._updated_ids:
             self._updated_ids.append(id)
 
-        self.waitforchanges.acquire()
-        self.lastchange = (id, gRPC.NodeInvalidation.UPDATE)
-        self.waitforchanges.notify_all()
-        self.waitforchanges.release()
+        stime=time.time();print("DD;%f;enter client._on_remotely_updated_node" % time.time())
+        with self.waitforchanges:
+            self.lastchange = (id, gRPC.NodesInvalidation.UPDATE)
+            self.waitforchanges.notify_all()
+
+        print("DD;%f; exit client._on_remotely_updated_node;%.2f"%(time.time(), (time.time()-stime)*1000))
 
     def _on_remotely_added_node(self, id):
 
+        stime=time.time();print("DD;%f;enter client._on_remotely_added_node" % time.time())
         self._len += 1 # not atomic, but still fine since I'm the only one to write it
 
         if id not in self._updated_ids:
             self._updated_ids.append(id)
 
-        self.waitforchanges.acquire()
-        self.lastchange = (id, gRPC.NodeInvalidation.NEW)
-        self.waitforchanges.notify_all()
-        self.waitforchanges.release()
+        with self.waitforchanges:
+            self.lastchange = (id, gRPC.NodesInvalidation.NEW)
+            self.waitforchanges.notify_all()
+        print("DD;%f; exit client._on_remotely_added_node;%.2f"%(time.time(), (time.time()-stime)*1000))
 
 
     def _on_remotely_deleted_node(self, id):
@@ -101,10 +96,9 @@ class NodesProxy(threading.Thread):
         self._len -= 1 # not atomic, but still fine since I'm the only one to write it
         self._deleted_ids.append(id)
 
-        self.waitforchanges.acquire()
-        self.lastchange = (id, gRPC.NodeInvalidation.DELETE)
-        self.waitforchanges.notify_all()
-        self.waitforchanges.release()
+        with self.waitforchanges:
+            self.lastchange = (id, gRPC.NodesInvalidation.DELETE)
+            self.waitforchanges.notify_all()
 
 
     def _get_more_node(self):
@@ -237,9 +231,12 @@ class NodesProxy(threading.Thread):
         node with a smaller index is removed).
 
         """
-        self._ctx.rpc.updateNode(gRPC.NodeInContext(context=self._server_ctx,
+        stime=time.time();print("DD;%f;enter client.nodes.update" % time.time())
+        self.update_future = self._ctx.rpc.updateNode.future(
+                                 gRPC.NodeInContext(context=self._server_ctx,
                                                     node=node.serialize(gRPC.Node)),
                                  _TIMEOUT_SECONDS)
+        print("DD;%f; exit client.nodes.update;%.2f"%(time.time(), (time.time()-stime)*1000))
 
     def remove(self, node):
         """ Deletes a node from the node set.
@@ -254,40 +251,11 @@ class NodesProxy(threading.Thread):
         take some time (a couple of milliseconds) to propagate
         the change.
         """
+        stime=time.time();print("DD;%f;enter client.nodes.remove" % time.time())
         self._ctx.rpc.deleteNode(gRPC.NodeInContext(context=self._server_ctx,
                                                     node=node.serialize(gRPC.Node)),
                                  _TIMEOUT_SECONDS)
-
-
-    def run(self):
-        threading.current_thread().name = "node monitor thread"
-
-        while self._running:
-            time.sleep(_INVALIDATION_PERIOD)
-
-            try:
-                for invalidation in self._ctx.rpc.getNodeInvalidations(self._server_ctx, _TIMEOUT_SECONDS):
-                    action, id = invalidation.type, invalidation.id
-
-
-                    if action == gRPC.NodeInvalidation.UPDATE:
-                        logger.debug("Server notification: update node: " + id)
-                        self._on_remotely_updated_node(id)
-                    elif action == gRPC.NodeInvalidation.NEW:
-                        logger.debug("Server notification: add node: " + id)
-                        self._on_remotely_added_node(id)
-                    elif action == gRPC.NodeInvalidation.DELETE:
-                        logger.debug("Server notification: delete node: " + id)
-                        self._on_remotely_deleted_node(id)
-                    else:
-                        raise RuntimeError("Unexpected invalidation action")
-            except ExpirationError:
-                logger.warning("The server timed out while trying to update node"
-                               " invalidations")
-
-            except AbortionError:
-                logger.warning("...no server anymore... Closing now!")
-                self._running = False
+        print("DD;%f; exit client.nodes.remove;%.2f"%(time.time(), (time.time()-stime)*1000))
 
 
 class SceneProxy(object):
@@ -309,16 +277,17 @@ class SceneProxy(object):
 
         :param timeout: timeout in seconds (float value)
         :returns: the change that occured as a pair [node id, operation]
-        (operation is one of gRPC.NodeInvalidation.UPDATE,
-        gRPC.NodeInvalidation.NEW, gRPC.NodeInvalidation.DELETE) or None if the
+        (operation is one of gRPC.NodesInvalidation.UPDATE,
+        gRPC.NodesInvalidation.NEW, gRPC.NodesInvalidation.DELETE) or None if the
         timeout has been reached.
         """
         lastchange = None
-        self.nodes.waitforchanges.acquire()
-        self.nodes.waitforchanges.wait(timeout)
-        lastchange = self.nodes.lastchange
-        self.nodes.lastchange = None
-        self.nodes.waitforchanges.release()
+        with self.nodes.waitforchanges:
+            self.nodes.waitforchanges.wait(timeout)
+            lastchange = self.nodes.lastchange
+            self.nodes.lastchange = None
+
+        print("DD;%f; client.waitforchanges notified" % time.time())
 
         return lastchange
 
@@ -347,10 +316,6 @@ class SceneProxy(object):
         """
         self.nodes.remove(node)
 
-
-    def finalize(self):
-        self.nodes._running = False
-        self.nodes.join()
 
 
 class TimelineProxy(threading.Thread):
@@ -382,6 +347,9 @@ class TimelineProxy(threading.Thread):
     def __del__(self):
         self._running = False
 
+    def finalize(self):
+        self._running = False
+        self.join()
     def _on_remotely_started_situation(self, sit_id, isevent = False):
 
         # TODO: append the situation, not just the ID!
@@ -482,13 +450,6 @@ class TimelineProxy(threading.Thread):
                 logger.warning("...no server anymore... Closing now!")
                 self._running = False
 
-
-
-    def finalize(self):
-        self._running = False
-        self.join()
-
-
 class WorldProxy:
 
     def __init__(self, ctx, name):
@@ -517,7 +478,6 @@ class WorldProxy:
         self._ctx.rpc.recv() #ack
 
     def finalize(self):
-        self.scene.finalize()
         self.timeline.finalize()
 
     def __str__(self):
@@ -558,11 +518,56 @@ class WorldsProxy:
             logger.debug("Context [%s]: Closing world <%s>" % (self._ctx.name, w.name))
             w.finalize()
 
+class InvalidationServer(gRPC.BetaUnderworldsInvalidationServicer):
+
+    def __init__(self, ctx):
+        self.ctx=ctx
+
+    def emitNodesInvalidation(self, invalidation, context):
+        stime=time.time();print("DD;%f;enter client.emitNodesInvalidation" % time.time())
+        logger.info("Got <emitNodesInvalidation> for world <%s>" % invalidation.world)
+       
+        action, world, id = invalidation.type, invalidation.world, invalidation.id
+
+
+        if action == gRPC.NodesInvalidation.UPDATE:
+            logger.debug("Server notification: update node: " + id)
+            self.ctx.worlds[world].scene.nodes._on_remotely_updated_node(id)
+        elif action == gRPC.NodesInvalidation.NEW:
+            logger.debug("Server notification: add node: " + id)
+            self.ctx.worlds[world].scene.nodes._on_remotely_added_node(id)
+        elif action == gRPC.NodesInvalidation.DELETE:
+            logger.debug("Server notification: delete node: " + id)
+            self.ctx.worlds[world].scene.nodes._on_remotely_deleted_node(id)
+        else:
+            raise RuntimeError("Unexpected invalidation action")
+ 
+        print("DD;%f; exit client.emitNodesInvalidation;%.2f"%(time.time(), (time.time()-stime)*1000))
+        return gRPC.Empty()
+
+
 class Context(object):
 
     def __init__(self, name, host="localhost",port=50051):
 
         self.name = name
+        self.worlds = WorldsProxy(self)
+
+        invalidation_port = random.randint(50052,60000)
+        logger.info("Creating my own invalidation server on port %s..." % (invalidation_port))
+
+        self.invalidation_server = gRPC.beta_create_UnderworldsInvalidation_server(InvalidationServer(self))
+        invalidation_port = self.invalidation_server.add_insecure_port('[::]:%d' % invalidation_port)
+
+        if invalidation_port == 0:
+            logger.error("The port is already in use! Underworlds server already running?"
+                         "I can not start the server.")
+            sys.exit(1)
+
+        self.invalidation_server.start()
+
+        logger.info("Invalidation server created")
+
 
         if "UWDS_SERVER" in os.environ and os.environ["UWDS_SERVER"] != "":
             if ":" in os.environ["UWDS_SERVER"]:
@@ -573,11 +578,14 @@ class Context(object):
 
         logger.info("Connecting to the underworlds server on %s:%s..." % (host, port))
 
+
         try:
             channel = implementations.insecure_channel(host, port)
             self.rpc = gRPC.beta_create_Underworlds_stub(channel)
 
-            self.id = self.rpc.helo(gRPC.Name(name=name), _TIMEOUT_SECONDS).id
+            self.id = self.rpc.helo(gRPC.Welcome(name=name,
+                                                 host="localhost", 
+                                                 invalidation_server_port=invalidation_port), _TIMEOUT_SECONDS).id
         except (NetworkError, AbortionError) as e:
             logger.fatal("Underworld server unreachable on %s:%d! Is it started?\n"
                          "Set UWDS_SERVER=host:port if underworlded is running on a different machine.\n"
@@ -586,7 +594,7 @@ class Context(object):
 
         logger.info("<%s> connected to the underworlds server." % self.name)
 
-        self.worlds = WorldsProxy(self)
+
 
     def topology(self):
         """Returns the current topology to the underworlds environment.
@@ -643,6 +651,7 @@ class Context(object):
     def close(self):
         logger.info("Closing context [%s]..." % self.name)
         self.worlds.finalize()
+        self.invalidation_server.stop(0)
         logger.info("The context [%s] is now closed." % self.name)
 
     def __repr__(self):

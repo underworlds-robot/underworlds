@@ -3,9 +3,12 @@ import time
 import logging;logger = logging.getLogger("underworlds.server")
 
 from underworlds.types import *
-import underworlds_pb2 as gRPC 
+from grpc.framework.interfaces.face.face import ExpirationError,NetworkError,AbortionError
+import underworlds.underworlds_pb2 as gRPC 
 from grpc.beta import interfaces as beta_interfaces
+from grpc.beta import implementations
 
+_TIMEOUT_SECONDS = 1
 
 class Server(gRPC.BetaUnderworldsServicer):
 
@@ -13,13 +16,15 @@ class Server(gRPC.BetaUnderworldsServicer):
 
         self._worlds = {}
 
-        # for each world (key), stores a mapping {client: list of node IDs that
-        # are to be invalidated}
-        self._node_invalidations = {}
+        # for each world (key), stores the list of clients that are to be notified when a change
+        # occurs in that world
+        self._observers = {}
+        self._invalidation_futures = []
         self._timeline_invalidations = {}
 
         self._clients = {} # for each client, stored the links (cf clients' types) with the various worlds.
         self._clientnames = {}
+        self._client_invalidation_servers = {}
         
         # meshes are stored as a dictionary:
         # - the key is a unique ID
@@ -31,17 +36,35 @@ class Server(gRPC.BetaUnderworldsServicer):
 
         self.starttime = time.time()
 
-    def _new_client(self, id, name):
-        self._clients[id] = {}
-        self._clientnames[id] = name
-        logger.info("New client <%s> has connected." % name)
+    def _connect_invalidation_server(self, name, host, port):
+        try:
+            channel = implementations.insecure_channel(host, port)
+            invalidation_server = gRPC.beta_create_UnderworldsInvalidation_stub(channel)
+            logger.info("Connected to invalidation server of client <%s>" % name)
+            return invalidation_server
+
+        except (NetworkError, AbortionError) as e:
+            logger.fatal("Underworld server unable to establish a connection with Underworlds'\n"
+                         " client <%> on %s:%d. Client died? Unreachable over network?\n"
+                         "Removing the client.\nOriginal error: %s" % (name, host, port, str(e)))
+            return None
+
+
+    def _new_client(self, id, name, host, port):
+
+        invalidation_server = self._connect_invalidation_server(name, host, port)
+        if invalidation_server is not None:
+            self._clients[id] = {}
+            self._clientnames[id] = name
+            self._client_invalidation_servers[id] = invalidation_server
+            logger.info("New client <%s> has connected." % name)
 
     def _clientname(self, id):
         return self._clientnames.get(id, id)
 
     def _new_world(self, name):
         self._worlds[name] = World(name)
-        self._node_invalidations[name] = {}
+        self._observers[name] = set()
         self._timeline_invalidations[name] = {}
 
 
@@ -60,6 +83,10 @@ class Server(gRPC.BetaUnderworldsServicer):
         return scene, timeline
 
     def _update_current_links(self, client, world, type):
+
+        # register client for notifications to future changes to world 'world'
+        self._observers.setdefault(world, set()).add(client)
+
         if world in self._clients[client]:
             current_type = self._clients[client][world][0]
             # update only if the current link is 'READER' (we do not 
@@ -84,23 +111,30 @@ class Server(gRPC.BetaUnderworldsServicer):
             # replace the node
             scene.nodes = [node if old == node else old for old in scene.nodes]
             
-            action = gRPC.NodeInvalidation.UPDATE
+            action = gRPC.NodesInvalidation.UPDATE
 
         else: # new node
             scene.nodes.append(node)
             if node.parent:
                 parent_has_changed = True
-            action = gRPC.NodeInvalidation.NEW
+            action = gRPC.NodesInvalidation.NEW
 
         return action, parent_has_changed
 
     def _delete_node(self, scene, id):
         scene.nodes.remove(scene.node(id))
  
-    def _add_node_invalidation(self, world, node_id, invalidation_type):
+    def _emit_nodes_invalidation(self, world, node_id, invalidation_type):
+        stime=time.time();print("DD;%f;enter server._emit_nodes_invalidation" % time.time())
 
-        for client_id in self._node_invalidations[world].keys():
-            self._node_invalidations[world][client_id].append(gRPC.NodeInvalidation(type=invalidation_type, id=node_id))
+        invalidation = gRPC.NodesInvalidation(type=invalidation_type, world=world, id=node_id)
+
+
+        for client_id in self._observers[world]:
+            logger.info("Informing client <%s> that nodes have been invalidated in world <%s>" % (self._clientname(client_id), world))
+            self._invalidation_futures.append(self._client_invalidation_servers[client_id].emitNodesInvalidation.future(invalidation, _TIMEOUT_SECONDS))
+
+        print("DD;%f; exit server._emit_nodes_invalidation;%.2f"%(time.time(), (time.time()-stime)*1000))
 
     def _add_timeline_invalidation(self, world, sit_id, invalidation_type):
 
@@ -113,8 +147,8 @@ class Server(gRPC.BetaUnderworldsServicer):
     ############ GENERAL
     def helo(self, client, context):
         client_id = str(uuid.uuid4())
-        logger.debug("Got <helo> from %s" % client_id)
-        self._new_client(client_id, client.name)
+        logger.debug("Got <helo> from %s (id: %s)" % (client.name, client_id))
+        self._new_client(client_id, client.name, client.host, client.invalidation_server_port)
 
         res = gRPC.Client(id=client_id)
         logger.debug("<helo> completed")
@@ -160,7 +194,7 @@ class Server(gRPC.BetaUnderworldsServicer):
 
         self._worlds = {}
 
-        self._node_invalidations = {}
+        self._observers = {}
         self._timeline_invalidations = {}
 
 
@@ -171,6 +205,7 @@ class Server(gRPC.BetaUnderworldsServicer):
 
     ############ NODES
     def getNodesLen(self, ctxt, context):
+        stime=time.time();print("DD;%f;enter server._getNodesLen" % time.time())
         logger.debug("Got <getNodesLen> from %s" % ctxt.client)
         self._update_current_links(ctxt.client, ctxt.world, READER)
 
@@ -178,9 +213,11 @@ class Server(gRPC.BetaUnderworldsServicer):
 
         res = gRPC.Size(size=len(scene.nodes))
         logger.debug("<getNodesLen> completed")
+        print("DD;%f; exit server._getNodesLen;%.2f"%(time.time(), (time.time()-stime)*1000))
         return res
 
     def getNodesIds(self, ctxt, context):
+        stime=time.time();print("DD;%f;enter server._getNodesId" % time.time())
         logger.debug("Got <getNodesIds> from %s" % ctxt.client)
         self._update_current_links(ctxt.client, ctxt.world, READER)
 
@@ -191,9 +228,11 @@ class Server(gRPC.BetaUnderworldsServicer):
             nodes.ids.append(n.id)
 
         logger.debug("<getNodesIds> completed")
+        print("DD;%f; exit server._getNodesId;%.2f"%(time.time(), (time.time()-stime)*1000))
         return nodes
 
     def getRootNode(self, ctxt, context):
+        stime=time.time();print("DD;%f;enter server._getRootNode" % time.time())
         logger.debug("Got <getRootNode> from %s" % ctxt.client)
         self._update_current_links(ctxt.client, ctxt.world, READER)
 
@@ -201,9 +240,11 @@ class Server(gRPC.BetaUnderworldsServicer):
 
         res = gRPC.Node(id=scene.rootnode.id)
         logger.debug("<getRootNode> completed")
+        print("DD;%f; exit server._getRootNode;%.2f"%(time.time(), (time.time()-stime)*1000))
         return res
 
     def getNode(self, nodeInCtxt, context):
+        stime=time.time();print("DD;%f;enter server._getNode" % time.time())
         logger.debug("Got <getNode> from %s" % nodeInCtxt.context.client)
         self._update_current_links(nodeInCtxt.context.client, nodeInCtxt.context.world, READER)
 
@@ -226,10 +267,12 @@ class Server(gRPC.BetaUnderworldsServicer):
         else:
             res = node.serialize(gRPC.Node)
             logger.debug("<getNode> completed")
+            print("DD;%f; exit server._getNode;%.2f"%(time.time(), (time.time()-stime)*1000))
             return res
 
 
     def updateNode(self, nodeInCtxt, context):
+        stime=time.time();print("DD;%f;enter server._updateNode" % time.time())
         logger.debug("Got <updateNode> from %s" % nodeInCtxt.context.client)
         self._update_current_links(nodeInCtxt.context.client, nodeInCtxt.context.world, PROVIDER)
 
@@ -242,13 +285,13 @@ class Server(gRPC.BetaUnderworldsServicer):
 
         logger.info("<%s> %s node <%s> in world <%s>" % \
                             (self._clientname(client_id), 
-                             "updated" if invalidation_type==gRPC.NodeInvalidation.UPDATE else ("created" if invalidation_type==gRPC.NodeInvalidation.NEW else "deleted"),
+                             "updated" if invalidation_type==gRPC.NodesInvalidation.UPDATE else ("created" if invalidation_type==gRPC.NodesInvalidation.NEW else "deleted"),
                              repr(node), 
                              world))
 
 
         logger.debug("Adding invalidation action [" + str(invalidation_type) + "]")
-        self._add_node_invalidation(world, node.id, invalidation_type)
+        self._emit_nodes_invalidation(world, node.id, invalidation_type)
 
         ## If necessary, update the node hierarchy
         if parent_has_changed:
@@ -259,7 +302,7 @@ class Server(gRPC.BetaUnderworldsServicer):
                 parent.children.append(node.id)
                 # tells everyone about the change to the parent
                 logger.debug("Adding invalidation action [update " + parent.id + "] due to hierarchy update")
-                self._add_node_invalidation(world, parent.id, gRPC.NodeInvalidation.UPDATE)
+                self._emit_nodes_invalidation(world, parent.id, gRPC.NodesInvalidation.UPDATE)
 
                 # As a node has only one parent, if the parent has changed we must
                 # remove our node for its previous parent
@@ -268,13 +311,15 @@ class Server(gRPC.BetaUnderworldsServicer):
                         othernode.children.remove(node.id)
                         # tells everyone about the change to the former parent
                         logger.debug("Adding invalidation action [update " + othernode.id + "] due to hierarchy update")
-                        self._add_node_invalidation(world, othernode.id, gRPC.NodeInvalidation.UPDATE)
+                        self._emit_nodes_invalidation(world, othernode.id, gRPC.NodesInvalidation.UPDATE)
                         break
 
         logger.debug("<updateNode> completed")
+        print("DD;%f; exit server._updateNode;%.2f"%(time.time(), (time.time()-stime)*1000))
         return gRPC.Empty()
 
     def deleteNode(self, nodeInCtxt, context):
+        stime=time.time();print("DD;%f;enter server.deleteNode" % time.time())
         logger.debug("Got <deleteNode> from %s" % nodeInCtxt.context.client)
         self._update_current_links(nodeInCtxt.context.client, nodeInCtxt.context.world, PROVIDER)
 
@@ -292,7 +337,7 @@ class Server(gRPC.BetaUnderworldsServicer):
 
         # tells everyone about the change
         logger.debug("Sent invalidation action [delete]")
-        self._add_node_invalidation(world, nodeInCtxt.node.id, gRPC.NodeInvalidation.DELETE)
+        self._emit_nodes_invalidation(world, nodeInCtxt.node.id, gRPC.NodesInvalidation.DELETE)
 
         # Also remove the node for its parent's children
         parent = scene.node(node.parent)
@@ -300,29 +345,11 @@ class Server(gRPC.BetaUnderworldsServicer):
             parent.children.remove(node.id)
             # tells everyone about the change to the parent
             logger.debug("Sent invalidation action [update " + parent.id + "] due to hierarchy update")
-            self._add_node_invalidation(world, parent.id, gRPC.NodeInvalidation.UPDATE)
+            self._emit_nodes_invalidation(world, parent.id, gRPC.NodesInvalidation.UPDATE)
 
         logger.debug("<updateNode> completed")
+        print("DD;%f; exit server.deleteNode;%.2f"%(time.time(), (time.time()-stime)*1000))
         return gRPC.Empty()
-
-    #### Nodes invalidation streams
-    def getNodeInvalidations(self, ctxt, context):
-        """ For each pair (world, client), check if nodes need to be
-        invalidated, and yield accordingly the invalidation messages.
-        """
-
-        world, client = ctxt.world, ctxt.client
-
-        # (if this client is not yet monitoring this world, add it as a side effect of the test)
-        if self._node_invalidations[world].setdefault(client,[]):
-            for invalidation in self._node_invalidations[world][client]:
-                yield invalidation
-            self._node_invalidations[world][client] = []
-
-        #try:
-        #except Exception as e:
-        #    context.details("Exception in getInvalidations: %s" %repr(e))
-        #    context.code(beta_interfaces.StatusCode.UNKNOWN)
 
 
     ############ TIMELINES

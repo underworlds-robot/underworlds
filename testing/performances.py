@@ -3,7 +3,7 @@
 import argparse
 import time
 
-import yappi
+#import yappi
 
 import threading
 from concurrent.futures import ThreadPoolExecutor
@@ -47,6 +47,7 @@ def wait_for_changes(world):
     starttime = time.time()
 
     change = world.scene.waitforchanges(5)
+    print("DD;%f;waitforchanges triggered" % time.time())
     return change, time.time()-starttime
 
 
@@ -73,12 +74,15 @@ def test_propagation_time(nb_worlds):
     n.name = "test"
 
     print("Propagating a change from world %s..." % entry_world)
+    print("DD;%f;start test with %d worlds" % (time.time(),nb_worlds))
 
     starttime=time.time()
 
     entry_world.scene.append_and_propagate(n)
 
     change, duration = future.result()
+
+    print("DD;%f;end test" % time.time())
     #yappi.stop()
     #finish_yappi()
 
@@ -87,6 +91,7 @@ def test_propagation_time(nb_worlds):
     if change is None:
         raise RuntimeError("The change has not been seen!")
 
+    print("Total time: %.2f" % ((time.time() - starttime) * 1000))
 
     running = False
     executor.shutdown(wait=True)

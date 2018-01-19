@@ -10,7 +10,7 @@ service Underworlds {
     // the client.
     // The server returns a unique client ID that must be used in every subsequent
     // request to the server.
-    rpc helo(Name) returns (Client) {}
+    rpc helo(Welcome) returns (Client) {}
 
     // Returns the uptime of the server, in seconds
     rpc uptime(Client) returns (Time) {}
@@ -48,12 +48,6 @@ service Underworlds {
     // Deletes (and broadcasts to all client) a node in a given world
     rpc deleteNode(NodeInContext) returns (Empty) {}
 
-    // Returns a (stream of) 'invalidated' nodes that need to be updated.
-    // Invalidated nodes can be new nodes, nodes that have changed, or nodes
-    // that have been removed (see Invalidation.type).
-    rpc getNodeInvalidations(Context) returns (stream NodeInvalidation) {}
-
-
     // TIMELINE
 
     // Returns the timeline origin: time of the timeline creation
@@ -87,6 +81,14 @@ service Underworlds {
     rpc pushMesh(MeshInContext) returns (Empty) {}
 }
 
+service UnderworldsInvalidation {
+
+    // Returns a (stream of) 'invalidated' nodes that need to be updated.
+    // Invalidated nodes can be new nodes, nodes that have changed, or nodes
+    // that have been removed (see Invalidation.type).
+    rpc emitNodesInvalidation(NodesInvalidation) returns (Empty) {}
+
+}
 /////////////////////////////////////////////
 // GENERIC MESSAGES
 
@@ -102,9 +104,12 @@ message Time {
     double time = 1;
 }
 
-message Name {
+message Welcome {
     string name = 1;
+    string host = 2;
+    int32 invalidation_server_port = 3;
 }
+
 
 message Size {
     int32 size = 1;
@@ -245,7 +250,7 @@ message NodeInContext {
     Node node = 2;
 }
 
-message NodeInvalidation {
+message NodesInvalidation {
 
     enum NodeInvalidationType {
         NEW = 0;
@@ -255,8 +260,10 @@ message NodeInvalidation {
 
     NodeInvalidationType type = 1;
 
+    string world = 2;
+
     // the ID of the node which is being invalidated
-    string id = 2;
+    string id = 3;
 }
 
 /////////////////////////////////////////////
