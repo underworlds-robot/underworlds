@@ -1,5 +1,6 @@
 #! /usr/bin/env python
 
+import argparse
 import time
 
 import yappi
@@ -8,7 +9,6 @@ import threading
 from concurrent.futures import ThreadPoolExecutor
 
 import logging; logger = logging.getLogger("underworlds.testing.performances")
-logging.basicConfig(level=logging.WARN)
 
 import underworlds
 import underworlds.server
@@ -123,7 +123,24 @@ def finish_yappi():
 if __name__ == '__main__':
     durations = []
 
-    for nb in range(12,13):
+    parser = argparse.ArgumentParser()
+    parser.add_argument("maxworlds", default=5, type=int, nargs="?", help="Maximum number of Underworlds worlds to spawn")
+    parser.add_argument("-d", "--debug", help="debug mode", action="store_true")
+    parser.add_argument("-dd", "--fulldebug", help="debug mode (verbose)", action="store_true")
+    parser.add_argument("-i", "--incremental", action="store_true", help="test for every nb of worlds, from 2 to maxworlds")
+    args = parser.parse_args()
+
+    if args.debug or args.fulldebug:
+        if args.fulldebug:
+            logging.basicConfig(level=logging.DEBUG)
+        else:
+            logging.basicConfig(level=logging.INFO)
+    else:
+        logger.setLevel(logging.WARN)
+
+    minworlds = 2 if args.incremental else args.maxworlds
+
+    for nb in range(minworlds, args.maxworlds+1):
         print("\n\n\n-- %d worlds --\n" % nb)
 
         server = underworlds.server.start()
