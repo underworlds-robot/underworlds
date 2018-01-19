@@ -47,7 +47,7 @@ if __name__ == "__main__":
                         print("underworlds server restarted. Logs go to %s" % LOGFILE)
                         daemon.restart()
                 elif 'foreground' == sys.argv[1]:
-                        print("Starting underworlds server in foreground. Use 'underworlded start' to start as a daemon.")
+                        print("Starting underworlds server in foreground. Use 'uwds start' to start as a daemon.")
                         consolelog = logging.StreamHandler()
                         logger.addHandler(consolelog)
                         server = underworlds.server.start()
