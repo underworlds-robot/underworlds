@@ -3,6 +3,7 @@ import time
 import logging;logger = logging.getLogger("underworlds.server")
 
 from underworlds.types import *
+from underworlds.helpers.profile import profile, profileonce
 from grpc.framework.interfaces.face.face import ExpirationError,NetworkError,AbortionError
 import underworlds.underworlds_pb2 as gRPC 
 from grpc.beta import interfaces as beta_interfaces
@@ -124,8 +125,8 @@ class Server(gRPC.BetaUnderworldsServicer):
     def _delete_node(self, scene, id):
         scene.nodes.remove(scene.node(id))
  
+    @profile
     def _emit_nodes_invalidation(self, world, node_id, invalidation_type):
-        stime=time.time();print("DD;%f;enter server._emit_nodes_invalidation" % time.time())
 
         invalidation = gRPC.NodesInvalidation(type=invalidation_type, world=world, id=node_id)
 
@@ -134,8 +135,8 @@ class Server(gRPC.BetaUnderworldsServicer):
             logger.info("Informing client <%s> that nodes have been invalidated in world <%s>" % (self._clientname(client_id), world))
             self._invalidation_futures.append(self._client_invalidation_servers[client_id].emitNodesInvalidation.future(invalidation, _TIMEOUT_SECONDS))
 
-        print("DD;%f; exit server._emit_nodes_invalidation;%.2f"%(time.time(), (time.time()-stime)*1000))
 
+    @profile
     def _add_timeline_invalidation(self, world, sit_id, invalidation_type):
 
         for client_id in self._timeline_invalidations[world].keys():
@@ -145,6 +146,7 @@ class Server(gRPC.BetaUnderworldsServicer):
     ############ Underworlds API ################
 
     ############ GENERAL
+    @profile
     def helo(self, client, context):
         client_id = str(uuid.uuid4())
         logger.debug("Got <helo> from %s (id: %s)" % (client.name, client_id))
@@ -154,12 +156,14 @@ class Server(gRPC.BetaUnderworldsServicer):
         logger.debug("<helo> completed")
         return res
 
+    @profile
     def uptime(self, client, context):
         logger.debug("Got <uptime> from %s" % client.id)
         res = gRPC.Time(time=time.time() - self.starttime)
         logger.debug("<uptime> completed")
         return res
 
+    @profile
     def topology(self, client, context):
         logger.debug("Got <topology> from %s" % client.id)
     
@@ -187,6 +191,7 @@ class Server(gRPC.BetaUnderworldsServicer):
         logger.debug("<topology> completed")
         return topo
 
+    @profile
     def reset(self, client, context):
         logger.debug("Got <reset> from %s" % client.id)
         logger.warning("Resetting Underworlds upon client <%s> request" % client.id)
@@ -204,8 +209,8 @@ class Server(gRPC.BetaUnderworldsServicer):
 
 
     ############ NODES
+    @profile
     def getNodesLen(self, ctxt, context):
-        stime=time.time();print("DD;%f;enter server._getNodesLen" % time.time())
         logger.debug("Got <getNodesLen> from %s" % ctxt.client)
         self._update_current_links(ctxt.client, ctxt.world, READER)
 
@@ -213,11 +218,10 @@ class Server(gRPC.BetaUnderworldsServicer):
 
         res = gRPC.Size(size=len(scene.nodes))
         logger.debug("<getNodesLen> completed")
-        print("DD;%f; exit server._getNodesLen;%.2f"%(time.time(), (time.time()-stime)*1000))
         return res
 
+    @profile
     def getNodesIds(self, ctxt, context):
-        stime=time.time();print("DD;%f;enter server._getNodesId" % time.time())
         logger.debug("Got <getNodesIds> from %s" % ctxt.client)
         self._update_current_links(ctxt.client, ctxt.world, READER)
 
@@ -228,11 +232,10 @@ class Server(gRPC.BetaUnderworldsServicer):
             nodes.ids.append(n.id)
 
         logger.debug("<getNodesIds> completed")
-        print("DD;%f; exit server._getNodesId;%.2f"%(time.time(), (time.time()-stime)*1000))
         return nodes
 
+    @profile
     def getRootNode(self, ctxt, context):
-        stime=time.time();print("DD;%f;enter server._getRootNode" % time.time())
         logger.debug("Got <getRootNode> from %s" % ctxt.client)
         self._update_current_links(ctxt.client, ctxt.world, READER)
 
@@ -240,11 +243,10 @@ class Server(gRPC.BetaUnderworldsServicer):
 
         res = gRPC.Node(id=scene.rootnode.id)
         logger.debug("<getRootNode> completed")
-        print("DD;%f; exit server._getRootNode;%.2f"%(time.time(), (time.time()-stime)*1000))
         return res
 
+    @profile
     def getNode(self, nodeInCtxt, context):
-        stime=time.time();print("DD;%f;enter server._getNode" % time.time())
         logger.debug("Got <getNode> from %s" % nodeInCtxt.context.client)
         self._update_current_links(nodeInCtxt.context.client, nodeInCtxt.context.world, READER)
 
@@ -267,12 +269,11 @@ class Server(gRPC.BetaUnderworldsServicer):
         else:
             res = node.serialize(gRPC.Node)
             logger.debug("<getNode> completed")
-            print("DD;%f; exit server._getNode;%.2f"%(time.time(), (time.time()-stime)*1000))
             return res
 
 
+    @profile
     def updateNode(self, nodeInCtxt, context):
-        stime=time.time();print("DD;%f;enter server._updateNode" % time.time())
         logger.debug("Got <updateNode> from %s" % nodeInCtxt.context.client)
         self._update_current_links(nodeInCtxt.context.client, nodeInCtxt.context.world, PROVIDER)
 
@@ -315,11 +316,10 @@ class Server(gRPC.BetaUnderworldsServicer):
                         break
 
         logger.debug("<updateNode> completed")
-        print("DD;%f; exit server._updateNode;%.2f"%(time.time(), (time.time()-stime)*1000))
         return gRPC.Empty()
 
+    @profile
     def deleteNode(self, nodeInCtxt, context):
-        stime=time.time();print("DD;%f;enter server.deleteNode" % time.time())
         logger.debug("Got <deleteNode> from %s" % nodeInCtxt.context.client)
         self._update_current_links(nodeInCtxt.context.client, nodeInCtxt.context.world, PROVIDER)
 
@@ -348,11 +348,11 @@ class Server(gRPC.BetaUnderworldsServicer):
             self._emit_nodes_invalidation(world, parent.id, gRPC.NodesInvalidation.UPDATE)
 
         logger.debug("<updateNode> completed")
-        print("DD;%f; exit server.deleteNode;%.2f"%(time.time(), (time.time()-stime)*1000))
         return gRPC.Empty()
 
 
     ############ TIMELINES
+    @profile
     def timelineOrigin(self, ctxt, context):
         logger.debug("Got <timelineOrigin> from %s" % ctxt.client)
         self._update_current_links(ctxt.client, ctxt.world, READER)
@@ -363,6 +363,7 @@ class Server(gRPC.BetaUnderworldsServicer):
         logger.debug("<timelineOrigin> completed")
         return res
 
+    @profile
     def event(self, sitInCtxt, context):
 
         client, world = sitInCtxt.context.client, sitInCtxt.context.world
@@ -383,6 +384,7 @@ class Server(gRPC.BetaUnderworldsServicer):
         logger.debug("<event> completed")
         return gRPC.Empty()
 
+    @profile
     def startSituation(self, sitInCtxt, context):
 
         client, world = sitInCtxt.context.client, sitInCtxt.context.world
@@ -403,6 +405,7 @@ class Server(gRPC.BetaUnderworldsServicer):
         logger.debug("<startSituation> completed")
         return gRPC.Empty()
 
+    @profile
     def endSituation(self, sitInCtxt, context):
 
         client, world = sitInCtxt.context.client, sitInCtxt.context.world
@@ -440,17 +443,20 @@ class Server(gRPC.BetaUnderworldsServicer):
 
 
     ############ MESHES
+    @profile
     def hasMesh(self, meshInCtxt, context):
         logger.debug("Got <hasMesh> from %s" % meshInCtxt.client.id)
         res = gRPC.Bool(value=(meshInCtxt.mesh.id in self.meshes))
         logger.debug("<hasMesh> completed")
         return res
 
+    @profile
     def getMesh(self, meshInCtxt, context):
         logger.debug("Got <getMesh> from %s" % meshInCtxt.client.id)
         logger.debug("<getMesh> completed")
         return self.meshes[meshInCtxt.mesh.id]
 
+    @profile
     def pushMesh(self, meshInCtxt, context):
         logger.debug("Got <pushMesh> from %s" % meshInCtxt.client.id)
 

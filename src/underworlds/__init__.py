@@ -18,6 +18,8 @@ import underworlds.underworlds_pb2 as gRPC
 
 from underworlds.types import World, Node, Situation, Mesh
 
+from underworlds.helpers.profile import profile, profileonce
+
 _TIMEOUT_SECONDS = 1
 _TIMEOUT_SECONDS_MESH_LOADING = 20
 _SLEEP_PERIOD = 0.1 #s
@@ -65,21 +67,20 @@ class NodesProxy:
 
         self.cv = threading.Condition()
 
+    @profile
     def _on_remotely_updated_node(self, id):
 
         if id not in self._updated_ids:
             self._updated_ids.append(id)
 
-        stime=time.time();print("DD;%f;enter client._on_remotely_updated_node" % time.time())
         with self.waitforchanges:
             self.lastchange = (id, gRPC.NodesInvalidation.UPDATE)
             self.waitforchanges.notify_all()
 
-        print("DD;%f; exit client._on_remotely_updated_node;%.2f"%(time.time(), (time.time()-stime)*1000))
 
+    @profile
     def _on_remotely_added_node(self, id):
 
-        stime=time.time();print("DD;%f;enter client._on_remotely_added_node" % time.time())
         self._len += 1 # not atomic, but still fine since I'm the only one to write it
 
         if id not in self._updated_ids:
@@ -88,9 +89,9 @@ class NodesProxy:
         with self.waitforchanges:
             self.lastchange = (id, gRPC.NodesInvalidation.NEW)
             self.waitforchanges.notify_all()
-        print("DD;%f; exit client._on_remotely_added_node;%.2f"%(time.time(), (time.time()-stime)*1000))
 
 
+    @profile
     def _on_remotely_deleted_node(self, id):
 
         self._len -= 1 # not atomic, but still fine since I'm the only one to write it
@@ -203,6 +204,7 @@ class NodesProxy:
         """
         return self.update(node)
 
+    @profile
     def update(self, node):
         """ Update the value of a node in the node set.
         If the node does not exist yet, add it.
@@ -231,13 +233,12 @@ class NodesProxy:
         node with a smaller index is removed).
 
         """
-        stime=time.time();print("DD;%f;enter client.nodes.update" % time.time())
         self.update_future = self._ctx.rpc.updateNode.future(
                                  gRPC.NodeInContext(context=self._server_ctx,
                                                     node=node.serialize(gRPC.Node)),
                                  _TIMEOUT_SECONDS)
-        print("DD;%f; exit client.nodes.update;%.2f"%(time.time(), (time.time()-stime)*1000))
 
+    @profile
     def remove(self, node):
         """ Deletes a node from the node set.
 
@@ -251,11 +252,9 @@ class NodesProxy:
         take some time (a couple of milliseconds) to propagate
         the change.
         """
-        stime=time.time();print("DD;%f;enter client.nodes.remove" % time.time())
         self._ctx.rpc.deleteNode(gRPC.NodeInContext(context=self._server_ctx,
                                                     node=node.serialize(gRPC.Node)),
                                  _TIMEOUT_SECONDS)
-        print("DD;%f; exit client.nodes.remove;%.2f"%(time.time(), (time.time()-stime)*1000))
 
 
 class SceneProxy(object):
@@ -287,7 +286,7 @@ class SceneProxy(object):
             lastchange = self.nodes.lastchange
             self.nodes.lastchange = None
 
-        print("DD;%f; client.waitforchanges notified" % time.time())
+        profileonce("client.waitforchanges notified")
 
         return lastchange
 
@@ -523,8 +522,8 @@ class InvalidationServer(gRPC.BetaUnderworldsInvalidationServicer):
     def __init__(self, ctx):
         self.ctx=ctx
 
+    @profile
     def emitNodesInvalidation(self, invalidation, context):
-        stime=time.time();print("DD;%f;enter client.emitNodesInvalidation" % time.time())
         logger.info("Got <emitNodesInvalidation> for world <%s>" % invalidation.world)
        
         action, world, id = invalidation.type, invalidation.world, invalidation.id
@@ -542,7 +541,6 @@ class InvalidationServer(gRPC.BetaUnderworldsInvalidationServicer):
         else:
             raise RuntimeError("Unexpected invalidation action")
  
-        print("DD;%f; exit client.emitNodesInvalidation;%.2f"%(time.time(), (time.time()-stime)*1000))
         return gRPC.Empty()
 
 
