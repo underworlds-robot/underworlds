@@ -166,6 +166,32 @@ with ``scene.rootnode``.
 
 .. _api-reference:
 
+Performances
+============
+
+The performance of your system can be tested by running
+``testing/performances.py <nb worlds>``. This script measure the propagation
+time of one change across n worlds by simulating (n-1) clients which simply
+replicate changes for one world to another one (passthrough filters).
+
+For reference, propagating one change across ten worlds (on the same network
+host) take about 50 ms.
+
+Due the changes in how the Python interpreter manages condition variables
+between Python2 and Python3, **underworlds is significantly faster with Python
+3** (an order of magnitude faster on certain tests!).
+
+Investigating performance issues
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+underworlds can profile the network while running, which usually help with
+identifying performance issues.
+
+To enable the profiler, change the value of ``PROFILING_ENABLED`` to ``True`` in
+``helpers/profile.py``, reinstall underworlds, and re-run your code.
+
+
+
 API Reference
 =============
 
