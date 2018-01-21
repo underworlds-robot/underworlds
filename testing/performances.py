@@ -130,11 +130,9 @@ if __name__ == '__main__':
         print("\n\n\n-- %d worlds --\n" % nb)
 
         server = underworlds.server.start()
-        time.sleep(0.2) # leave some time to the server to start
 
         durations.append(test_propagation_time(nb))
-        server.stop(0)
-        time.sleep(0.2)
+        server.stop(0).wait()
 
         for d in durations:
             print("%.1f" % (d * 1000))

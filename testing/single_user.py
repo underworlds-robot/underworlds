@@ -10,16 +10,15 @@ import underworlds
 import underworlds.server
 from underworlds.types import Node
 
-PROPAGATION_TIME=0.05 # time to wait for node update notification propagation (in sec)
+PROPAGATION_TIME=0.1 # time to wait for node update notification propagation (in sec)
 
 class TestSingleUser(unittest.TestCase):
 
     def setUp(self):
         self.server = underworlds.server.start()
-        time.sleep(0.1) # leave some time to the server to start
 
-        self.ctx = underworlds.Context("unittest - single user")
-        self.ctx2 = underworlds.Context("unittest - single user 2")
+        self.ctx = underworlds.Context("unittest - user 1")
+        self.ctx2 = underworlds.Context("unittest - user 2")
 
 
     def test_initial_access(self):
@@ -154,7 +153,7 @@ class TestSingleUser(unittest.TestCase):
     def tearDown(self):
         self.ctx.close()
         self.ctx2.close()
-        self.server.stop(0)
+        self.server.stop(0).wait()
 
 def test_suite():
      suite = unittest.TestLoader().loadTestsFromTestCase(TestSingleUser)

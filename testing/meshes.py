@@ -15,7 +15,6 @@ class TestMeshes(unittest.TestCase):
 
     def setUp(self):
         self.server = underworlds.server.start()
-        time.sleep(0.1) # leave some time to the server to start
         self.ctx = underworlds.Context("unittest - meshes")
 
     def test_frames(self):
@@ -44,7 +43,7 @@ class TestMeshes(unittest.TestCase):
 
     def tearDown(self):
         self.ctx.close()
-        self.server.stop(0)
+        self.server.stop(0).wait()
 
 def test_suite():
      suite = unittest.TestLoader().loadTestsFromTestCase(TestMeshes)

@@ -25,7 +25,6 @@ class TestWaitforchanges(unittest.TestCase):
 
     def setUp(self):
         self.server = underworlds.server.start()
-        time.sleep(0.2) # leave some time to the server to start
 
         self.ctx1 = underworlds.Context("unittest - waitforchanges - user1")
         self.ctx2 = underworlds.Context("unittest - waitforchanges - user2")
@@ -83,7 +82,7 @@ class TestWaitforchanges(unittest.TestCase):
     def tearDown(self):
         self.ctx1.close()
         self.ctx2.close()
-        self.server.stop(0)
+        self.server.stop(0).wait()
 
 def test_suite():
      suite = unittest.TestLoader().loadTestsFromTestCase(TestWaitforchanges)

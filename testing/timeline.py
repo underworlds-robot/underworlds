@@ -18,7 +18,6 @@ class TestTimeline(unittest.TestCase):
 
     def setUp(self):
         self.server = underworlds.server.start()
-        time.sleep(0.1) # leave some time to the server to start
 
         self.t0 = time.time()
         self.ctx = underworlds.Context("unittest - timeline")
@@ -134,7 +133,7 @@ class TestTimeline(unittest.TestCase):
     def tearDown(self):
         self.ctx.close()
         self.ctx2.close()
-        self.server.stop(0)
+        self.server.stop(0).wait()
 
 def test_suite():
      suite = unittest.TestLoader().loadTestsFromTestCase(TestTimeline)
