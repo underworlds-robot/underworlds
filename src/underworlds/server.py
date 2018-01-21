@@ -502,20 +502,21 @@ class Server(gRPC.BetaUnderworldsServicer):
 
 def start():
 
+    PORT="50051"
+
     server = gRPC.beta_create_Underworlds_server(Server())
-    port = server.add_insecure_port('[::]:50051')
+    port = server.add_insecure_port('[::]:%s' % PORT)
 
     if port == 0:
-        logger.error("The port is already in use! Underworlds server already running?"
-                     "I can not start the server.")
-        return server
+        raise RuntimeError("The port %s is already in use! Underworlds server already running? "
+                     "I can not start the server." % PORT)
 
     logger.info("Starting the server...")
     server.start()
+    time.sleep(0.2) # leave some time to the server to start
     logger.info("Server started.")
 
     return server
-
 
 if __name__ == "__main__":
 
