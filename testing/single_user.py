@@ -101,8 +101,11 @@ class TestSingleUser(unittest.TestCase):
         world = self.ctx.worlds["base"]
         nodes = world.scene.nodes
         
+        n0 = Node()
+        n0.name = "test0"
+        nodes.update(n0)
         n1 = Node()
-        n1.name = "test"
+        n1.name = "test1"
         nodes.update(n1)
         n2 = Node()
         n2.name = "test2"
