@@ -135,6 +135,13 @@ class Server(gRPC.BetaUnderworldsServicer):
             logger.info("Informing client <%s> that nodes have been invalidated in world <%s>" % (self._clientname(client_id), world))
             self._invalidation_futures.append(self._client_invalidation_servers[client_id].emitNodesInvalidation.future(invalidation, _TIMEOUT_SECONDS))
 
+        active_futures = []
+        for f in self._invalidation_futures:
+            if not f.done():
+                active_futures.append(f)
+        self._invalidation_futures = active_futures
+
+
 
     @profile
     def _add_timeline_invalidation(self, world, sit_id, invalidation_type):
