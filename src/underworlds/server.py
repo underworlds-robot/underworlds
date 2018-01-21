@@ -11,6 +11,60 @@ from grpc.beta import implementations
 
 _TIMEOUT_SECONDS = 1
 
+class Client:
+
+    def __init__(self, name, host, port):
+        self.id = str(uuid.uuid4())
+        self.name = name
+
+        # stores the links (cf clients' types) with the various worlds.
+        self.links = {}
+
+        self.channel = None
+        self.invalidation_server = self._connect_invalidation_server(name, host, port)
+        self.isactive = (self.invalidation_server is not None)
+
+        self.active_invalidations = []
+
+        self.grpc_client = gRPC.Client(id=self.id)
+
+        if self.isactive:
+            logger.debug("Client %s (id: %s) successfully created." % (self.name, self.id))
+        else:
+            logger.warn("Client %s (id: %s) created but inactive." % (self.name, self.id))
+
+
+    def _connect_invalidation_server(self, name, host, port):
+        try:
+            self.channel = implementations.insecure_channel(host, port)
+            invalidation_server = gRPC.beta_create_UnderworldsInvalidation_stub(self.channel)
+            logger.info("Connected to invalidation server of client <%s>" % name)
+            return invalidation_server
+
+        except (NetworkError, AbortionError) as e:
+            logger.warn("Underworld server unable to establish a connection with Underworlds'\n"
+                         " client <%> on %s:%d. Client died? Unreachable over network?\n"
+                         "Removing the client.\nOriginal error: %s" % (name, host, port, str(e)))
+            return None
+
+    def emit_invalidation(self, invalidation):
+
+        if not self.isactive:
+            logger.debug("Attempting to send invalidations to inactive client <%s>. Skipping" % self.name)
+            return
+
+        future = self.invalidation_server.emitNodesInvalidation.future(invalidation, _TIMEOUT_SECONDS)
+
+        # remove the future form the current list of active invalidations upon completion
+        future.add_done_callback(self.active_invalidations.remove)
+
+        self.active_invalidations.append(future)
+
+    def close(self):
+        self.isactive = False
+
+
+
 class Server(gRPC.BetaUnderworldsServicer):
 
     def __init__(self):
@@ -23,9 +77,7 @@ class Server(gRPC.BetaUnderworldsServicer):
         self._invalidation_futures = []
         self._timeline_invalidations = {}
 
-        self._clients = {} # for each client, stored the links (cf clients' types) with the various worlds.
-        self._clientnames = {}
-        self._client_invalidation_servers = {}
+        self._clients = {} 
         
         # meshes are stored as a dictionary:
         # - the key is a unique ID
@@ -37,31 +89,8 @@ class Server(gRPC.BetaUnderworldsServicer):
 
         self.starttime = time.time()
 
-    def _connect_invalidation_server(self, name, host, port):
-        try:
-            channel = implementations.insecure_channel(host, port)
-            invalidation_server = gRPC.beta_create_UnderworldsInvalidation_stub(channel)
-            logger.info("Connected to invalidation server of client <%s>" % name)
-            return invalidation_server
-
-        except (NetworkError, AbortionError) as e:
-            logger.fatal("Underworld server unable to establish a connection with Underworlds'\n"
-                         " client <%> on %s:%d. Client died? Unreachable over network?\n"
-                         "Removing the client.\nOriginal error: %s" % (name, host, port, str(e)))
-            return None
-
-
-    def _new_client(self, id, name, host, port):
-
-        invalidation_server = self._connect_invalidation_server(name, host, port)
-        if invalidation_server is not None:
-            self._clients[id] = {}
-            self._clientnames[id] = name
-            self._client_invalidation_servers[id] = invalidation_server
-            logger.info("New client <%s> has connected." % name)
-
     def _clientname(self, id):
-        return self._clientnames.get(id, id)
+        return self._clients[id].name
 
     def _new_world(self, name):
         self._worlds[name] = World(name)
@@ -88,12 +117,12 @@ class Server(gRPC.BetaUnderworldsServicer):
         # register client for notifications to future changes to world 'world'
         self._observers.setdefault(world, set()).add(client)
 
-        if world in self._clients[client]:
-            current_type = self._clients[client][world][0]
+        if world in self._clients[client].links:
+            current_type = self._clients[client].links[world][0]
             # update only if the current link is 'READER' (we do not 
             # want a 'READER' to overwrite a 'PROVIDER' for instance)
             type = type if current_type == READER else current_type
-        self._clients[client][world] = (type, time.time())
+        self._clients[client].links[world] = (type, time.time())
 
     def _update_node(self, scene, node):
 
@@ -124,7 +153,7 @@ class Server(gRPC.BetaUnderworldsServicer):
 
     def _delete_node(self, scene, id):
         scene.nodes.remove(scene.node(id))
- 
+
     @profile
     def _emit_nodes_invalidation(self, world, node_id, invalidation_type):
 
@@ -132,15 +161,8 @@ class Server(gRPC.BetaUnderworldsServicer):
 
 
         for client_id in self._observers[world]:
-            logger.info("Informing client <%s> that nodes have been invalidated in world <%s>" % (self._clientname(client_id), world))
-            self._invalidation_futures.append(self._client_invalidation_servers[client_id].emitNodesInvalidation.future(invalidation, _TIMEOUT_SECONDS))
-
-        active_futures = []
-        for f in self._invalidation_futures:
-            if not f.done():
-                active_futures.append(f)
-        self._invalidation_futures = active_futures
-
+            logger.debug("Informing client <%s> that nodes have been invalidated in world <%s>" % (self._clientname(client_id), world))
+            self._clients[client_id].emit_invalidation(invalidation)
 
 
     @profile
@@ -155,13 +177,20 @@ class Server(gRPC.BetaUnderworldsServicer):
     ############ GENERAL
     @profile
     def helo(self, client, context):
-        client_id = str(uuid.uuid4())
-        logger.debug("Got <helo> from %s (id: %s)" % (client.name, client_id))
-        self._new_client(client_id, client.name, client.host, client.invalidation_server_port)
+        logger.debug("Got <helo> from %s" % client.name)
+        c = Client(client.name, client.host, client.invalidation_server_port)
+        self._clients[c.id] = c
 
-        res = gRPC.Client(id=client_id)
         logger.debug("<helo> completed")
-        return res
+        return c.grpc_client
+
+    @profile
+    def byebye(self, client, context):
+        logger.debug("Got <byebye> from %s" % (self._clientname(client.id)))
+        self._clients[client.id].close()
+        logger.debug("<byebye> completed")
+        return gRPC.Empty()
+
 
     @profile
     def uptime(self, client, context):
@@ -179,7 +208,8 @@ class Server(gRPC.BetaUnderworldsServicer):
         for w in self._worlds.keys():
             topo.worlds.append(w)
 
-        for client_id, links in self._clients.items():
+        for client_id in self._clients.keys():
+            links = self._clients[client_id].links
             client = topo.clients.add()
             client.id  = client_id
             client.name = self._clientname(client_id)

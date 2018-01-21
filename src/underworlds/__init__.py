@@ -644,6 +644,7 @@ class Context(object):
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
+        self.rpc.byebye(gRPC.Client(id=self._ctx.id), _TIMEOUT_SECONDS)
         self.close()
 
     def close(self):

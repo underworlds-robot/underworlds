@@ -12,6 +12,11 @@ service Underworlds {
     // request to the server.
     rpc helo(Welcome) returns (Client) {}
 
+    // Inform the server that the client is disconnecting.
+    // After completing this call, the server should attempt to connect to
+    // the client's invalidation server.
+    rpc byebye(Client) returns (Empty) {}
+
     // Returns the uptime of the server, in seconds
     rpc uptime(Client) returns (Time) {}
 
