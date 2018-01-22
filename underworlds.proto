@@ -35,7 +35,6 @@ service Underworlds {
     // NODES
 
     // Returns the number of nodes in a given world.
-    // 
     // Accepts a context (client ID and world) and returns the number of existing nodes.
     rpc getNodesLen(Context) returns (Size) {}
 
@@ -57,6 +56,19 @@ service Underworlds {
 
     // TIMELINE
 
+    // Returns the number of situations in a given world.
+    // Accepts a context (client ID and world) and returns the number of
+    // existing situations.
+    rpc getSituationsLen(Context) returns (Size) {}
+
+
+    // Returns the list of situation IDs present in the given world
+    rpc getSituationIds(Context) returns (Situations) {}
+
+    // Returns a situation from its ID.
+    // Note that only the situation ID is used (and thus, required).
+    rpc getSituation(SituationInContext) returns (Situation) {}
+
     // Returns the timeline origin: time of the timeline creation
     rpc timelineOrigin(Context) returns (Time) {}
 
@@ -69,10 +81,12 @@ service Underworlds {
     // Notifies the server that a specific situation has ended
     rpc endSituation(SituationInContext) returns (Empty) {}
 
-    // Returns a (stream of) 'invalidated' nodes that need to be updated.
-    // Invalidated nodes can be new nodes, nodes that have changed, or nodes
-    // that have been removed (see Invalidation.type).
-    rpc getTimelineInvalidations(Context) returns (stream TimelineInvalidation) {}
+    // Updates (and broadcasts to all client) a situation in a given world
+    rpc updateSituation(SituationInContext) returns (Empty) {}
+
+    // Deletes (and broadcasts to all client) a node in a given world
+    rpc deleteSituation(SituationInContext) returns (Empty) {}
+
 
     // MESHES
 
@@ -90,10 +104,14 @@ service Underworlds {
 
 service UnderworldsInvalidation {
 
-    // Returns a (stream of) 'invalidated' nodes that need to be updated.
-    // Invalidated nodes can be new nodes, nodes that have changed, or nodes
-    // that have been removed (see Invalidation.type).
+    // Sends (to the client's invalidation server) 'invalidated' nodes that
+    // need to be updated.  Invalidated nodes can be new nodes, nodes that have
+    // changed, or nodes that have been removed (see Invalidation.type).
     rpc emitNodesInvalidation(NodesInvalidation) returns (Empty) {}
+
+    // Sends (to the client's invalidation server) 'invalidated' situations that
+    // need to be updated.
+    rpc emitTimelineInvalidation(TimelineInvalidation) returns (Empty) {}
 
 }
 /////////////////////////////////////////////
@@ -291,10 +309,15 @@ message Situation {
 
     // start time of the situation. 0 means that the situation has not started yet
     Time start = 4;
-    // end time of the situation. 0 means that the situation has not finnished yet
+    // end time of the situation. 0 means that the situation has not finished yet
     // For events, start == end
     Time end = 5;
 }
+
+message Situations {
+    repeated string ids = 1;
+}
+
 
 message SituationInContext {
     Context context = 1;
@@ -311,8 +334,10 @@ message TimelineInvalidation {
 
     TimelineInvalidationType type = 1;
 
+    string world = 2;
+
     // the ID of the situation which is being invalidated
-    string id = 2;
+    string id = 3;
 }
 
 /////////////////////////////////////////////
