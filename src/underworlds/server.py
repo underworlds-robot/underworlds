@@ -68,6 +68,9 @@ class Client:
         else:
             self.active_invalidations.remove(invalidation)
 
+    def reset_links(self):
+        self.links = {}
+
     def close(self):
         self.isactive = False
         logger.debug("Waiting for all pending invalidation to client <%s> to complete..." % self.name)
@@ -85,9 +88,6 @@ class Server(gRPC.BetaUnderworldsServicer):
 
         self._worlds = {}
 
-        # for each world (key), stores the list of clients that are to be notified when a change
-        # occurs in that world
-        self._observers = {}
         self._timeline_invalidations = {}
 
         self._clients = {} 
@@ -107,7 +107,6 @@ class Server(gRPC.BetaUnderworldsServicer):
 
     def _new_world(self, name):
         self._worlds[name] = World(name)
-        self._observers[name] = set()
         self._timeline_invalidations[name] = {}
 
 
@@ -126,9 +125,6 @@ class Server(gRPC.BetaUnderworldsServicer):
         return scene, timeline
 
     def _update_current_links(self, client, world, type):
-
-        # register client for notifications to future changes to world 'world'
-        self._observers.setdefault(world, set()).add(client)
 
         if world in self._clients[client].links:
             current_type = self._clients[client].links[world][0]
@@ -173,9 +169,10 @@ class Server(gRPC.BetaUnderworldsServicer):
         invalidation = gRPC.NodesInvalidation(type=invalidation_type, world=world, id=node_id)
 
 
-        for client_id in self._observers[world]:
-            logger.debug("Informing client <%s> that nodes have been invalidated in world <%s>" % (self._clientname(client_id), world))
-            self._clients[client_id].emit_invalidation(invalidation)
+        for client_id in self._clients:
+            if world in self._clients[client_id].links:
+                logger.debug("Informing client <%s> that nodes have been invalidated in world <%s>" % (self._clientname(client_id), world))
+                self._clients[client_id].emit_invalidation(invalidation)
 
 
     @profile
@@ -250,7 +247,9 @@ class Server(gRPC.BetaUnderworldsServicer):
 
         self._worlds = {}
 
-        self._observers = {}
+        for cid, c in self._clients.items():
+            c.reset_links()
+
         self._timeline_invalidations = {}
 
 
