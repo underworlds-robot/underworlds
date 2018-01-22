@@ -551,15 +551,14 @@ class Context(object):
         self.name = name
         self.worlds = WorldsProxy(self)
 
-        invalidation_port = random.randint(50052,60000)
+        invalidation_port = random.randint(port + 1,60000)
         logger.info("Creating my own invalidation server on port %s..." % (invalidation_port))
 
         self.invalidation_server = gRPC.beta_create_UnderworldsInvalidation_server(InvalidationServer(self))
-        invalidation_port = self.invalidation_server.add_insecure_port('[::]:%d' % invalidation_port)
+        self.invalidation_port = self.invalidation_server.add_insecure_port('[::]:%d' % invalidation_port)
 
-        if invalidation_port == 0:
-            logger.error("The port is already in use! Underworlds server already running?"
-                         "I can not start the server.")
+        if self.invalidation_port == 0:
+            logger.error("The port for my invalidation server is already in use! Try restarting.")
             sys.exit(1)
 
         self.invalidation_server.start()
@@ -583,7 +582,7 @@ class Context(object):
 
             self.id = self.rpc.helo(gRPC.Welcome(name=name,
                                                  host="localhost", 
-                                                 invalidation_server_port=invalidation_port), _TIMEOUT_SECONDS).id
+                                                 invalidation_server_port=self.invalidation_port), _TIMEOUT_SECONDS).id
         except NetworkError as e:
             logger.fatal("Underworld server unreachable on %s:%d! Is it started?\n"
                          "Set UWDS_SERVER=host:port if underworlded is running on a different machine.\n"
@@ -654,7 +653,7 @@ class Context(object):
         logger.info("Closing context [%s]..." % self.name)
         self.worlds.finalize()
         self.rpc.byebye(gRPC.Client(id=self.id), _TIMEOUT_SECONDS)
-        self.invalidation_server.stop(0).wait()
+        self.invalidation_server.stop(1).wait()
         logger.info("The context [%s] is now closed." % self.name)
 
     def __repr__(self):
