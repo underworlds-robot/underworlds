@@ -57,39 +57,46 @@ class TestTopology(unittest.TestCase):
                 print(n)
             reader_id = reader_ctx.id
 
+            topo = self.observer_ctx.topology()
+
+            self.assertEquals(len(topo.clients), 3)
+            self.assertIn(reader_id, [c.id for c in topo.clients])
+            reader = {c.id:c for c in topo.clients}[reader_id]
+            self.assertIn("base", [l.world for l in reader.links])
+            link2 = {l.world:l for l in reader.links}["base"]
+            self.assertEquals(READER, link2.type)
+
+            # Check the provider is still here
+            provider = {c.id:c for c in topo.clients}[provider_id]
+            self.assertIn("base", [l.world for l in provider.links])
+            link = {l.world:l for l in provider.links}["base"]
+            self.assertEquals(PROVIDER, link.type)
+            # The provider has not been used: the last activity timestamp should be the same
+            self.assertEquals(last_provider_activity, link.last_activity.time)
+
+            # Modify the world from the PROVIDER context
+            time.sleep(0.2)
+            world.scene.nodes.append(Node()) # create and add a random node
+
+            topo = self.observer_ctx.topology()
+
+            # Check the provider is still here
+            provider = {c.id:c for c in topo.clients}[provider_id]
+            self.assertIn("base", [l.world for l in provider.links])
+            link = {l.world:l for l in provider.links}["base"]
+            self.assertEquals(PROVIDER, link.type)
+            # The provider *has been used*: the last activity timestamp should be higher
+            self.assertLess(last_provider_activity, link.last_activity.time)
+
+            provider_ctx.close()
+
+            # the provider is not here anymore...
+            topo = self.observer_ctx.topology()
+            self.assertEquals(len(topo.clients), 2)
+
+        # the reader is not here anymore...
         topo = self.observer_ctx.topology()
-
-        self.assertEquals(len(topo.clients), 3)
-        self.assertIn(reader_id, [c.id for c in topo.clients])
-        reader = {c.id:c for c in topo.clients}[reader_id]
-        self.assertIn("base", [l.world for l in reader.links])
-        link2 = {l.world:l for l in reader.links}["base"]
-        self.assertEquals(READER, link2.type)
-
-        # Check the provider is still here
-        provider = {c.id:c for c in topo.clients}[provider_id]
-        self.assertIn("base", [l.world for l in provider.links])
-        link = {l.world:l for l in provider.links}["base"]
-        self.assertEquals(PROVIDER, link.type)
-        # The provider has not been used: the last activity timestamp should be the same
-        self.assertEquals(last_provider_activity, link.last_activity.time)
-
-        # Modify the world from the PROVIDER context
-        time.sleep(0.2)
-        world.scene.nodes.append(Node()) # create and add a random node
-
-        topo = self.observer_ctx.topology()
-
-        # Check the provider is still here
-        provider = {c.id:c for c in topo.clients}[provider_id]
-        self.assertIn("base", [l.world for l in provider.links])
-        link = {l.world:l for l in provider.links}["base"]
-        self.assertEquals(PROVIDER, link.type)
-        # The provider *has been used*: the last activity timestamp should be higher
-        self.assertLess(last_provider_activity, link.last_activity.time)
-
-        provider_ctx.close()
-
+        self.assertEquals(len(topo.clients), 1)
 
 
     def tearDown(self):
