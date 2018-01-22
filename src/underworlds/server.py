@@ -537,23 +537,46 @@ class Server(gRPC.BetaUnderworldsServicer):
 #                    pass #TODO
 #
 
-def start():
+def start(port=50051, signaling_queue=None):
+    """Starts the underworlds server in a thread on the given port and returns
+    the resulting gRPC server.
 
-    PORT="50051"
+    If signaling_queue is provided, the behaviour is blocking:
+    it creates and start an underworlds server, then blocks until something is pushed onto the queue.
+    It then properly closes the server and returns None.
+    """
+
+    desired_port=str(port)
 
     server = gRPC.beta_create_Underworlds_server(Server())
-    port = server.add_insecure_port('[::]:%s' % PORT)
+    port = server.add_insecure_port('[::]:%s' % desired_port)
 
     if port == 0:
         raise RuntimeError("The port %s is already in use! Underworlds server already running? "
-                     "I can not start the server." % PORT)
+                     "I can not start the server." % desired_port)
 
     logger.info("Starting the server...")
     server.start()
     time.sleep(0.2) # leave some time to the server to start
     logger.info("Server started.")
 
-    return server
+    if signaling_queue is None:
+        return server
+    else:
+        # block on the queue
+        signaling_queue.get()
+        logger.info("uwds server exiting. Closing connections...")
+        server.stop(1).wait()
+        logger.info("uwds server closed.")
+
+def start_process(port=50051):
+    import multiprocessing
+
+    q = multiprocessing.Queue()
+    p = multiprocessing.Process(target=start, args=(port, q,))
+    p.start()
+
+    return p, q
 
 if __name__ == "__main__":
 
