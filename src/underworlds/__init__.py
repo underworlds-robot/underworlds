@@ -45,11 +45,6 @@ class NodesProxy:
         # They may be valid or invalid (if present in _updated_ids)
         self._ids = []
 
-        # When I commit a node update, I get a notification from the
-        # remote as any client. To prevent the reloading of the node I have
-        # created myself, I store their ids in this list.
-        self._ids_being_propagated = []
-
         # list of invalid ids (ie, nodes that have remotely changed).
         # This list is updated asynchronously from a server publisher
         self._updated_ids = deque(self._ctx.rpc.getNodesIds(self._server_ctx, _TIMEOUT_SECONDS).ids)
@@ -132,12 +127,7 @@ class NodesProxy:
 
     def _update_node_from_remote(self, id):
 
-        nodeInCtxt = gRPC.NodeInContext(context=self._server_ctx,
-                                        node=gRPC.Node(id=id))
-        gRPCNode = self._ctx.rpc.getNode(nodeInCtxt, _TIMEOUT_SECONDS)
-
-        updated_node = Node.deserialize(gRPCNode)
-        self._nodes[id] = updated_node
+        self._get_node_from_remote(id)
 
         try:
             self._updated_ids.remove(id)
