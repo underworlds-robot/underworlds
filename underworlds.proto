@@ -13,7 +13,9 @@ service Underworlds {
     rpc helo(Welcome) returns (Client) {}
 
     // Inform the server that the client is disconnecting.
-    // After completing this call, the server should attempt to connect to
+    // Before completing this call, the client must keep its invalidation
+    // server open and listening.
+    // After completing this call, the server should not attempt to connect to
     // the client's invalidation server.
     rpc byebye(Client) returns (Empty) {}
 
