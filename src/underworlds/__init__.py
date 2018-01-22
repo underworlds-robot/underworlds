@@ -56,11 +56,8 @@ class NodesProxy:
         self._update_node_from_remote(self.rootnode)
         self._ids.append(self.rootnode)
  
-        self.waitforchanges = threading.Condition()
-
+        self.waitforchanges_cv = threading.Condition()
         self.lastchange = None
-
-        self.cv = threading.Condition()
 
     @profile
     def _on_remotely_updated_node(self, id):
@@ -68,9 +65,9 @@ class NodesProxy:
         if id not in self._updated_ids:
             self._updated_ids.append(id)
 
-        with self.waitforchanges:
+        with self.waitforchanges_cv:
             self.lastchange = (id, gRPC.NodesInvalidation.UPDATE)
-            self.waitforchanges.notify_all()
+            self.waitforchanges_cv.notify_all()
 
 
     @profile
@@ -81,9 +78,9 @@ class NodesProxy:
         if id not in self._updated_ids:
             self._updated_ids.append(id)
 
-        with self.waitforchanges:
+        with self.waitforchanges_cv:
             self.lastchange = (id, gRPC.NodesInvalidation.NEW)
-            self.waitforchanges.notify_all()
+            self.waitforchanges_cv.notify_all()
 
 
     @profile
@@ -92,9 +89,9 @@ class NodesProxy:
         self._len -= 1 # not atomic, but still fine since I'm the only one to write it
         self._deleted_ids.append(id)
 
-        with self.waitforchanges:
+        with self.waitforchanges_cv:
             self.lastchange = (id, gRPC.NodesInvalidation.DELETE)
-            self.waitforchanges.notify_all()
+            self.waitforchanges_cv.notify_all()
 
 
     def _get_more_node(self):
@@ -271,12 +268,12 @@ class SceneProxy(object):
         timeout has been reached.
         """
         lastchange = None
-        with self.nodes.waitforchanges:
-            self.nodes.waitforchanges.wait(timeout)
+        with self.nodes.waitforchanges_cv:
+            self.nodes.waitforchanges_cv.wait(timeout)
             lastchange = self.nodes.lastchange
             self.nodes.lastchange = None
 
-        profileonce("client.waitforchanges notified")
+        profileonce("client.scene.waitforchanges notified")
 
         return lastchange
 
