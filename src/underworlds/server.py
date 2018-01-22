@@ -70,6 +70,12 @@ class Client:
 
     def close(self):
         self.isactive = False
+        logger.debug("Waiting for all pending invalidation to client <%s> to complete..." % self.name)
+        for i in self.active_invalidations:
+            i.result()
+        logger.debug("No more pending invalidations. The client <%s> is now properly disconnected." % self.name)
+        self.active_invalidations = []
+
 
 
 
@@ -195,6 +201,7 @@ class Server(gRPC.BetaUnderworldsServicer):
     def byebye(self, client, context):
         logger.debug("Got <byebye> from %s" % (self._clientname(client.id)))
         self._clients[client.id].close()
+        del self._clients[client.id]
         logger.debug("<byebye> completed")
         return gRPC.Empty()
 
