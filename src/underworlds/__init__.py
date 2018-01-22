@@ -648,13 +648,13 @@ class Context(object):
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        self.rpc.byebye(gRPC.Client(id=self._ctx.id), _TIMEOUT_SECONDS)
         self.close()
 
     def close(self):
         logger.info("Closing context [%s]..." % self.name)
         self.worlds.finalize()
-        self.invalidation_server.stop(0)
+        self.rpc.byebye(gRPC.Client(id=self.id), _TIMEOUT_SECONDS)
+        self.invalidation_server.stop(0).wait()
         logger.info("The context [%s] is now closed." % self.name)
 
     def __repr__(self):
