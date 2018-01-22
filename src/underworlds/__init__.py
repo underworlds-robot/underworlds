@@ -584,9 +584,13 @@ class Context(object):
             self.id = self.rpc.helo(gRPC.Welcome(name=name,
                                                  host="localhost", 
                                                  invalidation_server_port=invalidation_port), _TIMEOUT_SECONDS).id
-        except (NetworkError, AbortionError) as e:
+        except NetworkError as e:
             logger.fatal("Underworld server unreachable on %s:%d! Is it started?\n"
                          "Set UWDS_SERVER=host:port if underworlded is running on a different machine.\n"
+                         "Original error: %s" % (host, port, str(e)))
+            sys.exit(1)
+        except AbortionError as e:
+            logger.fatal("Underworld server refused connection on %s:%d.\n"
                          "Original error: %s" % (host, port, str(e)))
             sys.exit(1)
 
