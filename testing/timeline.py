@@ -34,7 +34,7 @@ class TestTimeline(unittest.TestCase):
         t1 = self.timeline.origin
         t2 = self.timeline.origin
 
-        self.assertEquals(t1, t2)
+        self.assertEqual(t1, t2)
         self.assertTrue(self.t0 < t1 < self.t3)
 
     def test_events_base(self):
@@ -44,28 +44,30 @@ class TestTimeline(unittest.TestCase):
         self.timeline.start(s)
         time.sleep(PROPAGATION_TIME) # wait for propagation
 
-        self.assertIn(s, self.timeline.situations)
-        self.assertIn(s, self.timeline.activesituations)
+        self.assertEqual(len(self.timeline), 1)
+
+        self.assertIn(s, self.timeline)
+
 
         self.timeline.end(s)
         time.sleep(PROPAGATION_TIME) # wait for propagation
 
-        self.assertIn(s, self.timeline.situations)
-        self.assertNotIn(s, self.timeline.activesituations)
+        self.assertIn(s, self.timeline)
+        self.assertEqual(len(self.timeline), 1)
 
         s = createevent()
 
         self.timeline.start(s)
         time.sleep(PROPAGATION_TIME) # wait for propagation
 
-        self.assertIn(s, self.timeline.situations)
-        self.assertNotIn(s, self.timeline.activesituations)
+        self.assertIn(s, self.timeline)
+        self.assertEqual(len(self.timeline), 2)
 
-        self.timeline.end(s)
+        self.timeline.end(s) # this is a no-op for events
         time.sleep(PROPAGATION_TIME) # wait for propagation
 
-        self.assertIn(s, self.timeline.situations)
-        self.assertNotIn(s, self.timeline.activesituations)
+        self.assertIn(s, self.timeline)
+        self.assertEqual(len(self.timeline), 2)
 
 
     def _test_events_callback(self):
@@ -81,35 +83,6 @@ class TestTimeline(unittest.TestCase):
         time.sleep(PROPAGATION_TIME)
         self.assertTrue(ok)
 
-    def _test_events_start_stop(self):
-        t = self.timeline
-
-        s = Situation()
-        t.start(s)
-
-        self.assertEquals(len(t.activesituations), 1)
-        self.assertIn(s, t.activesituations)
-
-        t.end(s)
-
-        self.assertEquals(len(t.activesituations), 0)
-
-        # can not call .event() with a situation
-        with self.assertRaises(TypeError):
-            t.event(s)
-
-        e = Event()
-
-        t.end(e) # should do nothing at all
-
-        t.start(e) # events end immediately
-       
-        self.assertEquals(len(t.activesituations), 0)
-
-        t.event(e) # for events, should be synonym with 't.start'
-       
-        self.assertEquals(len(t.activesituations), 0)
-
     def _test_modelloading(self):
 
         event = Event(Event.MODELLOAD)
@@ -117,7 +90,7 @@ class TestTimeline(unittest.TestCase):
         with self.assertRaises(TimeoutError):
             self.timeline.on(event).wait(timeout = 0.1)
 
-        ModelLoader(self.world).load("res/base.dae")
+        ModelLoader().load("res/base.dae", world=self.world)
 
         self.timeline.on(event).wait(timeout = 0.1) # should not throw a timeouterror
 

@@ -22,8 +22,6 @@ from underworlds.helpers.profile import profile, profileonce
 
 _TIMEOUT_SECONDS = 1
 _TIMEOUT_SECONDS_MESH_LOADING = 20
-_SLEEP_PERIOD = 0.1 #s
-_INVALIDATION_PERIOD = 0.02 #s
 
 #TODO: inherit for a collections.MutableSequence? what is the benefit?
 class NodesProxy:
@@ -148,7 +146,7 @@ class NodesProxy:
         # Then, let see what the user want:
         if type(key) is int:
 
-            # First, are we over the lenght of our node list?
+            # First, are we over the length of our node list?
             if key >= self._len:
                 raise IndexError
 
@@ -304,11 +302,9 @@ class SceneProxy(object):
 
 
 
-class TimelineProxy(threading.Thread):
+class TimelineProxy:
 
     def __init__(self, ctx, world):
-
-        threading.Thread.__init__(self)
 
         self._ctx = ctx # context
         self._world = world
@@ -317,31 +313,139 @@ class TimelineProxy(threading.Thread):
         # when communicating with the server
         self._server_ctx = gRPC.Context(client=self._ctx.id, world=self._world.name)
 
+        self._len = self._ctx.rpc.getSituationsLen(self._server_ctx, _TIMEOUT_SECONDS).size
+
+        self._situations = {} # situation store
+
+        # list of all node IDs that were once obtained.
+        # They may be valid or invalid (if present in _updated_ids)
+        self._ids = []
+
+        # list of invalid ids (ie, nodes that have remotely changed).
+        # This list is updated asynchronously from a server publisher
+        self._updated_ids = deque(self._ctx.rpc.getNodesIds(self._server_ctx, _TIMEOUT_SECONDS).ids)
+
+        self._deleted_ids = deque()
+
+
         self.origin = self._ctx.rpc.timelineOrigin(self._server_ctx, _TIMEOUT_SECONDS).time
         logger.info("Accessing world <%s> (initially created on  %s)"%(self._world.name, time.asctime(time.localtime(self.origin))))
 
-        self.situations = []
+        self.waitforchanges_cv = threading.Condition()
+        self.lastchange = None
 
-        #### Threading related stuff
-        self.waitforchanges = threading.Condition()
-        self._running = True
-        self.cv = threading.Condition()
-        super(TimelineProxy, self).start()
+    def _get_more_situations(self):
+        
+        if not self._updated_ids:
+            logger.warning("Slow propagation? Waiting for new/updated situations notifications...")
+            time.sleep(0.05) #leave some time for propagation
 
-        self._onchange_callbacks = []
+            # still empty? we have a problem!
+            if not self._updated_ids:
+                logger.error("Inconsistency detected! The server has not"\
+                             " notified all the situations updates. Or the "\
+                             "IPC transport is really slow.")
+                raise Exception()
 
-    def __del__(self):
-        self._running = False
+        # here, _updated_ids is not empty. It should not raise an exception
+        id = self._updated_ids.pop()
 
-    def finalize(self):
-        self._running = False
-        self.join()
-    def _on_remotely_started_situation(self, sit_id, isevent = False):
+        self._get_situation_from_remote(id)
 
-        # TODO: append the situation, not just the ID!
-        self.situations.append(sit_id)
+    def _get_situation_from_remote(self, id):
 
-        self._notifychange()
+        sitInCtxt = gRPC.SituationInContext(context=self._server_ctx,
+                                        situation=gRPC.Situation(id=id))
+        gRPCSituation = self._ctx.rpc.getSituation(sitInCtxt, _TIMEOUT_SECONDS)
+
+        self._ids.append(id)
+        self._situations[id] = Situation.deserialize(gRPCSituation)
+
+    def _update_situation_from_remote(self, id):
+
+        self._get_situation_from_remote(id)
+
+        try:
+            self._updated_ids.remove(id)
+        except ValueError as ve:
+            raise ve
+
+    def __contains__(self, situation):
+        try:
+            self[situation.id]
+            return True
+        except KeyError:
+            return False
+        
+
+    def __getitem__(self, key):
+
+        # First, a bit of house keeping
+        # do we have pending situations to delete?
+        if self._deleted_ids:
+            tmp = copy.copy(self._deleted_ids)
+            for id in tmp:
+                try:
+                    self._ids.remove(id)
+                    del(self._situations[id])
+                    self._deleted_ids.remove(id)
+                except ValueError:
+                    logger.warning("The situation %s is already removed. Feels like a synchro issue..." % id)
+
+        # Then, let see what the user want:
+        if type(key) is int:
+
+            # First, are we over the length of our situation list?
+            if key >= self._len:
+                raise IndexError
+
+            # not downloaded enough nodes yet?
+            while key >= len(self._ids):
+                self._get_more_situations()
+
+            id = self._ids[key]
+
+            # did the situation changed since the last time we obtained it?
+            if id in self._updated_ids:
+                self._update_situation_from_remote(id)
+
+            return self._situations[id]
+
+        else: #assume it's a situation ID
+
+            if key in self._ids:
+                # did the situation changed since the last time we obtained it?
+                if key in self._updated_ids:
+                        self._update_situation_from_remote(key)
+                return self._situations[key]
+
+            else: # we do not have this situation locally. Let's try to fetch it
+                try:
+                    self._get_situation_from_remote(key)
+                except ValueError:
+                    #The situation does not exist!!
+                    raise KeyError("The situation ID %s does not exist" % key)
+                return self._situations[key]
+
+    def __len__(self):
+        return self._len
+
+    def __repr__(self):
+        return "TimelineProxy %s" % [str(s) for s in self._situations]
+
+    @profile
+    def _on_remotely_started_situation(self, id, isevent = False):
+
+
+        self._len += 1 # not atomic, but still fine since I'm the only one to write it
+
+        if id not in self._updated_ids:
+            self._updated_ids.append(id)
+
+        with self.waitforchanges_cv:
+            self.lastchange = (id, gRPC.TimelineInvalidation.EVENT if isevent else gRPC.TimelineInvalidation.START)
+            self.waitforchanges_cv.notify_all()
+
 
     def _on_remotely_ended_situation(self, id):
 
@@ -351,50 +455,37 @@ class TimelineProxy(threading.Thread):
         #        sit.endtime = time.time()
         #        break
 
-        self._notifychange()
+        with self.waitforchanges_cv:
+            self.lastchange = (id, gRPC.TimelineInvalidation.END)
+            self.waitforchanges_cv.notify_all()
+
+
 
     def _notifychange(self):
-        self.waitforchanges.acquire()
-        self.waitforchanges.notify_all()
-
         for cb in self._onchange_callbacks:
-            cb()
-
-        self.waitforchanges.release()
+            cb(self.lastchange)
 
 
+    @profile
     def start(self, situation):
         self._ctx.rpc.startSituation(
                 gRPC.SituationInContext(context=self._server_ctx,
                                         situation=situation.serialize(gRPC.Situation)),
                 _TIMEOUT_SECONDS)
 
+    @profile
     def event(self, situation):
         self._ctx.rpc.event(
                 gRPC.SituationInContext(context=self._server_ctx,
                                         situation=situation.serialize(gRPC.Situation)),
                 _TIMEOUT_SECONDS)
 
+    @profile
     def end(self, situation):
         self._ctx.rpc.endSituation(
                 gRPC.SituationInContext(context=self._server_ctx,
                                         situation=situation.serialize(gRPC.Situation)),
                 _TIMEOUT_SECONDS)
-
-    def onchange(self, cb, remove = False):
-        """ Register a callback to be invoked when the timeline is updated.
-
-        :param cb: a Python callable
-        :param remove: (default: False) if true, remove the callback instead
-        """
-
-        self.waitforchanges.acquire()
-        if not remove:
-            self._onchange_callbacks.append(cb)
-        else:
-            self._onchange_callbacks.remove(cb)
-
-        self.waitforchanges.release()
 
 
     def waitforchanges(self, timeout = None):
@@ -403,38 +494,23 @@ class TimelineProxy(threading.Thread):
         ended) or the timeout is over.
 
         :param timeout: timeout in seconds (float value)
+
+        :returns: the change that occured as a pair [node id, operation]
+        (operation is one of gRPC.NodesInvalidation.UPDATE,
+        gRPC.NodesInvalidation.NEW, gRPC.NodesInvalidation.DELETE) or None if the
+        timeout has been reached.
         """
-        self.waitforchanges.acquire()
-        self.waitforchanges.wait(timeout)
-        self.waitforchanges.release()
+        lastchange = None
+        with self.waitforchanges_cv:
+            self.waitforchanges_cv.wait(timeout)
+            lastchange = self.lastchange
+            self.lastchange = None
 
-    def run(self):
-        threading.current_thread().name = "timeline monitor thread"
+        profileonce("client.timeline.waitforchanges notified")
 
-        while self._running:
-            time.sleep(_INVALIDATION_PERIOD)
+        return lastchange
 
-            try:
-                for invalidation in self._ctx.rpc.getTimelineInvalidations(self._server_ctx, _TIMEOUT_SECONDS):
-                    action, id = invalidation.type, invalidation.id
 
-                    if action == gRPC.TimelineInvalidation.EVENT:
-                        logger.debug("Server notification: event: " + id)
-                        self._on_remotely_started_situation(id, isevent = True)
-                    if action == gRPC.TimelineInvalidation.START:
-                        logger.debug("Server notification: situation start: " + id)
-                        self._on_remotely_started_situation(id, isevent = False)
-                    elif action == gRPC.TimelineInvalidation.END:
-                        logger.debug("Server notification: situation end: " + id)
-                        self._on_remotely_ended_situation(id)
-                    else:
-                        raise RuntimeError("Unexpected invalidation action")
-            except ExpirationError:
-                logger.warning("The server timed out while trying to update timeline"
-                               " invalidations")
-            except AbortionError:
-                logger.warning("...no server anymore... Closing now!")
-                self._running = False
 
 class WorldProxy:
 
@@ -462,9 +538,6 @@ class WorldProxy:
 
         self._ctx.rpc.send_json(req)
         self._ctx.rpc.recv() #ack
-
-    def finalize(self):
-        self.timeline.finalize()
 
     def __str__(self):
         return self.name
@@ -499,11 +572,6 @@ class WorldsProxy:
         for world in topo.worlds:
             yield self.__getitem__(world)
 
-    def finalize(self):
-        for w in self._worlds:
-            logger.debug("Context [%s]: Closing world <%s>" % (self._ctx.name, w.name))
-            w.finalize()
-
 class InvalidationServer(gRPC.BetaUnderworldsInvalidationServicer):
 
     def __init__(self, ctx):
@@ -525,6 +593,28 @@ class InvalidationServer(gRPC.BetaUnderworldsInvalidationServicer):
         elif action == gRPC.NodesInvalidation.DELETE:
             logger.debug("Server notification: delete node: " + id)
             self.ctx.worlds[world].scene.nodes._on_remotely_deleted_node(id)
+        else:
+            raise RuntimeError("Unexpected invalidation action")
+ 
+        return gRPC.Empty()
+
+
+    @profile
+    def emitTimelineInvalidation(self, invalidation, context):
+        logger.info("Got <emitTimelineInvalidation> for world <%s>" % invalidation.world)
+       
+        action, world, id = invalidation.type, invalidation.world, invalidation.id
+
+
+        if action == gRPC.TimelineInvalidation.EVENT:
+            logger.debug("Server notification: event: " + id)
+            self.ctx.worlds[world].timeline._on_remotely_started_situation(id, isevent = True)
+        if action == gRPC.TimelineInvalidation.START:
+            logger.debug("Server notification: situation start: " + id)
+            self.ctx.worlds[world].timeline._on_remotely_started_situation(id, isevent = False)
+        elif action == gRPC.TimelineInvalidation.END:
+            logger.debug("Server notification: situation end: " + id)
+            self.ctx.worlds[world].timeline._on_remotely_ended_situation(id)
         else:
             raise RuntimeError("Unexpected invalidation action")
  
@@ -646,7 +736,6 @@ class Context(object):
 
     def close(self):
         logger.info("Closing context [%s]..." % self.name)
-        self.worlds.finalize()
         self.rpc.byebye(gRPC.Client(id=self.id), _TIMEOUT_SECONDS)
         self.invalidation_server.stop(1).wait()
         logger.info("The context [%s] is now closed." % self.name)

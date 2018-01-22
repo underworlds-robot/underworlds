@@ -47,10 +47,10 @@ class Client:
                          "Removing the client.\nOriginal error: %s" % (name, host, port, str(e)))
             return None
 
-    def emit_invalidation(self, invalidation):
+    def emit_nodes_invalidation(self, invalidation):
 
         if not self.isactive:
-            logger.debug("Attempting to send invalidations to inactive client <%s>. Skipping" % self.name)
+            logger.debug("Attempting to send nodes invalidations to inactive client <%s>. Skipping" % self.name)
             return
 
         future = self.invalidation_server.emitNodesInvalidation.future(invalidation, _TIMEOUT_SECONDS)
@@ -59,6 +59,20 @@ class Client:
         future.add_done_callback(self._cleanup_completed_invalidations)
 
         self.active_invalidations.append(future)
+
+    def emit_timeline_invalidation(self, invalidation):
+
+        if not self.isactive:
+            logger.debug("Attempting to send timeline invalidations to inactive client <%s>. Skipping" % self.name)
+            return
+
+        future = self.invalidation_server.emitTimelineInvalidation.future(invalidation, _TIMEOUT_SECONDS)
+
+        # remove the future form the current list of active invalidations upon completion
+        future.add_done_callback(self._cleanup_completed_invalidations)
+
+        self.active_invalidations.append(future)
+
 
     def _cleanup_completed_invalidations(self, invalidation):
         e = invalidation.exception()
@@ -88,10 +102,8 @@ class Server(gRPC.BetaUnderworldsServicer):
 
         self._worlds = {}
 
-        self._timeline_invalidations = {}
-
         self._clients = {} 
-        
+
         # meshes are stored as a dictionary:
         # - the key is a unique ID
         # - the value is a ditionary with these keys:
@@ -107,7 +119,6 @@ class Server(gRPC.BetaUnderworldsServicer):
 
     def _new_world(self, name):
         self._worlds[name] = World(name)
-        self._timeline_invalidations[name] = {}
 
 
     def _get_scene_timeline(self, ctxt):
@@ -172,14 +183,20 @@ class Server(gRPC.BetaUnderworldsServicer):
         for client_id in self._clients:
             if world in self._clients[client_id].links:
                 logger.debug("Informing client <%s> that nodes have been invalidated in world <%s>" % (self._clientname(client_id), world))
-                self._clients[client_id].emit_invalidation(invalidation)
+                self._clients[client_id].emit_nodes_invalidation(invalidation)
 
 
     @profile
-    def _add_timeline_invalidation(self, world, sit_id, invalidation_type):
+    def _emit_timeline_invalidation(self, world, sit_id, invalidation_type):
 
-        for client_id in self._timeline_invalidations[world].keys():
-            self._timeline_invalidations[world][client_id].append(gRPC.TimelineInvalidation(type=invalidation_type, id=sit_id))
+        invalidation = gRPC.TimelineInvalidation(type=invalidation_type, world=world, id=sit_id)
+
+
+        for client_id in self._clients:
+            if world in self._clients[client_id].links:
+                logger.debug("Informing client <%s> that situations have been invalidated in world <%s>" % (self._clientname(client_id), world))
+                self._clients[client_id].emit_timeline_invalidation(invalidation)
+
 
     #############################################
     ############ Underworlds API ################
@@ -250,9 +267,6 @@ class Server(gRPC.BetaUnderworldsServicer):
         for cid, c in self._clients.items():
             c.reset_links()
 
-        self._timeline_invalidations = {}
-
-
         logger.debug("<reset> completed")
 
         return gRPC.Empty()
@@ -298,7 +312,6 @@ class Server(gRPC.BetaUnderworldsServicer):
     @profile
     def getNode(self, nodeInCtxt, context):
         logger.debug("Got <getNode> from %s" % nodeInCtxt.context.client)
-        self._update_current_links(nodeInCtxt.context.client, nodeInCtxt.context.world, READER)
 
         client_id, world = nodeInCtxt.context.client, nodeInCtxt.context.world
 
@@ -403,6 +416,57 @@ class Server(gRPC.BetaUnderworldsServicer):
 
     ############ TIMELINES
     @profile
+    def getSituationsLen(self, ctxt, context):
+        logger.debug("Got <getSituationsLen> from %s" % ctxt.client)
+        self._update_current_links(ctxt.client, ctxt.world, READER)
+
+        _,timeline = self._get_scene_timeline(ctxt)
+
+        res = gRPC.Size(size=len(timeline.situations))
+        logger.debug("<getSituationsLen> completed")
+        return res
+
+    @profile
+    def getSituationIds(self, ctxt, context):
+        logger.debug("Got <getSituationIds> from %s" % ctxt.client)
+        self._update_current_links(ctxt.client, ctxt.world, READER)
+
+        _,timeline = self._get_scene_timeline(ctxt)
+
+        sitations = gRPC.Situations()
+        for s in timeline.situations:
+            situations.ids.append(s.id)
+
+        logger.debug("<getSituationsIds> completed")
+        return situations
+
+
+    @profile
+    def getSituation(self, sitInCtxt, context):
+        logger.debug("Got <getSituation> from %s" % sitInCtxt.context.client)
+
+        client_id, world = sitInCtxt.context.client, sitInCtxt.context.world
+
+        _,timeline = self._get_scene_timeline(sitInCtxt.context)
+
+        self._update_current_links(client_id, world, READER)
+
+        situation = timeline.situation(sitInCtxt.situation.id)
+
+        if not situation:
+            logger.warning("%s has required an non-existant "
+                           "situation <%s> in world %s" % (self._clientname(client_id), sitInCtxt.node.id, world))
+
+            context.details("Situation <%s> does not exist in world %s" % (sitInCtxt.node.id, world))
+            context.code(beta_interfaces.StatusCode.UNKNOWN)
+
+
+        else:
+            res = situation.serialize(gRPC.Situation)
+            logger.debug("<getSituation> completed")
+            return res
+
+    @profile
     def timelineOrigin(self, ctxt, context):
         logger.debug("Got <timelineOrigin> from %s" % ctxt.client)
         self._update_current_links(ctxt.client, ctxt.world, READER)
@@ -429,7 +493,7 @@ class Server(gRPC.BetaUnderworldsServicer):
             raise Exception("Attempting to add twice the same situation!")
 
         timeline.event(sit)
-        self._add_timeline_invalidation(world, sit.id, gRPC.TimelineInvalidation.EVENT)
+        self._emit_timeline_invalidation(world, sit.id, gRPC.TimelineInvalidation.EVENT)
 
         logger.debug("<event> completed")
         return gRPC.Empty()
@@ -450,7 +514,7 @@ class Server(gRPC.BetaUnderworldsServicer):
             raise Exception("Attempting to add twice the same situation!")
 
         timeline.start(sit)
-        self._add_timeline_invalidation(world, sit.id, gRPC.TimelineInvalidation.START)
+        self._emit_timeline_invalidation(world, sit.id, gRPC.TimelineInvalidation.START)
 
         logger.debug("<startSituation> completed")
         return gRPC.Empty()
@@ -471,26 +535,10 @@ class Server(gRPC.BetaUnderworldsServicer):
             raise Exception("Attempting to end a non-existant situation!")
 
         timeline.end(sit)
-        self._add_timeline_invalidation(world, sit.id, gRPC.TimelineInvalidation.END)
+        self._emit_timeline_invalidation(world, sit.id, gRPC.TimelineInvalidation.END)
 
         logger.debug("<endSituation> completed")
         return gRPC.Empty()
-
-    #### Timeline invalidation streams
-    def getTimelineInvalidations(self, ctxt, context):
-        """ For each pair (world, client), check if situations need to be
-        invalidated, and yield accordingly the invalidation messages.
-        """
-
-        world, client = ctxt.world, ctxt.client
-
-        # (if this client is not yet monitoring this world, add it as a side effect of the test)
-        if self._timeline_invalidations[world].setdefault(client,[]):
-            for invalidation in self._timeline_invalidations[world][client]:
-                yield invalidation
-            self._timeline_invalidations[world][client] = []
-
-
 
     ############ MESHES
     @profile

@@ -426,9 +426,9 @@ class Situation(object):
 
     def __str__(self):
         if self.desc:
-            return self.desc
+            return "Situation %s -- %s: %s" % (self.id, self.type, self.desc)
         else:
-            return self.type
+            return "Situation %s -- %s" % (self.id, self.type)
 
     def __cmp__(self, sit):
         # TODO: check here other values equality, and raise exception if any differ? may be costly, though...
@@ -440,7 +440,7 @@ class Situation(object):
     def serialize(self, SituationType):
         """Outputs a protobuf encoding of the situation
 
-        The SituationType (underworlds_pb2.Node) needs to be passed as parameter
+        The SituationType (underworlds_pb2.Situation) needs to be passed as parameter
         to prevent the creation of a 2nd instance of the underworlds_pb2 that
         crashes the gRPC. Not sure why...
         Similar to http://stackoverflow.com/questions/32010905/unbound-method-must-be-called-with-x-instance-as-first-argument-got-x-instance
@@ -481,8 +481,7 @@ def createevent():
     :sees: situations.py for a set of standard events types
     """
 
-
-    sit = Situation(type = GENERIC, pattern = None)
+    sit = Situation(type = GENERIC)
 
     return sit
 
