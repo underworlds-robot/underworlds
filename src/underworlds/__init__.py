@@ -596,6 +596,14 @@ class Context(object):
         logger.info("<%s> connected to the underworlds server." % self.name)
 
 
+    def reset(self):
+        """ Hard reset of Underworlds: all the worlds are deleted.
+        The existing mesh database is kept, however.
+        This does not impact the list of known clients (ie, clients do not have to
+        call 'helo' again).
+        """
+        self.rpc.reset(gRPC.Client(id=self.id), _TIMEOUT_SECONDS)
+
 
     def topology(self):
         """Returns the current topology to the underworlds environment.
