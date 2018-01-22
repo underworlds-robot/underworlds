@@ -56,9 +56,17 @@ class Client:
         future = self.invalidation_server.emitNodesInvalidation.future(invalidation, _TIMEOUT_SECONDS)
 
         # remove the future form the current list of active invalidations upon completion
-        future.add_done_callback(self.active_invalidations.remove)
+        future.add_done_callback(self._cleanup_completed_invalidations)
 
         self.active_invalidations.append(future)
+
+    def _cleanup_completed_invalidations(self, invalidation):
+        e = invalidation.exception()
+        if e is not None:
+            logger.warn("An exception occured while sending invalidations to %s: %s" % (self.name, str(e)))
+            self.isactive = False
+        else:
+            self.active_invalidations.remove(invalidation)
 
     def close(self):
         self.isactive = False
@@ -74,7 +82,6 @@ class Server(gRPC.BetaUnderworldsServicer):
         # for each world (key), stores the list of clients that are to be notified when a change
         # occurs in that world
         self._observers = {}
-        self._invalidation_futures = []
         self._timeline_invalidations = {}
 
         self._clients = {} 
