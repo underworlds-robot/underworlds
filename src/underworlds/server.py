@@ -68,11 +68,9 @@ class Client:
 
         future = self.invalidation_server.emitTimelineInvalidation.future(invalidation, _TIMEOUT_SECONDS)
 
+        self.active_invalidations.append(future)
         # remove the future form the current list of active invalidations upon completion
         future.add_done_callback(self._cleanup_completed_invalidations)
-
-        self.active_invalidations.append(future)
-
 
     def _cleanup_completed_invalidations(self, invalidation):
         e = invalidation.exception()
