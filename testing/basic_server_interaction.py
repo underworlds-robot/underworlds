@@ -10,7 +10,6 @@ import underworlds
 import underworlds.server
 from underworlds.types import Node
 
-PROPAGATION_TIME=0.001 # time to wait for node update notification propagation (in sec)
 
 class TestSingleUser(unittest.TestCase):
 

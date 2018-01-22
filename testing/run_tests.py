@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import sys, os
@@ -93,32 +93,33 @@ def runtest(module):
 ########################################################################
 
 #Import unit-tests
-import nodes, \
+import basic_server_interaction, \
+       topology, \
        core, \
+       nodes, \
        single_user, \
        waitforchanges, \
        timeline, \
-       topology, \
-       visibility, \
-       basic_server_interaction, \
        model_loading
 
 modules = [
-    nodes, \
+    basic_server_interaction, \
+    topology, \
     core, \
+    nodes, \
     single_user, \
     waitforchanges, \
-    #timeline, \ # not passing -- timeline functions not implemented with gRPC
-    topology, \
-    basic_server_interaction, \
+    timeline, \
     model_loading]
 
 # add the tests which require OpenGL support
 if not nogl:
+    import visibility
     modules += [visibility]
 
 
 for m in modules:
+    print("\n****************************************************\nRunning tests in <%s>...\n" % m.__name__)
     ok = runtest(m)
     if failfast and not ok:
         break

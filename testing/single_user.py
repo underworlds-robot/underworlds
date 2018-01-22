@@ -10,16 +10,30 @@ import underworlds
 import underworlds.server
 from underworlds.types import Node
 
-PROPAGATION_TIME=0.1 # time to wait for node update notification propagation (in sec)
+PROPAGATION_TIME=0.05 # time to wait for node update notification propagation (in sec)
+
 
 class TestSingleUser(unittest.TestCase):
 
+    # workaround for https://github.com/grpc/grpc/issues/14088
+    @classmethod
+    def setUpClass(cls):
+        cls.server = underworlds.server.start()
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.server.stop(1).wait()
+
     def setUp(self):
-        self.server = underworlds.server.start()
+
+        # workaround for https://github.com/grpc/grpc/issues/14088
+        #self.server = underworlds.server.start()
 
         self.ctx = underworlds.Context("unittest - user 1")
         self.ctx2 = underworlds.Context("unittest - user 2")
 
+        # workaround for https://github.com/grpc/grpc/issues/14088
+        self.ctx.reset()
 
     def test_initial_access(self):
 
@@ -30,23 +44,23 @@ class TestSingleUser(unittest.TestCase):
         self.assertIsNotNone(world.timeline)
 
         nodes = world.scene.nodes
-        self.assertEquals(len(nodes), 1) # the root node is always present
+        self.assertEqual(len(nodes), 1) # the root node is always present
 
     def test_adding_nodes(self):
 
         world = self.ctx.worlds["base"]
         nodes = world.scene.nodes
         
-        self.assertEquals(len(nodes), 1)
-        self.assertEquals(nodes[0].name, "root")
+        self.assertEqual(len(nodes), 1)
+        self.assertEqual(nodes[0].name, "root")
 
         n = Node()
         n.name = "test"
         nodes.append(n)
 
-        self.assertEquals(len(nodes), 1) # the effective length of nodes takes a few ms to be updated
+        self.assertEqual(len(nodes), 1) # the effective length of nodes takes a few ms to be updated
         time.sleep(PROPAGATION_TIME) # wait for propagation
-        self.assertEquals(len(nodes), 2)
+        self.assertEqual(len(nodes), 2)
 
         # Get another reference to the 'base' world, and check
         # our node is still here.
@@ -66,8 +80,8 @@ class TestSingleUser(unittest.TestCase):
         self.assertFalse(world is world2)
         self.assertFalse(nodes is nodes2)
 
-        self.assertEquals(len(nodes), 2)
-        self.assertEquals(len(nodes2), 2)
+        self.assertEqual(len(nodes), 2)
+        self.assertEqual(len(nodes2), 2)
 
         names = [n.name for n in nodes2]
         self.assertSetEqual(set(names), {"root", "test"})
@@ -78,8 +92,8 @@ class TestSingleUser(unittest.TestCase):
         nodes.update(n2) # 'update' and 'append' are actually aliases
 
         time.sleep(PROPAGATION_TIME) # wait for propagation
-        self.assertEquals(len(nodes), 3)
-        self.assertEquals(len(nodes2), 3)
+        self.assertEqual(len(nodes), 3)
+        self.assertEqual(len(nodes2), 3)
 
         names2 = [n.name for n in nodes2]
         self.assertSetEqual(set(names2), {"root", "test", "test2"})
@@ -92,7 +106,7 @@ class TestSingleUser(unittest.TestCase):
         nodes2.update(n3)
 
         time.sleep(PROPAGATION_TIME) # wait for propagation
-        self.assertEquals(len(nodes), 4)
+        self.assertEqual(len(nodes), 4)
         names3 = [n.name for n in nodes]
         self.assertSetEqual(set(names3), {"root", "test", "test2", "test3"})
 
@@ -101,9 +115,6 @@ class TestSingleUser(unittest.TestCase):
         world = self.ctx.worlds["base"]
         nodes = world.scene.nodes
         
-        n0 = Node()
-        n0.name = "test0"
-        nodes.update(n0)
         n1 = Node()
         n1.name = "test1"
         nodes.update(n1)
@@ -115,13 +126,13 @@ class TestSingleUser(unittest.TestCase):
         nodes.update(n3)
 
         time.sleep(PROPAGATION_TIME) # wait for propagation
-        self.assertEquals(len(nodes), 4)
+        self.assertEqual(len(nodes), 4) # the 3 added nodes + root node
 
         # Get another reference to the 'base' world, and check
         # our nodes are here.
         world2 = self.ctx2.worlds["base"]
         nodes2 = world2.scene.nodes
-        self.assertEquals(len(nodes2), 4)
+        self.assertEqual(len(nodes2), 4) # the 3 added nodes + root node
 
         names = [n.name for n in nodes2] # store the order.
 
@@ -129,7 +140,7 @@ class TestSingleUser(unittest.TestCase):
         nodes.remove(n3)
         time.sleep(PROPAGATION_TIME) # wait for propagation
 
-        self.assertEquals(len(nodes2), 3)
+        self.assertEqual(len(nodes2), 3)
         names2 = [n.name for n in nodes2]
         names.remove(n3.name)
         self.assertListEqual(names, names2)
@@ -138,7 +149,7 @@ class TestSingleUser(unittest.TestCase):
         nodes.remove(n1)
         time.sleep(PROPAGATION_TIME) # wait for propagation
 
-        self.assertEquals(len(nodes2), 2)
+        self.assertEqual(len(nodes2), 2)
         names2 = [n.name for n in nodes2]
         names.remove(n1.name)
         print("After two removals: %s" % names2)
@@ -149,14 +160,15 @@ class TestSingleUser(unittest.TestCase):
         nodes.update(n1)
         time.sleep(PROPAGATION_TIME) # wait for propagation
 
-        self.assertEquals(len(nodes2), 3)
+        self.assertEqual(len(nodes2), 3)
         names2 = [n.name for n in nodes2]
         self.assertListEqual(names, names2[:2])
 
     def tearDown(self):
         self.ctx.close()
         self.ctx2.close()
-        self.server.stop(0).wait()
+        # workaround for https://github.com/grpc/grpc/issues/14088
+        #self.server.stop(1).wait()
 
 def test_suite():
      suite = unittest.TestLoader().loadTestsFromTestCase(TestSingleUser)

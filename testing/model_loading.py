@@ -16,16 +16,31 @@ import os.path as path
 
 from underworlds.helpers.transformations import compose_matrix
 
-PROPAGATION_TIME=0.01 # time to wait for node update notification propagation (in sec)
+PROPAGATION_TIME=0.05 # time to wait for node update notification propagation (in sec)
 
 class TestModelLoading(unittest.TestCase):
     """Test for a bug where loading a second model reset the transformation of the first model
     """
 
+    # workaround for https://github.com/grpc/grpc/issues/14088
+    @classmethod
+    def setUpClass(cls):
+        cls.server = underworlds.server.start()
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.server.stop(1).wait()
+
+
     def setUp(self):
-        self.server = underworlds.server.start()
+
+        # workaround for https://github.com/grpc/grpc/issues/14088
+        #self.server = underworlds.server.start()
 
         self.ctx = underworlds.Context("unittest - root anchoring transformation issue")
+
+        # workaround for https://github.com/grpc/grpc/issues/14088
+        self.ctx.reset()
 
     def test_basic_loading(self):
 
@@ -101,7 +116,9 @@ class TestModelLoading(unittest.TestCase):
 
     def tearDown(self):
         self.ctx.close()
-        self.server.stop(0).wait()
+
+        # workaround for https://github.com/grpc/grpc/issues/14088
+        #self.server.stop(1).wait()
 
 def test_suite():
      suite = unittest.TestLoader().loadTestsFromTestCase(TestModelLoading)
