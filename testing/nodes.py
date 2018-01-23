@@ -32,17 +32,17 @@ class TestNodes(unittest.TestCase):
                 root2 = n
 
         self.assertIsNotNone(root2)
-        self.assertEquals(root2, root)
+        self.assertEqual(root2, root)
 
         root2.name = "toto"
         nodes.update(root2)
         time.sleep(PROPAGATION_TIME) # wait for propagation
 
-        self.assertEquals(root, world.scene.rootnode) # the equality test is based on the ID, and the ID did not change
-        self.assertEquals(world.scene.rootnode.name, "toto")
+        self.assertEqual(root, world.scene.rootnode) # the equality test is based on the ID, and the ID did not change
+        self.assertEqual(world.scene.rootnode.name, "toto")
 
         world2 = self.ctx2.worlds["base"]
-        self.assertEquals(world2.scene.rootnode, world.scene.rootnode)
+        self.assertEqual(world2.scene.rootnode, world.scene.rootnode)
 
     def tearDown(self):
         self.ctx.close()
