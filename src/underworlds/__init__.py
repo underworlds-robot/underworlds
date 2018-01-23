@@ -68,7 +68,7 @@ class NodesProxy:
             self._updated_ids.append(id)
 
         with self.waitforchanges_cv:
-            self.lastchange = (id, gRPC.NodesInvalidation.UPDATE)
+            self.lastchange = (id, gRPC.Invalidation.UPDATE)
             self.waitforchanges_cv.notify_all()
 
 
@@ -81,7 +81,7 @@ class NodesProxy:
             self._updated_ids.append(id)
 
         with self.waitforchanges_cv:
-            self.lastchange = (id, gRPC.NodesInvalidation.NEW)
+            self.lastchange = (id, gRPC.Invalidation.NEW)
             self.waitforchanges_cv.notify_all()
 
 
@@ -92,7 +92,7 @@ class NodesProxy:
         self._deleted_ids.append(id)
 
         with self.waitforchanges_cv:
-            self.lastchange = (id, gRPC.NodesInvalidation.DELETE)
+            self.lastchange = (id, gRPC.Invalidation.DELETE)
             self.waitforchanges_cv.notify_all()
 
 
@@ -277,8 +277,8 @@ class SceneProxy(object):
 
         :param timeout: timeout in seconds (float value)
         :returns: the change that occured as a pair [node id, operation]
-        (operation is one of gRPC.NodesInvalidation.UPDATE,
-        gRPC.NodesInvalidation.NEW, gRPC.NodesInvalidation.DELETE) or None if the
+        (operation is one of gRPC.Invalidation.UPDATE,
+        gRPC.Invalidation.NEW, gRPC.Invalidation.DELETE) or None if the
         timeout has been reached.
         """
         lastchange = None
@@ -355,7 +355,7 @@ class TimelineProxy:
         self.lastchange = None
 
     @profile
-    def _on_remotely_started_situation(self, id, isevent = False):
+    def _on_remotely_added_situation(self, id):
 
 
         self._len += 1 # not atomic, but still fine since I'm the only one to write it
@@ -364,7 +364,7 @@ class TimelineProxy:
             self._updated_ids.append(id)
 
         with self.waitforchanges_cv:
-            self.lastchange = (id, gRPC.TimelineInvalidation.EVENT if isevent else gRPC.TimelineInvalidation.START)
+            self.lastchange = (id, gRPC.Invalidation.NEW)
             self.waitforchanges_cv.notify_all()
 
     @profile
@@ -374,7 +374,7 @@ class TimelineProxy:
             self._updated_ids.append(id)
 
         with self.waitforchanges_cv:
-            self.lastchange = (id, gRPC.TimelineInvalidation.UPDATE)
+            self.lastchange = (id, gRPC.Invalidation.UPDATE)
             self.waitforchanges_cv.notify_all()
 
 
@@ -385,7 +385,7 @@ class TimelineProxy:
         self._deleted_ids.append(id)
 
         with self.waitforchanges_cv:
-            self.lastchange = (id, gRPC.TimelineInvalidation.DELETE)
+            self.lastchange = (id, gRPC.Invalidation.DELETE)
             self.waitforchanges_cv.notify_all()
 
     def _get_more_situations(self):
@@ -590,8 +590,8 @@ class TimelineProxy:
         :param timeout: timeout in seconds (float value)
 
         :returns: the change that occured as a pair [node id, operation]
-        (operation is one of gRPC.NodesInvalidation.UPDATE,
-        gRPC.NodesInvalidation.NEW, gRPC.NodesInvalidation.DELETE) or None if the
+        (operation is one of gRPC.Invalidation.UPDATE,
+        gRPC.Invalidation.NEW, gRPC.Invalidation.DELETE) or None if the
         timeout has been reached.
         """
         lastchange = None
@@ -672,52 +672,39 @@ class InvalidationServer(gRPC.BetaUnderworldsInvalidationServicer):
         self.ctx=ctx
 
     @profile
-    def emitNodesInvalidation(self, invalidation, context):
-        logger.info("Got <emitNodesInvalidation> for world <%s>" % invalidation.world)
+    def emitInvalidation(self, invalidation, context):
+        logger.info("Got <emitInvalidation> for world <%s>" % invalidation.world)
        
-        action, world, id = invalidation.type, invalidation.world, invalidation.id
+        target, action, world, id = invalidation.target, invalidation.type, invalidation.world, invalidation.id
 
+        if target == gRPC.Invalidation.SCENE:
+            if action == gRPC.Invalidation.UPDATE:
+                logger.debug("Server notification: node updated: " + id)
+                self.ctx.worlds[world].scene.nodes._on_remotely_updated_node(id)
+            elif action == gRPC.Invalidation.NEW:
+                logger.debug("Server notification: node added: " + id)
+                self.ctx.worlds[world].scene.nodes._on_remotely_added_node(id)
+            elif action == gRPC.Invalidation.DELETE:
+                logger.debug("Server notification: node deleted: " + id)
+                self.ctx.worlds[world].scene.nodes._on_remotely_deleted_node(id)
+            else:
+                raise RuntimeError("Unexpected invalidation action")
 
-        if action == gRPC.NodesInvalidation.UPDATE:
-            logger.debug("Server notification: update node: " + id)
-            self.ctx.worlds[world].scene.nodes._on_remotely_updated_node(id)
-        elif action == gRPC.NodesInvalidation.NEW:
-            logger.debug("Server notification: add node: " + id)
-            self.ctx.worlds[world].scene.nodes._on_remotely_added_node(id)
-        elif action == gRPC.NodesInvalidation.DELETE:
-            logger.debug("Server notification: delete node: " + id)
-            self.ctx.worlds[world].scene.nodes._on_remotely_deleted_node(id)
+        elif target == gRPC.Invalidation.TIMELINE:
+            if action == gRPC.Invalidation.UPDATE:
+                logger.debug("Server notification: situation updated: " + id)
+                self.ctx.worlds[world].timeline._on_remotely_updated_situation(id)
+            if action == gRPC.Invalidation.NEW:
+                logger.debug("Server notification: situation added: " + id)
+                self.ctx.worlds[world].timeline._on_remotely_added_situation(id)
+            elif action == gRPC.Invalidation.DELETE:
+                logger.debug("Server notification: situation deleted: " + id)
+                self.ctx.worlds[world].timeline._on_remotely_deleted_situation(id)
+            else:
+                raise RuntimeError("Unexpected invalidation action")
         else:
-            raise RuntimeError("Unexpected invalidation action")
- 
-        return gRPC.Empty()
+            raise RuntimeError("Unexpected invalidation target")
 
-
-    @profile
-    def emitTimelineInvalidation(self, invalidation, context):
-        logger.info("Got <emitTimelineInvalidation> for world <%s>" % invalidation.world)
-       
-        action, world, id = invalidation.type, invalidation.world, invalidation.id
-
-
-        if action == gRPC.TimelineInvalidation.EVENT:
-            logger.debug("Server notification: event: " + id)
-            self.ctx.worlds[world].timeline._on_remotely_started_situation(id, isevent = True)
-        if action == gRPC.TimelineInvalidation.START:
-            logger.debug("Server notification: situation start: " + id)
-            self.ctx.worlds[world].timeline._on_remotely_started_situation(id, isevent = False)
-        elif action == gRPC.TimelineInvalidation.END:
-            logger.debug("Server notification: situation end: " + id)
-            self.ctx.worlds[world].timeline._on_remotely_updated_situation(id)
-        elif action == gRPC.TimelineInvalidation.UPDATE:
-            logger.debug("Server notification: situation updated: " + id)
-            self.ctx.worlds[world].timeline._on_remotely_updated_situation(id)
-        elif action == gRPC.TimelineInvalidation.DELETE:
-            logger.debug("Server notification: delete situation: " + id)
-            self.ctx.worlds[world].timeline._on_remotely_deleted_situation(id)
-        else:
-            raise RuntimeError("Unexpected invalidation action")
- 
         return gRPC.Empty()
 
 
