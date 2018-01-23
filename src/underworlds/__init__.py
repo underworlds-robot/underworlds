@@ -49,6 +49,10 @@ class NodesProxy:
 
         self._deleted_ids = deque()
 
+        # holds futures for non-blocking RPC calls when updating/removing nodes
+        self.update_future = None
+        self.remove_future = None
+
         # Get the root node
         self.rootnode = self._ctx.rpc.getRootNode(self._server_ctx, _TIMEOUT_SECONDS).id
         self._update_node_from_remote(self.rootnode)
@@ -218,6 +222,12 @@ class NodesProxy:
         node with a smaller index is removed).
 
         """
+
+        # if for some reason, the previous non-blocking call to update the node is
+        # not yet complete, finish it now
+        if self.update_future is not None:
+            self.update_future.result()
+
         self.update_future = self._ctx.rpc.updateNode.future(
                                  gRPC.NodeInContext(context=self._server_ctx,
                                                     node=node.serialize(gRPC.Node)),
@@ -237,7 +247,13 @@ class NodesProxy:
         take some time (a couple of milliseconds) to propagate
         the change.
         """
-        self._ctx.rpc.deleteNode(gRPC.NodeInContext(context=self._server_ctx,
+        # if for some reason, the previous non-blocking call to delete the node is
+        # not yet complete, finish it now
+        if self.remove_future is not None:
+            self.remove_future.result()
+
+        self.remove_future = self._ctx.rpc.deleteNode.future(
+                                 gRPC.NodeInContext(context=self._server_ctx,
                                                     node=node.serialize(gRPC.Node)),
                                  _TIMEOUT_SECONDS)
 
