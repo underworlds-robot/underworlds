@@ -339,9 +339,13 @@ class TimelineProxy:
 
         # list of invalid ids (ie, nodes that have remotely changed).
         # This list is updated asynchronously from a server publisher
-        self._updated_ids = deque(self._ctx.rpc.getNodesIds(self._server_ctx, _TIMEOUT_SECONDS).ids)
+        self._updated_ids = deque(self._ctx.rpc.getSituationsIds(self._server_ctx, _TIMEOUT_SECONDS).ids)
 
         self._deleted_ids = deque()
+
+        # holds futures for non-blocking RPC calls when updating/removing nodes
+        self.update_future = None
+        self.remove_future = None
 
 
         self.origin = self._ctx.rpc.timelineOrigin(self._server_ctx, _TIMEOUT_SECONDS).time
@@ -349,6 +353,40 @@ class TimelineProxy:
 
         self.waitforchanges_cv = threading.Condition()
         self.lastchange = None
+
+    @profile
+    def _on_remotely_started_situation(self, id, isevent = False):
+
+
+        self._len += 1 # not atomic, but still fine since I'm the only one to write it
+
+        if id not in self._updated_ids:
+            self._updated_ids.append(id)
+
+        with self.waitforchanges_cv:
+            self.lastchange = (id, gRPC.TimelineInvalidation.EVENT if isevent else gRPC.TimelineInvalidation.START)
+            self.waitforchanges_cv.notify_all()
+
+    @profile
+    def _on_remotely_updated_situation(self, id):
+
+        if id not in self._updated_ids:
+            self._updated_ids.append(id)
+
+        with self.waitforchanges_cv:
+            self.lastchange = (id, gRPC.TimelineInvalidation.UPDATE)
+            self.waitforchanges_cv.notify_all()
+
+
+    @profile
+    def _on_remotely_deleted_situation(self, id):
+
+        self._len -= 1 # not atomic, but still fine since I'm the only one to write it
+        self._deleted_ids.append(id)
+
+        with self.waitforchanges_cv:
+            self.lastchange = (id, gRPC.TimelineInvalidation.DELETE)
+            self.waitforchanges_cv.notify_all()
 
     def _get_more_situations(self):
         
@@ -450,39 +488,6 @@ class TimelineProxy:
         return "TimelineProxy %s" % [str(s) for s in self._situations]
 
     @profile
-    def _on_remotely_started_situation(self, id, isevent = False):
-
-
-        self._len += 1 # not atomic, but still fine since I'm the only one to write it
-
-        if id not in self._updated_ids:
-            self._updated_ids.append(id)
-
-        with self.waitforchanges_cv:
-            self.lastchange = (id, gRPC.TimelineInvalidation.EVENT if isevent else gRPC.TimelineInvalidation.START)
-            self.waitforchanges_cv.notify_all()
-
-
-    def _on_remotely_ended_situation(self, id):
-
-        # TODO!!
-        #for sit in self.situations:
-        #    if sit.id == id:
-        #        sit.endtime = time.time()
-        #        break
-
-        with self.waitforchanges_cv:
-            self.lastchange = (id, gRPC.TimelineInvalidation.END)
-            self.waitforchanges_cv.notify_all()
-
-
-
-    def _notifychange(self):
-        for cb in self._onchange_callbacks:
-            cb(self.lastchange)
-
-
-    @profile
     def start(self, situation):
         self._ctx.rpc.startSituation(
                 gRPC.SituationInContext(context=self._server_ctx,
@@ -502,6 +507,79 @@ class TimelineProxy:
                 gRPC.SituationInContext(context=self._server_ctx,
                                         situation=situation.serialize(gRPC.Situation)),
                 _TIMEOUT_SECONDS)
+
+
+    def append(self, situation):
+        """ Adds a new node to the node set.
+
+        It is actually an alias for NodesProxy.update: all the restrictions
+        regarding ordering or propagation time apply as well.
+        """
+        return self.update(node)
+
+
+    @profile
+    def update(self, situation):
+        """ Update the value of a situation.
+        If the situation does not exist yet, add it.
+
+        This method sends the new/updated situation to the
+        remote. IT DOES NOT DIRECTLY modify the local
+        copy of situations: the roundtrip is slower, but data
+        consistency is easier to ensure.
+
+        This means that if you create or update a situation, the
+        situation won't be created/updated immediately. It will 
+        take some time (a couple of milliseconds) to propagate
+        the change.
+
+        Also, you have no guarantee regarding the ordering:
+
+        for instance,
+
+        >>> timeline.update(n1)
+        >>> timeline.update(n2)
+
+        does not mean that timeline[0] = n1 and timeline[1] = n2.
+        This is due to the lazy access process.
+
+        However, once accessed once, situations keep their index (until a
+        situation with a smaller index is removed).
+        """
+
+        # if for some reason, the previous non-blocking call to update the situation is
+        # not yet complete, finish it now
+        if self.update_future is not None:
+            self.update_future.result()
+
+        self.update_future = self._ctx.rpc.updateSituation.future(
+                                 gRPC.SituationInContext(context=self._server_ctx,
+                                                    situation=situation.serialize(gRPC.Situation)),
+                                 _TIMEOUT_SECONDS)
+
+    @profile
+    def remove(self, situation):
+        """ Deletes a situation.
+
+        THIS METHOD DOES NOT DIRECTLY delete the local
+        copy of the situation: it tells instead the server to
+        delete this situation for all clients.
+        the roundtrip is slower, but data consistency is easier to ensure.
+
+        This means that if you delete a situation, the
+        situation won't be actually deleted immediately. It will 
+        take some time (a couple of milliseconds) to propagate
+        the change.
+        """
+        # if for some reason, the previous non-blocking call to delete the situation is
+        # not yet complete, finish it now
+        if self.remove_future is not None:
+            self.remove_future.result()
+
+        self.remove_future = self._ctx.rpc.deleteSituation.future(
+                                 gRPC.SituationInContext(context=self._server_ctx,
+                                                        situation=situation.serialize(gRPC.Situation)),
+                                 _TIMEOUT_SECONDS)
 
 
     def waitforchanges(self, timeout = None):
@@ -630,7 +708,13 @@ class InvalidationServer(gRPC.BetaUnderworldsInvalidationServicer):
             self.ctx.worlds[world].timeline._on_remotely_started_situation(id, isevent = False)
         elif action == gRPC.TimelineInvalidation.END:
             logger.debug("Server notification: situation end: " + id)
-            self.ctx.worlds[world].timeline._on_remotely_ended_situation(id)
+            self.ctx.worlds[world].timeline._on_remotely_updated_situation(id)
+        elif action == gRPC.TimelineInvalidation.UPDATE:
+            logger.debug("Server notification: situation updated: " + id)
+            self.ctx.worlds[world].timeline._on_remotely_updated_situation(id)
+        elif action == gRPC.TimelineInvalidation.DELETE:
+            logger.debug("Server notification: delete situation: " + id)
+            self.ctx.worlds[world].timeline._on_remotely_deleted_situation(id)
         else:
             raise RuntimeError("Unexpected invalidation action")
  

@@ -172,6 +172,29 @@ class Server(gRPC.BetaUnderworldsServicer):
     def _delete_node(self, scene, id):
         scene.nodes.remove(scene.node(id))
 
+    def _update_situation(self, timeline, situation):
+
+        situation.last_update = time.time()
+
+        oldsituation = timeline.situation(situation.id)
+
+        if oldsituation: # the situation already exist
+            # replace the node
+            scene.nodes = [node if old == node else old for old in scene.nodes]
+            
+            action = gRPC.TimelineInvalidation.UPDATE
+
+        else: # new situation
+            timeline.append(situation)
+            if situation.isevent():
+                action = gRPC.TimelineInvalidation.EVENT
+
+        return action
+
+    def _delete_situation(self, timeline, id):
+        timeline.remove(timeline.situation(id))
+
+
     @profile
     def _emit_nodes_invalidation(self, world, node_id, invalidation_type):
 
@@ -408,7 +431,7 @@ class Server(gRPC.BetaUnderworldsServicer):
             logger.debug("Sent invalidation action [update " + parent.id + "] due to hierarchy update")
             self._emit_nodes_invalidation(world, parent.id, gRPC.NodesInvalidation.UPDATE)
 
-        logger.debug("<updateNode> completed")
+        logger.debug("<deleteNode> completed")
         return gRPC.Empty()
 
 
@@ -425,8 +448,8 @@ class Server(gRPC.BetaUnderworldsServicer):
         return res
 
     @profile
-    def getSituationIds(self, ctxt, context):
-        logger.debug("Got <getSituationIds> from %s" % ctxt.client)
+    def getSituationsIds(self, ctxt, context):
+        logger.debug("Got <getSituationsIds> from %s" % ctxt.client)
         self._update_current_links(ctxt.client, ctxt.world, READER)
 
         _,timeline = self._get_scene_timeline(ctxt)
@@ -536,6 +559,54 @@ class Server(gRPC.BetaUnderworldsServicer):
         self._emit_timeline_invalidation(world, sit.id, gRPC.TimelineInvalidation.END)
 
         logger.debug("<endSituation> completed")
+        return gRPC.Empty()
+
+    @profile
+    def updateSituation(self, sitInCtxt, context):
+        logger.debug("Got <updateSituation> from %s" % sitInCtxt.context.client)
+        self._update_current_links(sitInCtxt.context.client, sitInCtxt.context.world, PROVIDER)
+
+        client_id, world = sitInCtxt.context.client, sitInCtxt.context.world
+        _, timeline = self._get_scene_timeline(sitInCtxt.context)
+
+        situation = Situation.deserialize(sitInCtxt.situation)
+
+        invalidation_type = self._update_situation(timeline, situation)
+
+        logger.info("<%s> updated situation <%s> in world <%s>" % \
+                            (self._clientname(client_id), 
+                             repr(situation), 
+                             world))
+
+
+        logger.debug("Adding invalidation action [" + str(invalidation_type) + "]")
+        self._emit_timeline_invalidation(world, situation.id, invalidation_type)
+
+        logger.debug("<updateSituation> completed")
+        return gRPC.Empty()
+
+    @profile
+    def deleteSituation(self, sitInCtxt, context):
+        logger.debug("Got <deleteNode> from %s" % sitInCtxt.context.client)
+        self._update_current_links(sitInCtxt.context.client, sitInCtxt.context.world, PROVIDER)
+
+        client_id, world = sitInCtxt.context.client, sitInCtxt.context.world
+        _, timeline = self._get_scene_timeline(sitInCtxt.context)
+
+
+        situation = timeline[sitInCtxt.situation.id]
+        logger.info("<%s> deleted situation <%s> in world <%s>" % \
+                            (self._clientname(client_id), 
+                             repr(situation), 
+                             world))
+
+        action = self._delete_situation(timeline, sitInCtxt.situation.id)
+
+        # tells everyone about the change
+        logger.debug("Sent invalidation action [delete]")
+        self._emit_nodes_invalidation(world, sitInCtxt.situation.id, gRPC.TimelineInvalidation.DELETE)
+
+        logger.debug("<deleteSituation> completed")
         return gRPC.Empty()
 
     ############ MESHES

@@ -414,6 +414,8 @@ class Situation(object):
         self.type = type
         self.desc = desc
 
+        self.last_update = time.time()
+
         # Start|Endtime are in seconds (float)
         self.starttime = 0 # convention for situations that are not yet started
         self.endtime = 0 # convention for situations that are not terminated
@@ -450,6 +452,7 @@ class Situation(object):
         sit.id = self.id
         sit.type = self.type
         sit.description = self.desc
+        sit.last_update = self.last_update
         sit.start.time = self.starttime
         sit.end.time = self.endtime
 
@@ -466,6 +469,7 @@ class Situation(object):
         sit.id = data.id
         sit.type = data.type
         sit.desc = data.description
+        sit.last_update = data.last_update
         sit.starttime = data.start.time
         sit.endtime = data.end.time
 

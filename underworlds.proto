@@ -63,7 +63,7 @@ service Underworlds {
 
 
     // Returns the list of situation IDs present in the given world
-    rpc getSituationIds(Context) returns (Situations) {}
+    rpc getSituationsIds(Context) returns (Situations) {}
 
     // Returns a situation from its ID.
     // Note that only the situation ID is used (and thus, required).
@@ -307,11 +307,15 @@ message Situation {
     SituationType type = 2;
     string description = 3;
 
+    // date/time of the last node's update (in sec since the epoch)
+    double last_update = 4;
+
+
     // start time of the situation. 0 means that the situation has not started yet
-    Time start = 4;
+    Time start = 5;
     // end time of the situation. 0 means that the situation has not finished yet
     // For events, start == end
-    Time end = 5;
+    Time end = 6;
 }
 
 message Situations {
@@ -330,6 +334,8 @@ message TimelineInvalidation {
         EVENT = 0;
         START = 1;
         END = 2;
+        UPDATE = 3;
+        DELETE = 4;
     }
 
     TimelineInvalidationType type = 1;

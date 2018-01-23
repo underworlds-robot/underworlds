@@ -45,7 +45,6 @@ class TestTimeline(unittest.TestCase):
         time.sleep(PROPAGATION_TIME) # wait for propagation
 
         self.assertEqual(len(self.timeline), 1)
-
         self.assertIn(s, self.timeline)
 
 
@@ -69,6 +68,59 @@ class TestTimeline(unittest.TestCase):
         self.assertIn(s, self.timeline)
         self.assertEqual(len(self.timeline), 2)
 
+    def test_siutation_manipulations(self):
+
+        s1 = Situation()
+        s2 = Situation()
+
+        self.assertEqual(len(self.timeline),0)
+
+        self.timeline.append(s1)
+        time.sleep(PROPAGATION_TIME) # wait for propagation
+
+        self.assertEqual(len(self.timeline),1)
+        self.assertIn(s1, self.timeline)
+        self.assertEqual(self.timeline[0].endtime, 0)
+ 
+        s1.endtime = 1
+        self.timeline.update(s1)
+        time.sleep(PROPAGATION_TIME) # wait for propagation
+
+        self.assertEqual(len(self.timeline),1)
+        self.assertEqual(self.timeline[0].endtime, 1)
+
+        self.timeline.update(s2) # alias for append
+        time.sleep(PROPAGATION_TIME) # wait for propagation
+
+        self.assertEqual(len(self.timeline),2)
+        self.assertIn(s2, self.timeline)
+ 
+        self.timeline.update(s2) # shouldn't do anything, as s2 is already present
+        time.sleep(PROPAGATION_TIME) # wait for propagation
+
+        self.assertEqual(len(self.timeline),2)
+ 
+        s1.endtime = 2
+        s2.endtime = 3
+        self.timeline.update(s1)
+        self.timeline.update(s2)
+        time.sleep(PROPAGATION_TIME) # wait for propagation
+
+        self.assertEqual(len(self.timeline),2)
+        self.assertEqual(self.timeline[s1.id].endtime, 2)
+        self.assertEqual(self.timeline[s2.id].endtime, 3)
+
+ 
+        self.timeline.remove(s1)
+        time.sleep(PROPAGATION_TIME) # wait for propagation
+
+        self.assertEqual(len(self.timeline),1)
+        self.assertEqual(self.timeline[0].id, s2.id)
+ 
+        self.timeline.remove(s2)
+        time.sleep(PROPAGATION_TIME) # wait for propagation
+
+        self.assertEqual(len(self.timeline),0)
 
     def _test_events_callback(self):
         event = Event()
