@@ -55,10 +55,11 @@ class Client:
 
         future = self.invalidation_server.emitInvalidation.future(invalidation, _TIMEOUT_SECONDS)
 
+        self.active_invalidations.append(future)
+
         # remove the future form the current list of active invalidations upon completion
         future.add_done_callback(self._cleanup_completed_invalidations)
 
-        self.active_invalidations.append(future)
 
     def _cleanup_completed_invalidations(self, invalidation):
         e = invalidation.exception()
@@ -191,7 +192,7 @@ class Server(gRPC.BetaUnderworldsServicer):
                                          id=node_id)
 
 
-        for client_id in self._clients:
+        for client_id in list(self._clients.keys()): # make a copy in case a new client is created while updating the existing ones
             if world in self._clients[client_id].links:
                 logger.debug("Informing client <%s> that nodes have been invalidated in world <%s>" % (self._clientname(client_id), world))
                 self._clients[client_id].emit_invalidation(invalidation)
