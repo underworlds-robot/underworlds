@@ -1,5 +1,6 @@
 import uuid
 import time
+import threading
 import logging;logger = logging.getLogger("underworlds.server")
 
 from underworlds.types import *
@@ -90,6 +91,7 @@ class Server(gRPC.BetaUnderworldsServicer):
         self._worlds = {}
 
         self._clients = {} 
+        self._client_lock = threading.RLock()
 
         # meshes are stored as a dictionary:
         # - the key is a unique ID
@@ -102,7 +104,8 @@ class Server(gRPC.BetaUnderworldsServicer):
         self.starttime = time.time()
 
     def _clientname(self, id):
-        return self._clients[id].name
+        with self._client_lock:
+            return self._clients[id].name
 
     def _new_world(self, name):
         self._worlds[name] = World(name)
@@ -124,12 +127,13 @@ class Server(gRPC.BetaUnderworldsServicer):
 
     def _update_current_links(self, client, world, type):
 
-        if world in self._clients[client].links:
-            current_type = self._clients[client].links[world][0]
-            # update only if the current link is 'READER' (we do not 
-            # want a 'READER' to overwrite a 'PROVIDER' for instance)
-            type = type if current_type == READER else current_type
-        self._clients[client].links[world] = (type, time.time())
+        with self._client_lock:
+            if world in self._clients[client].links:
+                current_type = self._clients[client].links[world][0]
+                # update only if the current link is 'READER' (we do not 
+                # want a 'READER' to overwrite a 'PROVIDER' for instance)
+                type = type if current_type == READER else current_type
+            self._clients[client].links[world] = (type, time.time())
 
     def _update_node(self, scene, node):
 
@@ -192,10 +196,11 @@ class Server(gRPC.BetaUnderworldsServicer):
                                          id=node_id)
 
 
-        for client_id in list(self._clients.keys()): # make a copy in case a new client is created while updating the existing ones
-            if world in self._clients[client_id].links:
-                logger.debug("Informing client <%s> that nodes have been invalidated in world <%s>" % (self._clientname(client_id), world))
-                self._clients[client_id].emit_invalidation(invalidation)
+        with self._client_lock:
+            for client_id in self._clients:
+                if world in self._clients[client_id].links:
+                    logger.debug("Informing client <%s> that nodes have been invalidated in world <%s>" % (self._clientname(client_id), world))
+                    self._clients[client_id].emit_invalidation(invalidation)
 
 
     #############################################
@@ -206,7 +211,8 @@ class Server(gRPC.BetaUnderworldsServicer):
     def helo(self, client, context):
         logger.debug("Got <helo> from %s" % client.name)
         c = Client(client.name, client.host, client.invalidation_server_port)
-        self._clients[c.id] = c
+        with self._client_lock:
+            self._clients[c.id] = c
 
         logger.debug("<helo> completed")
         return c.grpc_client
@@ -214,8 +220,11 @@ class Server(gRPC.BetaUnderworldsServicer):
     @profile
     def byebye(self, client, context):
         logger.debug("Got <byebye> from %s" % (self._clientname(client.id)))
-        self._clients[client.id].close()
-        del self._clients[client.id]
+
+        with self._client_lock:
+            self._clients[client.id].close()
+            del self._clients[client.id]
+
         logger.debug("<byebye> completed")
         return gRPC.Empty()
 
@@ -236,20 +245,21 @@ class Server(gRPC.BetaUnderworldsServicer):
         for w in self._worlds.keys():
             topo.worlds.append(w)
 
-        for client_id in self._clients.keys():
-            links = self._clients[client_id].links
-            client = topo.clients.add()
-            client.id  = client_id
-            client.name = self._clientname(client_id)
+        with self._client_lock:
+            for client_id in self._clients:
+                links = self._clients[client_id].links
+                client = topo.clients.add()
+                client.id  = client_id
+                client.name = self._clientname(client_id)
 
-            for w, details in links.items():
+                for w, details in links.items():
 
-                type, timestamp = details
+                    type, timestamp = details
 
-                interaction = client.links.add()
-                interaction.world = w
-                interaction.type = type
-                interaction.last_activity.time = timestamp
+                    interaction = client.links.add()
+                    interaction.world = w
+                    interaction.type = type
+                    interaction.last_activity.time = timestamp
 
 
 
@@ -264,8 +274,9 @@ class Server(gRPC.BetaUnderworldsServicer):
 
         self._worlds = {}
 
-        for cid, c in self._clients.items():
-            c.reset_links()
+        with self._client_lock:
+            for cid, c in self._clients.items():
+                c.reset_links()
 
         logger.debug("<reset> completed")
 
