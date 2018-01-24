@@ -715,15 +715,18 @@ class Context(object):
         self.name = name
         self.worlds = WorldsProxy(self)
 
-        invalidation_port = random.randint(port + 1,60000)
-        logger.info("Creating my own invalidation server on port %s..." % (invalidation_port))
+        self.invalidation_port = 0
 
-        self.invalidation_server = gRPC.beta_create_UnderworldsInvalidation_server(InvalidationServer(self))
-        self.invalidation_port = self.invalidation_server.add_insecure_port('[::]:%d' % invalidation_port)
+        while self.invalidation_port == 0:
+            invalidation_port = random.randint(port + 1,60000)
+            logger.info("Creating my own invalidation server on port %s..." % (invalidation_port))
 
-        if self.invalidation_port == 0:
-            logger.error("The port for my invalidation server is already in use! Try restarting.")
-            sys.exit(1)
+            self.invalidation_server = gRPC.beta_create_UnderworldsInvalidation_server(InvalidationServer(self))
+            self.invalidation_port = self.invalidation_server.add_insecure_port('[::]:%d' % invalidation_port)
+
+            if self.invalidation_port == 0:
+                logger.error("The port for my invalidation server is already in use! Trying another one...")
+
 
         self.invalidation_server.start()
 
