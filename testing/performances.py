@@ -5,7 +5,7 @@ import argparse
 import time
 import uuid
 
-from multiprocessing import Pool
+from multiprocessing import Pipe, Pool
 import threading
 from concurrent.futures import ThreadPoolExecutor
 
@@ -21,7 +21,7 @@ def ms(duration):
     return "%.1fms" % (duration * 1000)
 
 
-def passthrough(world1, world2):
+def passthrough(world1, world2, signaling_pipe):
     """ Simple passthrough filter: wait for changes on a world world1 and
     propagate these changes to world world2.
     """
@@ -35,7 +35,7 @@ def passthrough(world1, world2):
 
         try:
             print("Waiting for changes...")
-            while True:
+            while not signaling_pipe.poll():
                 change = world1.scene.waitforchanges(0.5)
                 if change is not None:
                     id, op = change
@@ -45,6 +45,7 @@ def passthrough(world1, world2):
             import traceback
             traceback.print_exc()
         print("Stopping passthrough")
+    print("Passthrough stopped")
 
 
 def wait_for_changes(world):
@@ -65,11 +66,14 @@ def test_propagation_time(nb_worlds):
     executor = ThreadPoolExecutor(max_workers=nb_worlds)
     pool = Pool(nb_worlds)
 
+    pipes = []
     res = []
     for i in range(nb_worlds-1):
         print("Setting up passthrough between world %d and world %d" % (i, i+1))
         #f = executor.submit(passthrough, "world%d" % i, "world%d" % (i+1))
-        res.append(pool.apply_async(passthrough, ["world%d" % i, "world%d" % (i+1)]))
+        conn1, conn2 = Pipe()
+        pipes.append(conn1)
+        res.append(pool.apply_async(passthrough, ["world%d" % i, "world%d" % (i+1), conn2]))
 
     time.sleep(0.5)
 
@@ -101,20 +105,24 @@ def test_propagation_time(nb_worlds):
     print("Total time: %.2f" % ((time.time() - starttime) * 1000))
 
     executor.shutdown(wait=True)
-    pool.terminate()
+    #pool.terminate()
+    for p in pipes:
+        p.send(True)
+    pool.close()
     pool.join()
     ctx.close()
 
     return duration
 
 if __name__ == '__main__':
-    durations = []
+    durations = {}
 
     parser = argparse.ArgumentParser()
     parser.add_argument("maxworlds", default=5, type=int, nargs="?", help="Maximum number of Underworlds worlds to spawn")
     parser.add_argument("-d", "--debug", help="debug mode", action="store_true")
     parser.add_argument("-dd", "--fulldebug", help="debug mode (verbose)", action="store_true")
     parser.add_argument("-i", "--incremental", action="store_true", help="test for every nb of worlds, from 2 to maxworlds")
+    parser.add_argument("-r", "--repeat", default=1, type=int, nargs="?", help="how many times the test should be repeated (default: no repeat)")
     args = parser.parse_args()
 
     if args.debug or args.fulldebug:
@@ -127,15 +135,19 @@ if __name__ == '__main__':
 
     minworlds = 2 if args.incremental else args.maxworlds
 
-    for nb in range(minworlds, args.maxworlds+1):
-        print("\n\n\n-- %d worlds --\n" % nb)
+    for idx in range(0, args.repeat):
+        print("\n\n\n-- Iteration #%d --\n" % idx)
 
-        server = underworlds.server.start()
+        for nb in range(minworlds, args.maxworlds+1):
+            print("\n\n\n-- %d worlds --\n" % nb)
 
-        durations.append(test_propagation_time(nb))
-        server.stop(0).wait()
+            server = underworlds.server.start()
 
-        for d in durations:
-            print("%.1f" % (d * 1000))
+            durations.setdefault(nb,[]).append(test_propagation_time(nb))
+            server.stop(0).wait()
+        time.sleep(0.5)
+
+        for nb,times in durations.items():
+            print("%d;%s" % (nb, ";".join([str("%.1f" % (d * 1000)) for d in times])))
 
 
