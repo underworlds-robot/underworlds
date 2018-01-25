@@ -9,6 +9,10 @@ UWDS_CLONE_PATH=`pwd`
 UWDS_PREFIX=${HOME}/dev
 mkdir -p ${UWDS_PREFIX}
 
+export PATH=${PATH}:${UWDS_PREFIX}/bin
+export PYTHONPATH=${UWDS_PREFIX}/lib/python3.4/site-packages:${UWDS_PREFIX}/lib/python3.4/dist-packages:$PYTHONPATH
+
+
 
 # manually install assimp as the version packaged in trusty is too old
 echo "Installing pyassimp"
@@ -42,6 +46,7 @@ cd ${HOME}/assimp/port/PyAssimp
 # workaround for bug introduced in assimp's 33bd5cfcfb0f27794a333273b20b60a7a550d184
 mkdir -p ../../lib
 
+
 python3 setup.py install --prefix=${UWDS_PREFIX}
 
 
@@ -52,9 +57,6 @@ cd ${UWDS_CLONE_PATH}
 
 
 python3 setup.py install --prefix=${UWDS_PREFIX}
-
-export PATH=${PATH}:${UWDS_PREFIX}/bin
-export PYTHONPATH=${UWDS_PREFIX}/lib/python3.4/site-packages:${UWDS_PREFIX}/lib/python3.4/dist-packages:$PYTHONPATH
 
 ################################################################################
 ################################################################################
