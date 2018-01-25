@@ -1,15 +1,16 @@
 #!/usr/bin/env python
 #-*- coding: UTF-8 -*-
 
-import unittest
-
-import underworlds
-import underworlds.server
 
 import logging; logger = logging.getLogger("underworlds.testing")
 logging.basicConfig(level=logging.DEBUG)
 
+import unittest
 import time
+
+import underworlds
+import underworlds.server
+
 from underworlds.tools.loader import ModelLoader
 from underworlds.types import MESH, CAMERA
 import os.path as path
