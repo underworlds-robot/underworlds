@@ -337,7 +337,8 @@ class Server(gRPC.BetaUnderworldsServicer):
                            "node <%s> in world %s" % (self._clientname(client_id), nodeInCtxt.node.id, world))
 
             context.details("Node <%s> does not exist in world %s" % (nodeInCtxt.node.id, world))
-            context.code(beta_interfaces.StatusCode.UNKNOWN)
+            context.code(beta_interfaces.StatusCode.OUT_OF_RANGE)
+            return gRPC.Node()
 
 
         else:
@@ -469,7 +470,8 @@ class Server(gRPC.BetaUnderworldsServicer):
                            "situation <%s> in world %s" % (self._clientname(client_id), sitInCtxt.node.id, world))
 
             context.details("Situation <%s> does not exist in world %s" % (sitInCtxt.node.id, world))
-            context.code(beta_interfaces.StatusCode.UNKNOWN)
+            context.code(beta_interfaces.StatusCode.OUT_OF_RANGE)
+            return gRPC.Situation()
 
 
         else:

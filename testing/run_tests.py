@@ -97,7 +97,6 @@ import basic_server_interaction, \
        topology, \
        core, \
        nodes, \
-       single_user, \
        waitforchanges, \
        timeline, \
        model_loading
@@ -107,7 +106,6 @@ modules = [
     topology, \
     core, \
     nodes, \
-    single_user, \
     waitforchanges, \
     timeline, \
     model_loading]

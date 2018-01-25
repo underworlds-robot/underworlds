@@ -117,7 +117,10 @@ class NodesProxy:
 
         nodeInCtxt = gRPC.NodeInContext(context=self._server_ctx,
                                         node=gRPC.Node(id=id))
-        gRPCNode = self._ctx.rpc.getNode(nodeInCtxt, _TIMEOUT_SECONDS)
+        try:
+            gRPCNode = self._ctx.rpc.getNode(nodeInCtxt, _TIMEOUT_SECONDS)
+        except AbortionError as e:
+            raise IndexError(e.details)
 
         # is it a new node, or rather an update to an existing one?
         if id not in self._ids:
@@ -172,8 +175,9 @@ class NodesProxy:
                 if key in self._updated_ids:
                         self._update_node_from_remote(key)
                 return self._nodes[key]
-            elif id in self._updated_ids:
-                self._update_node_from_remote(id)
+            elif key in self._updated_ids:
+                self._update_node_from_remote(key)
+                return self._nodes[key]
             else: # we do not have this node locally. Let's try to fetch it
                 try:
                     self._get_node_from_remote(key)
@@ -410,7 +414,10 @@ class TimelineProxy:
 
         sitInCtxt = gRPC.SituationInContext(context=self._server_ctx,
                                         situation=gRPC.Situation(id=id))
-        gRPCSituation = self._ctx.rpc.getSituation(sitInCtxt, _TIMEOUT_SECONDS)
+        try:
+            gRPCSituation = self._ctx.rpc.getSituation(sitInCtxt, _TIMEOUT_SECONDS)
+        except AbortionError as e:
+            raise IndexError(e.details)
 
         # is it a new situation, or rather an update to an existing one?
         if id not in self._ids:
@@ -472,8 +479,9 @@ class TimelineProxy:
                 if key in self._updated_ids:
                         self._update_situation_from_remote(key)
                 return self._situations[key]
-            elif id in self._updated_ids:
-                self._update_situation_from_remote(id)
+            elif key in self._updated_ids:
+                self._update_situation_from_remote(key)
+                return self._situations[key]
             else: # we do not have this situation locally. Let's try to fetch it
                 try:
                     self._get_situation_from_remote(key)
@@ -516,7 +524,7 @@ class TimelineProxy:
         It is actually an alias for NodesProxy.update: all the restrictions
         regarding ordering or propagation time apply as well.
         """
-        return self.update(node)
+        return self.update(situation)
 
 
     @profile
@@ -538,10 +546,10 @@ class TimelineProxy:
 
         for instance,
 
-        >>> timeline.update(n1)
-        >>> timeline.update(n2)
+        >>> timeline.update(sit1)
+        >>> timeline.update(sit2)
 
-        does not mean that timeline[0] = n1 and timeline[1] = n2.
+        does not mean that timeline[0] = sit1 and timeline[1] = sit2.
         This is due to the lazy access process.
 
         However, once accessed once, situations keep their index (until a
