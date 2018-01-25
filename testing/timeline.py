@@ -12,7 +12,7 @@ from underworlds.tools.loader import ModelLoader
 from underworlds.types import Situation
 
 
-PROPAGATION_TIME=0.01 # time to wait for node update notification propagation (in sec)
+PROPAGATION_TIME=0.05 # time to wait for node update notification propagation (in sec)
 
 class TestTimeline(unittest.TestCase):
 
