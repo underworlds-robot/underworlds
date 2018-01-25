@@ -151,7 +151,7 @@ class Node(object):
 
         for p in self.aabb:
             point = node.aabb.add()
-            point.x, point.y, point.z = p
+            point.x, point.y, point.z = float(p[0]), float(p[1]), float(p[2])
 
         node.physics = self.properties["physics"]
 
