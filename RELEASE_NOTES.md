@@ -1,3 +1,13 @@
+underworlds 0.2.1
+=================
+
+Released on: 25 Jan 2018
+
+Changes since last version:
+
+- minor updates to the setuptools (setup.py) and upload to PyPI for
+  easy installation with `pip install underworlds`.
+
 underworlds 0.2
 ===============
 
