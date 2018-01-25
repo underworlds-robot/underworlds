@@ -8,6 +8,10 @@ Status](https://travis-ci.org/severin-lemaignan/underworlds.svg?branch=master)](
 Description
 -----------
 
+![A screenshot of underworlds, used in the human-robot interaction
+scenario](doc/images/screenshot-l2tor.jpg)
+
+
 Underworlds is a distributed and lightweight framework that aims at sharing
 between clients parallel models of the physical world surrounding a robot.
 
@@ -22,6 +26,8 @@ some objects filtered out, models that are physically consistent, etc.
 
 This package provides the library, and a small set of core clients that are
 useful for inspection and debugging.
+
+[Release notes](RELEASE_NOTES.md).
 
 Installation
 ------------

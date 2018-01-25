@@ -3,7 +3,7 @@ import os
 from distutils.core import setup
 
 setup(name='underworlds',
-      version='0.1',
+      version='0.2',
       license='ISC',
       description='A framework for geometric and temporal representation of robotic worlds',
       author='Séverin Lemaignan',
@@ -13,5 +13,5 @@ setup(name='underworlds',
       scripts=['bin/' + f for f in os.listdir('bin')],
       packages=['underworlds', 'underworlds.helpers', 'underworlds.tools'],
       data_files=[('share/doc/underworlds', ['LICENSE', 'README.md'])],
-      requires=["pyassimp","grpc"]
+      requires=["pyassimp","grpcio"]
       )
