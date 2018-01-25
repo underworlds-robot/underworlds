@@ -292,7 +292,7 @@ class VisibilityMonitor:
 
         #Reinterpret the RGB pixel buffer as a 1-D array of 24bits colors
         a = numpy.ndarray(len(buf), numpy.dtype('>u1'), buf)
-        colors = numpy.zeros(len(buf) / 3, numpy.dtype('<u4'))
+        colors = numpy.zeros(int(len(buf) / 3), numpy.dtype('<u4'))
         for i in range(3):
             colors.view(dtype='>u1')[i::4] = a.view(dtype='>u1')[i::3]
 

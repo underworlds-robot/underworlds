@@ -1,5 +1,10 @@
 #! /usr/bin/env python
 
+import sys
+PY3 = True
+if sys.version_info[0] < 3:
+    PY3 = False
+
 import unittest
 import time
 
@@ -27,13 +32,15 @@ class TestVisibility(unittest.TestCase):
 
         results = visibility.compute_all()
 
-        self.assertItemsEqual(["Camera1", "Camera2", "Camera3", "Camera4", "Camera5"], \
-                              results.keys())
+        if not PY3:
+            self.assertCountEqual = self.assertItemsEqual
 
-        self.assertItemsEqual([cube1, cube2], results["Camera1"])
-        self.assertItemsEqual([cube1, cube2], results["Camera2"])
-        self.assertItemsEqual([cube2], results["Camera3"])
-        self.assertItemsEqual([cube1], results["Camera4"])
+        self.assertCountEqual(["Camera1", "Camera2", "Camera3", "Camera4", "Camera5"], \
+                                results.keys())
+        self.assertCountEqual([cube1, cube2], results["Camera1"])
+        self.assertCountEqual([cube1, cube2], results["Camera2"])
+        self.assertCountEqual([cube2], results["Camera3"])
+        self.assertCountEqual([cube1], results["Camera4"])
         self.assertListEqual([], results["Camera5"])
 
     def tearDown(self):
