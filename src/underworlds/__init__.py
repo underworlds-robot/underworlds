@@ -56,7 +56,6 @@ class NodesProxy:
         # Get the root node
         self.rootnode = self._ctx.rpc.getRootNode(self._server_ctx, _TIMEOUT_SECONDS).id
         self._update_node_from_remote(self.rootnode)
-        self._ids.append(self.rootnode)
  
         self.waitforchanges_cv = threading.Condition()
         self.lastchange = None
@@ -120,7 +119,10 @@ class NodesProxy:
                                         node=gRPC.Node(id=id))
         gRPCNode = self._ctx.rpc.getNode(nodeInCtxt, _TIMEOUT_SECONDS)
 
-        self._ids.append(id)
+        # is it a new node, or rather an update to an existing one?
+        if id not in self._ids:
+            self._ids.append(id)
+
         self._nodes[id] = Node.deserialize(gRPCNode)
 
 
@@ -128,10 +130,7 @@ class NodesProxy:
 
         self._get_node_from_remote(id)
 
-        try:
-            self._updated_ids.remove(id)
-        except ValueError as ve:
-            raise ve
+        self._updated_ids.remove(id)
 
     def __getitem__(self, key):
 
@@ -173,7 +172,8 @@ class NodesProxy:
                 if key in self._updated_ids:
                         self._update_node_from_remote(key)
                 return self._nodes[key]
-
+            elif id in self._updated_ids:
+                self._update_node_from_remote(id)
             else: # we do not have this node locally. Let's try to fetch it
                 try:
                     self._get_node_from_remote(key)
@@ -412,17 +412,17 @@ class TimelineProxy:
                                         situation=gRPC.Situation(id=id))
         gRPCSituation = self._ctx.rpc.getSituation(sitInCtxt, _TIMEOUT_SECONDS)
 
-        self._ids.append(id)
+        # is it a new situation, or rather an update to an existing one?
+        if id not in self._ids:
+            self._ids.append(id)
+
         self._situations[id] = Situation.deserialize(gRPCSituation)
 
     def _update_situation_from_remote(self, id):
 
         self._get_situation_from_remote(id)
 
-        try:
-            self._updated_ids.remove(id)
-        except ValueError as ve:
-            raise ve
+        self._updated_ids.remove(id)
 
     def __contains__(self, situation):
         try:
@@ -472,7 +472,8 @@ class TimelineProxy:
                 if key in self._updated_ids:
                         self._update_situation_from_remote(key)
                 return self._situations[key]
-
+            elif id in self._updated_ids:
+                self._update_situation_from_remote(id)
             else: # we do not have this situation locally. Let's try to fetch it
                 try:
                     self._get_situation_from_remote(key)
