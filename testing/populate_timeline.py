@@ -4,7 +4,7 @@ import sys
 import time
 
 import underworlds
-from underworlds.types import Situation, createevent
+from underworlds.types import Situation
 
 if len(sys.argv) != 2:
     print("Usage: %s <world>" % __file__)
@@ -15,14 +15,10 @@ with underworlds.Context("provider") as ctx:
 
     timeline = world.timeline
 
-    s1 = Situation()
-    s2 = Situation()
-    s3 = Situation()
-
-    timeline.start(s1)
+    s1 = timeline.start()
     time.sleep(0.2)
-    timeline.start(s2)
-    timeline.event(s3)
+    s2 = timeline.start()
+    s3 = timeline.event()
     time.sleep(0.2)
     timeline.end(s2)
     time.sleep(0.5)

@@ -317,7 +317,7 @@ class Timeline(object):
 
         self.origin = time.time()
 
-        self.situations = []
+        self.situations = {}
 
     def on(self, event):
         """
@@ -338,33 +338,66 @@ class Timeline(object):
         return EventMonitor(event)
 
 
-    def start(self, situation):
-        """ Asserts a situation has started to exist.
+    def start(self):
+        """ Asserts a situation has started.
 
         Note that in the special case of events, the situation ends
         immediately.
+
+        :returns: The newly created situation
         """
+        situation = Situation()
         situation.starttime = time.time()
-        self.situations.append(situation)
+        self.situations[situation.id] = situation
+        return situation
 
     def end(self, situation):
         """ Asserts the end of a situation.
 
         Note that in the special case of events, this method a no effect.
         """
-        situation.endtime = time.time()
+        if situation.isevent():
+            return situation
+        self.situations[situation.id].endtime = time.time()
+        return self.situations[situation.id]
 
-    def event(self, event):
-        """ Asserts a new event occured in this timeline
-        at time 'time.time()'.
+    def event(self):
+        """ Asserts a new event occured in this timeline.
+
+        :returns: the newly created event.
         """
-        self.start(event)
+        event = self.start()
         event.endtime = event.starttime
+        return event
+
+    def append(self, situation):
+        """ Adds the given situation to the timeline.
+
+        If a situation with the same ID already exists, it replaces it.
+
+        :returns: True if the situation has been added, False if it has simply updated an existing situation
+        """
+        return not self.update(situation)
+
+    def update(self, situation):
+        """ Update (ie, replace) an existing situation with the
+        given one.
+        
+        If the situations does not exist, simply add it to the timeline.
+
+        :returns: True if the situation has been updated, False if it has been simply added (new situation)
+        """
+        isnew = situation.id in self.situations
+        self.situations[situation.id] = situation
+        return not isnew
+
+    def remove(self, situation):
+        """ Deletes an existing situation.
+        """
+        del self.situations[situation.id]
 
     def situation(self, id):
-        for sit in self.situations:
-            if sit.id == id:
-                return sit
+        return self.situations[id]
 
 
 class EventMonitor(object):
@@ -424,13 +457,13 @@ class Situation(object):
         return self.endtime == self.starttime
 
     def __repr__(self):
-        return self.id + " (" + self.type + ")"
+        return self.id + " (" + SITUATIONTYPE_NAMES[self.type] + ")"
 
     def __str__(self):
         if self.desc:
-            return "Situation %s -- %s: %s" % (self.id, self.type, self.desc)
+            return "Situation %s -- %s: %s" % (self.id, SITUATIONTYPE_NAMES[self.type], self.desc)
         else:
-            return "Situation %s -- %s" % (self.id, self.type)
+            return "Situation %s -- %s" % (self.id, SITUATIONTYPE_NAMES[self.type])
 
     def __cmp__(self, sit):
         # TODO: check here other values equality, and raise exception if any differ? may be costly, though...
@@ -475,17 +508,4 @@ class Situation(object):
 
         return sit
 
-
-def createevent():
-    """ An event is a (immediate) change of the world. It has no
-    duration, contrary to a StaticSituation that has a non-null duration.
-
-    This function creates and returns such a instantaneous situation.
-
-    :sees: situations.py for a set of standard events types
-    """
-
-    sit = Situation(type = GENERIC)
-
-    return sit
 

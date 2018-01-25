@@ -9,10 +9,10 @@ from underworlds.errors import *
 import underworlds.server
 from underworlds.tools.loader import ModelLoader
 
-from underworlds.types import Situation, createevent
+from underworlds.types import Situation
 
 
-PROPAGATION_TIME=0.001 # time to wait for node update notification propagation (in sec)
+PROPAGATION_TIME=0.01 # time to wait for node update notification propagation (in sec)
 
 class TestTimeline(unittest.TestCase):
 
@@ -39,9 +39,8 @@ class TestTimeline(unittest.TestCase):
 
     def test_events_base(self):
 
-        s = Situation()
 
-        self.timeline.start(s)
+        s = self.timeline.start()
         time.sleep(PROPAGATION_TIME) # wait for propagation
 
         self.assertEqual(len(self.timeline), 1)
@@ -54,9 +53,7 @@ class TestTimeline(unittest.TestCase):
         self.assertIn(s, self.timeline)
         self.assertEqual(len(self.timeline), 1)
 
-        s = createevent()
-
-        self.timeline.start(s)
+        s = self.timeline.event()
         time.sleep(PROPAGATION_TIME) # wait for propagation
 
         self.assertIn(s, self.timeline)
@@ -68,7 +65,7 @@ class TestTimeline(unittest.TestCase):
         self.assertIn(s, self.timeline)
         self.assertEqual(len(self.timeline), 2)
 
-    def test_siutation_manipulations(self):
+    def test_situation_manipulations(self):
 
         s1 = Situation()
         s2 = Situation()

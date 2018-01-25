@@ -169,23 +169,14 @@ class Server(gRPC.BetaUnderworldsServicer):
 
         situation.last_update = time.time()
 
-        oldsituation = timeline.situation(situation.id)
-
-        if oldsituation: # the situation already exist
-            # replace the node
-            timeline.situations = [situation if old == situation else old for old in timeline.situations]
-            
+        if situation.id in timeline.situations:
             action = gRPC.Invalidation.UPDATE
-
-        else: # new situation
-            timeline.situations.append(situation)
+        else:
             action = gRPC.Invalidation.NEW
 
+        timeline.update(situation)
+
         return action
-
-    def _delete_situation(self, timeline, id):
-        timeline.remove(timeline.situation(id))
-
 
     @profile
     def _emit_invalidation(self, target, world, node_id, invalidation_type):
@@ -491,69 +482,6 @@ class Server(gRPC.BetaUnderworldsServicer):
         return res
 
     @profile
-    def event(self, sitInCtxt, context):
-
-        client, world = sitInCtxt.context.client, sitInCtxt.context.world
-
-        logger.debug("Got <event> from %s" % client)
-
-        self._update_current_links(client, world, PROVIDER)
-
-        _, timeline = self._get_scene_timeline(sitInCtxt.context)
-        sit = Situation.deserialize(sitInCtxt.situation)
-
-        if timeline.situation(sit.id): # the situation already exist. Error!
-            raise Exception("Attempting to add twice the same situation!")
-
-        timeline.event(sit)
-        self._emit_invalidation(gRPC.Invalidation.TIMELINE, world, sit.id, gRPC.Invalidation.NEW)
-
-        logger.debug("<event> completed")
-        return gRPC.Empty()
-
-    @profile
-    def startSituation(self, sitInCtxt, context):
-
-        client, world = sitInCtxt.context.client, sitInCtxt.context.world
-
-        logger.debug("Got <startSituation> from %s" % client)
-
-        self._update_current_links(client, world, PROVIDER)
-
-        _, timeline = self._get_scene_timeline(sitInCtxt.context)
-        sit = Situation.deserialize(sitInCtxt.situation)
-
-        if timeline.situation(sit.id): # the situation already exist. Error!
-            raise Exception("Attempting to add twice the same situation!")
-
-        timeline.start(sit)
-        self._emit_invalidation(gRPC.Invalidation.TIMELINE, world, sit.id, gRPC.Invalidation.NEW)
-
-        logger.debug("<startSituation> completed")
-        return gRPC.Empty()
-
-    @profile
-    def endSituation(self, sitInCtxt, context):
-
-        client, world = sitInCtxt.context.client, sitInCtxt.context.world
-
-        logger.debug("Got <endSituation> from %s" % client)
-
-        self._update_current_links(client, world, PROVIDER)
-
-        _, timeline = self._get_scene_timeline(sitInCtxt.context)
-
-        sit = timeline.situation(sitInCtxt.situation.id)
-        if not sit:
-            raise Exception("Attempting to end a non-existant situation!")
-
-        timeline.end(sit)
-        self._emit_invalidation(gRPC.Invalidation.TIMELINE, world, sit.id, gRPC.Invalidation.UPDATE)
-
-        logger.debug("<endSituation> completed")
-        return gRPC.Empty()
-
-    @profile
     def updateSituation(self, sitInCtxt, context):
         logger.debug("Got <updateSituation> from %s" % sitInCtxt.context.client)
         self._update_current_links(sitInCtxt.context.client, sitInCtxt.context.world, PROVIDER)
@@ -585,18 +513,18 @@ class Server(gRPC.BetaUnderworldsServicer):
         client_id, world = sitInCtxt.context.client, sitInCtxt.context.world
         _, timeline = self._get_scene_timeline(sitInCtxt.context)
 
+        situation = Situation.deserialize(sitInCtxt.situation)
 
-        situation = timeline[sitInCtxt.situation.id]
+        timeline.remove(situation)
+
         logger.info("<%s> deleted situation <%s> in world <%s>" % \
                             (self._clientname(client_id), 
                              repr(situation), 
                              world))
 
-        action = self._delete_situation(timeline, sitInCtxt.situation.id)
-
         # tells everyone about the change
         logger.debug("Sent invalidation action [delete]")
-        self._emit_invalidation(gRPC.Invalidation.SCENE, world, sitInCtxt.situation.id, gRPC.Invalidation.DELETE)
+        self._emit_invalidation(gRPC.Invalidation.TIMELINE, world, sitInCtxt.situation.id, gRPC.Invalidation.DELETE)
 
         logger.debug("<deleteSituation> completed")
         return gRPC.Empty()

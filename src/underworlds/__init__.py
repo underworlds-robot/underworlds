@@ -335,7 +335,7 @@ class TimelineProxy:
 
         self._len = self._ctx.rpc.getSituationsLen(self._server_ctx, _TIMEOUT_SECONDS).size
 
-        self._situations = {} # situation store
+        self._situations = {}
 
         # list of all node IDs that were once obtained.
         # They may be valid or invalid (if present in _updated_ids)
@@ -496,32 +496,60 @@ class TimelineProxy:
     def __repr__(self):
         return "TimelineProxy %s" % [str(s) for s in self._situations]
 
-    @profile
-    def start(self, situation):
-        self._ctx.rpc.startSituation(
-                gRPC.SituationInContext(context=self._server_ctx,
-                                        situation=situation.serialize(gRPC.Situation)),
-                _TIMEOUT_SECONDS)
+    def start(self):
+        """ Starts (and return) a new situation
 
-    @profile
-    def event(self, situation):
-        self._ctx.rpc.event(
-                gRPC.SituationInContext(context=self._server_ctx,
-                                        situation=situation.serialize(gRPC.Situation)),
-                _TIMEOUT_SECONDS)
+        This method sends the new situation to the
+        remote. IT DOES NOT DIRECTLY modify the local
+        copy of situations: the roundtrip is slower, but data
+        consistency is easier to ensure.
 
-    @profile
+        Note that the situation starting time is set by the client, at the time
+        at which this method is called.
+        """
+        situation = Situation()
+        situation.starttime = time.time()
+        self.update(situation)
+        return situation
+
     def end(self, situation):
-        self._ctx.rpc.endSituation(
-                gRPC.SituationInContext(context=self._server_ctx,
-                                        situation=situation.serialize(gRPC.Situation)),
-                _TIMEOUT_SECONDS)
+        """ Ends an existing situation
 
+        This method sends the situation update to the
+        remote. IT DOES NOT DIRECTLY modify the local
+        copy of situations: the roundtrip is slower, but data
+        consistency is easier to ensure.
+
+        Note that the situation ending time is set by the client, at the time
+        at which this method is called.
+        """
+        if situation.isevent():
+            return situation
+        situation.endtime = time.time()
+        self.update(situation)
+        return situation
+
+    def event(self):
+        """ Creates (and return) a new event (situation with 0 duration)
+
+        This method sends the new event to the
+        remote. IT DOES NOT DIRECTLY modify the local
+        copy of situations: the roundtrip is slower, but data
+        consistency is easier to ensure.
+
+        Note that the event time is set by the client, at the time
+        at which this method is called.
+        """
+        situation = Situation()
+        situation.starttime = time.time()
+        situation.endtime = situation.starttime
+        self.update(situation)
+        return situation
 
     def append(self, situation):
-        """ Adds a new node to the node set.
+        """ Adds a new situation to the timeline.
 
-        It is actually an alias for NodesProxy.update: all the restrictions
+        It is actually an alias for TimelineProxy.update: all the restrictions
         regarding ordering or propagation time apply as well.
         """
         return self.update(situation)
@@ -565,6 +593,7 @@ class TimelineProxy:
                                  gRPC.SituationInContext(context=self._server_ctx,
                                                     situation=situation.serialize(gRPC.Situation)),
                                  _TIMEOUT_SECONDS)
+        return situation
 
     @profile
     def remove(self, situation):
@@ -703,7 +732,7 @@ class InvalidationServer(gRPC.BetaUnderworldsInvalidationServicer):
             if action == gRPC.Invalidation.UPDATE:
                 logger.debug("Server notification: situation updated: " + id)
                 self.ctx.worlds[world].timeline._on_remotely_updated_situation(id)
-            if action == gRPC.Invalidation.NEW:
+            elif action == gRPC.Invalidation.NEW:
                 logger.debug("Server notification: situation added: " + id)
                 self.ctx.worlds[world].timeline._on_remotely_added_situation(id)
             elif action == gRPC.Invalidation.DELETE:
