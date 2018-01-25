@@ -1,4 +1,0 @@
-numpy
-grpcio==1.4.0
-pyassimp
-argcomplete
