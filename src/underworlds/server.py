@@ -322,6 +322,13 @@ class Server(gRPC.BetaUnderworldsServicer):
 
         self._update_current_links(client_id, world, READER)
 
+        if not nodeInCtxt.node.id:
+            logger.warning("%s has required a node without specifying its id!" % (self._clientname(client_id)))
+
+            context.details("No node id provided")
+            context.code(beta_interfaces.StatusCode.NOT_FOUND)
+            return gRPC.Node()
+
         node = scene.node(nodeInCtxt.node.id)
 
         if not node:
@@ -329,7 +336,7 @@ class Server(gRPC.BetaUnderworldsServicer):
                            "node <%s> in world %s" % (self._clientname(client_id), nodeInCtxt.node.id, world))
 
             context.details("Node <%s> does not exist in world %s" % (nodeInCtxt.node.id, world))
-            context.code(beta_interfaces.StatusCode.OUT_OF_RANGE)
+            context.code(beta_interfaces.StatusCode.NOT_FOUND)
             return gRPC.Node()
 
 
@@ -471,6 +478,14 @@ class Server(gRPC.BetaUnderworldsServicer):
 
         self._update_current_links(client_id, world, READER)
 
+        if not sitInCtxt.situation.id:
+            logger.warning("%s has required a situation without specifying its id!" % (self._clientname(client_id)))
+
+            context.details("No situation id provided")
+            context.code(beta_interfaces.StatusCode.NOT_FOUND)
+            return gRPC.Node()
+
+
         situation = timeline.situation(sitInCtxt.situation.id)
 
         if not situation:
@@ -478,7 +493,7 @@ class Server(gRPC.BetaUnderworldsServicer):
                            "situation <%s> in world %s" % (self._clientname(client_id), sitInCtxt.node.id, world))
 
             context.details("Situation <%s> does not exist in world %s" % (sitInCtxt.node.id, world))
-            context.code(beta_interfaces.StatusCode.OUT_OF_RANGE)
+            context.code(beta_interfaces.StatusCode.NOT_FOUND)
             return gRPC.Situation()
 
 
