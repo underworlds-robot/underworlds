@@ -354,7 +354,8 @@ class Server(gRPC.BetaUnderworldsServicer):
         client_id, world = nodesInCtxt.context.client, nodesInCtxt.context.world
         scene,_ = self._get_scene_timeline(nodesInCtxt.context)
 
-        # TODO: optimize to send a single invalidation if more than one node
+        nodes_to_invalidate_new = []
+        nodes_to_invalidate_update = []
         for gRPCNode in nodesInCtxt.nodes:
             node = Node.deserialize(gRPCNode)
 
@@ -362,13 +363,17 @@ class Server(gRPC.BetaUnderworldsServicer):
 
             logger.info("<%s> %s node <%s> in world <%s>" % \
                                 (self._clientname(client_id), 
-                                "updated" if invalidation_type==gRPC.Invalidation.UPDATE else ("created" if invalidation_type==gRPC.Invalidation.NEW else "deleted"),
+                                "updated" if invalidation_type==gRPC.Invalidation.UPDATE else "created",
                                 repr(node), 
                                 world))
 
+            if invalidation_type ==  gRPC.Invalidation.UPDATE:
+                nodes_to_invalidate_update.append(gRPCNode.id)
+            elif invalidation_type ==  gRPC.Invalidation.NEW:
+                nodes_to_invalidate_new.append(gRPCNode.id)
+            else:
+                raise RuntimeError("Unexpected invalidation type")
 
-            logger.debug("Adding invalidation action [" + str(invalidation_type) + "]")
-            self._emit_invalidation(gRPC.Invalidation.SCENE, world, [node.id], invalidation_type)
 
             ## If necessary, update the node hierarchy
             if parent_has_changed:
@@ -379,7 +384,7 @@ class Server(gRPC.BetaUnderworldsServicer):
                     parent.children.append(node.id)
                     # tells everyone about the change to the parent
                     logger.debug("Adding invalidation action [update " + parent.id + "] due to hierarchy update")
-                    self._emit_invalidation(gRPC.Invalidation.SCENE, world, [parent.id], gRPC.Invalidation.UPDATE)
+                    nodes_to_invalidate_update.append(parent.id)
 
                     # As a node has only one parent, if the parent has changed we must
                     # remove our node from its previous parent
@@ -388,8 +393,14 @@ class Server(gRPC.BetaUnderworldsServicer):
                             othernode.children.remove(node.id)
                             # tells everyone about the change to the former parent
                             logger.debug("Adding invalidation action [update " + othernode.id + "] due to hierarchy update")
-                            self._emit_invalidation(gRPC.Invalidation.SCENE, world, [othernode.id], gRPC.Invalidation.UPDATE)
+                            nodes_to_invalidate_update.append(othernode.id)
                             break
+
+        if nodes_to_invalidate_update:
+            self._emit_invalidation(gRPC.Invalidation.SCENE, world, nodes_to_invalidate_update, gRPC.Invalidation.UPDATE)
+        if nodes_to_invalidate_new:
+            self._emit_invalidation(gRPC.Invalidation.SCENE, world, nodes_to_invalidate_new, gRPC.Invalidation.NEW)
+
 
         logger.debug("<updateNodes> completed")
         return gRPC.Empty()
@@ -402,7 +413,8 @@ class Server(gRPC.BetaUnderworldsServicer):
         client_id, world = nodesInCtxt.context.client, nodesInCtxt.context.world
         scene,_ = self._get_scene_timeline(nodesInCtxt.context)
 
-        # TODO: optimize to send a single invalidation if more than one node
+        nodes_to_invalidate_delete = []
+        nodes_to_invalidate_update = []
         for gRPCNode in nodesInCtxt.nodes:
             node = scene.node(gRPCNode.id)
             logger.info("<%s> deleted node <%s> in world <%s>" % \
@@ -414,7 +426,7 @@ class Server(gRPC.BetaUnderworldsServicer):
 
             # tells everyone about the change
             logger.debug("Sent invalidation action [delete]")
-            self._emit_invalidation(gRPC.Invalidation.SCENE, world, [gRPCNode.id], gRPC.Invalidation.DELETE)
+            nodes_to_invalidate_delete.append(gRPCNode.id)
 
             # reparent children to the scene's root node
             children_to_update = []
@@ -422,12 +434,7 @@ class Server(gRPC.BetaUnderworldsServicer):
                 child = scene.node(child_id)
                 child.parent = scene.rootnode.id
                 logger.debug("Reparenting child " + child_id + " to root node")
-                children_to_update.append(child_id)
-
-            if children_to_update:
-                # tells everyone about the change to the parent
-                self._emit_invalidation(gRPC.Invalidation.SCENE, world, children_to_update, gRPC.Invalidation.UPDATE)
-            
+                nodes_to_invalidate_update.append(child_id)
 
             # Also remove the node from its parent's children
             parent = scene.node(node.parent)
@@ -435,7 +442,13 @@ class Server(gRPC.BetaUnderworldsServicer):
                 parent.children.remove(node.id)
                 # tells everyone about the change to the parent
                 logger.debug("Sent invalidation action [update " + parent.id + "] due to hierarchy update")
-                self._emit_invalidation(gRPC.Invalidation.SCENE, world, [parent.id], gRPC.Invalidation.UPDATE)
+                nodes_to_invalidate_update.append(parent.id)
+
+        if nodes_to_invalidate_update:
+            self._emit_invalidation(gRPC.Invalidation.SCENE, world, nodes_to_invalidate_update, gRPC.Invalidation.UPDATE)
+        if nodes_to_invalidate_delete:
+            self._emit_invalidation(gRPC.Invalidation.SCENE, world, nodes_to_invalidate_delete, gRPC.Invalidation.DELETE)
+
 
         logger.debug("<deleteNodes> completed")
         return gRPC.Empty()
@@ -521,7 +534,8 @@ class Server(gRPC.BetaUnderworldsServicer):
         client_id, world = sitInCtxt.context.client, sitInCtxt.context.world
         _, timeline = self._get_scene_timeline(sitInCtxt.context)
 
-        # TODO: optimize to send a single invalidation if more than one node
+        situations_to_invalidate_update = []
+        situations_to_invalidate_new = []
         for gRPCSit in sitInCtxt.situations:
 
 
@@ -536,7 +550,19 @@ class Server(gRPC.BetaUnderworldsServicer):
 
 
             logger.debug("Adding invalidation action [" + str(invalidation_type) + "]")
-            self._emit_invalidation(gRPC.Invalidation.TIMELINE, world, [situation.id], invalidation_type)
+
+            if invalidation_type ==  gRPC.Invalidation.UPDATE:
+                situations_to_invalidate_update.append(situation.id)
+            elif invalidation_type ==  gRPC.Invalidation.NEW:
+                situations_to_invalidate_new.append(situation.id)
+            else:
+                raise RuntimeError("Unexpected invalidation type")
+
+        if situations_to_invalidate_update:
+            self._emit_invalidation(gRPC.Invalidation.TIMELINE, world, situations_to_invalidate_update, gRPC.Invalidation.UPDATE)
+        if situations_to_invalidate_new:
+            self._emit_invalidation(gRPC.Invalidation.TIMELINE, world, situations_to_invalidate_new, gRPC.Invalidation.NEW)
+
 
         logger.debug("<updateSituations> completed")
         return gRPC.Empty()
@@ -549,7 +575,7 @@ class Server(gRPC.BetaUnderworldsServicer):
         client_id, world = sitInCtxt.context.client, sitInCtxt.context.world
         _, timeline = self._get_scene_timeline(sitInCtxt.context)
 
-        # TODO: optimize to send a single invalidation if more than one node
+        situations_to_invalidate_delete = []
         for gRPCSit in sitInCtxt.situations:
 
             situation = Situation.deserialize(gRPCSit)
@@ -563,7 +589,10 @@ class Server(gRPC.BetaUnderworldsServicer):
 
             # tells everyone about the change
             logger.debug("Sent invalidation action [delete]")
-            self._emit_invalidation(gRPC.Invalidation.TIMELINE, world, [gRPCSit.id], gRPC.Invalidation.DELETE)
+            situations_to_invalidate_delete.append(situation.id)
+
+        if situations_to_invalidate_delete:
+            self._emit_invalidation(gRPC.Invalidation.TIMELINE, world, situations_to_invalidate_delete, gRPC.Invalidation.DELETE)
 
         logger.debug("<deleteSituations> completed")
         return gRPC.Empty()
