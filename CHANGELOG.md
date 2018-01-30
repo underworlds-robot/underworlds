@@ -5,7 +5,9 @@ underworlds next
 
 - support for batch update/deletion of nodes. This should significantly increase
   performances for clients touching many nodes at each iterations.
-
+- fixed 2 annoying bugs with parenting (in particular, deleting a node with
+  children would essentially corrupt the children) and added extensive
+  unit-tests for various parenting-related operations.
 
 underworlds 0.2.1
 =================

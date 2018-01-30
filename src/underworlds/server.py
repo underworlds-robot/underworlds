@@ -156,8 +156,9 @@ class Server(gRPC.BetaUnderworldsServicer):
 
         else: # new node
             scene.nodes.append(node)
-            if node.parent:
-                parent_has_changed = True
+            parent_has_changed = True
+            if node.parent is None:
+                node.parent = scene.rootnode.id
             action = gRPC.Invalidation.NEW
 
         return action, parent_has_changed
@@ -408,7 +409,20 @@ class Server(gRPC.BetaUnderworldsServicer):
             logger.debug("Sent invalidation action [delete]")
             self._emit_invalidation(gRPC.Invalidation.SCENE, world, [gRPCNode.id], gRPC.Invalidation.DELETE)
 
-            # Also remove the node for its parent's children
+            # reparent children to the scene's root node
+            children_to_update = []
+            for child_id in node.children:
+                child = scene.node(child_id)
+                child.parent = scene.rootnode.id
+                logger.debug("Reparenting child " + child_id + " to root node")
+                children_to_update.append(child_id)
+
+            if children_to_update:
+                # tells everyone about the change to the parent
+                self._emit_invalidation(gRPC.Invalidation.SCENE, world, children_to_update, gRPC.Invalidation.UPDATE)
+            
+
+            # Also remove the node from its parent's children
             parent = scene.node(node.parent)
             if parent:
                 parent.children.remove(node.id)
