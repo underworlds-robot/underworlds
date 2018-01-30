@@ -51,9 +51,11 @@ class TestWaitforchanges(unittest.TestCase):
 
         change = future.result()
         self.assertIsNotNone(change)
-        self.assertEquals(change[0], [n.id])
-        self.assertEquals(change[1], gRPC.Invalidation.NEW)
+        #TODO check that the change is either a new node or an update to the root node 
+        # (since the new node has been parented to the root node
 
+        time.sleep(0.1) # sleep a bit to make sure my next 'waitforchanges' is not going to trigger from still pending invalidations
+        
         # Now, we move the node
         future = self.executor.submit(wait_for_changes, world2)
         n.translate([0,1,0])
@@ -61,19 +63,21 @@ class TestWaitforchanges(unittest.TestCase):
 
         change = future.result()
         self.assertIsNotNone(change)
-        self.assertEquals(change[0], [n.id])
-        self.assertEquals(change[1], gRPC.Invalidation.UPDATE)
+        self.assertEqual(change[1], gRPC.Invalidation.UPDATE)
+        self.assertEqual(change[0], [n.id])
 
         # Finally, we remove the node
+        time.sleep(0.1) # sleep a bit to make sure my next 'waitforchanges' is not going to trigger from still pending invalidations
         future = self.executor.submit(wait_for_changes, world2)
         world1.scene.remove_and_propagate(n)
 
         change = future.result()
         self.assertIsNotNone(change)
-        self.assertEquals(change[0], [n.id])
-        self.assertEquals(change[1], gRPC.Invalidation.DELETE)
+        self.assertEqual(change[1], gRPC.Invalidation.DELETE)
+        self.assertEqual(change[0], [n.id])
 
         # Lastly, we do nothing again -> should timeout
+        time.sleep(0.1) # sleep a bit to make sure my next 'waitforchanges' is not going to trigger from still pending invalidations
         future = self.executor.submit(wait_for_changes, world2)
         self.assertIsNone(future.result())
 
