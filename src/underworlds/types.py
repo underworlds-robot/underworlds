@@ -109,6 +109,13 @@ class Node(object):
         self.transformation[1,3] = vector[1]
         self.transformation[2,3] = vector[2]
 
+    def translation(self):
+        """
+
+        :returns: a numpy vector (x, y, z) representing the current translation of the node wrt to its parent.
+        """
+        return self.transformation[0:3,3]
+
     def copy(self):
         """ Performs a deep-copy of myself, and return the copy.
         The copy *has a new, different, unique ID* (ie, the ID is not copied).
