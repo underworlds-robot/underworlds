@@ -27,7 +27,7 @@ some objects filtered out, models that are physically consistent, etc.
 This package provides the library, and a small set of core clients that are
 useful for inspection and debugging.
 
-[Release notes](RELEASE_NOTES.md).
+[Change log](CHANGELOG.md).
 
 Installation
 ------------
