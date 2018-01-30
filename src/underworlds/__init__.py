@@ -61,37 +61,39 @@ class NodesProxy:
         self.lastchange = None
 
     @profile
-    def _on_remotely_updated_node(self, id):
+    def _on_remotely_updated_nodes(self, ids):
 
-        if id not in self._updated_ids:
-            self._updated_ids.append(id)
+        for id in ids:
+            if id not in self._updated_ids:
+                self._updated_ids.append(id)
 
         with self.waitforchanges_cv:
-            self.lastchange = (id, gRPC.Invalidation.UPDATE)
+            self.lastchange = (ids, gRPC.Invalidation.UPDATE)
             self.waitforchanges_cv.notify_all()
 
 
     @profile
-    def _on_remotely_added_node(self, id):
+    def _on_remotely_added_nodes(self, ids):
 
-        self._len += 1 # not atomic, but still fine since I'm the only one to write it
+        self._len += len(ids)
 
-        if id not in self._updated_ids:
-            self._updated_ids.append(id)
+        for id in ids:
+            if id not in self._updated_ids:
+                self._updated_ids.append(id)
 
         with self.waitforchanges_cv:
-            self.lastchange = (id, gRPC.Invalidation.NEW)
+            self.lastchange = (ids, gRPC.Invalidation.NEW)
             self.waitforchanges_cv.notify_all()
 
 
     @profile
-    def _on_remotely_deleted_node(self, id):
+    def _on_remotely_deleted_nodes(self, ids):
 
-        self._len -= 1 # not atomic, but still fine since I'm the only one to write it
-        self._deleted_ids.append(id)
+        self._len -= len(ids)
+        self._deleted_ids.extend(ids)
 
         with self.waitforchanges_cv:
-            self.lastchange = (id, gRPC.Invalidation.DELETE)
+            self.lastchange = (ids, gRPC.Invalidation.DELETE)
             self.waitforchanges_cv.notify_all()
 
 
@@ -189,20 +191,22 @@ class NodesProxy:
     def __len__(self):
         return self._len
 
-    def append(self, node):
-        """ Adds a new node to the node set.
+    def append(self, nodes):
+        """ Adds one or several new nodes to the node set.
 
         It is actually an alias for NodesProxy.update: all the restrictions
         regarding ordering or propagation time apply as well.
+
+        :param nodes: a single node instance, or a sequence of node instances.
         """
-        return self.update(node)
+        return self.update(nodes)
 
     @profile
-    def update(self, node):
-        """ Update the value of a node in the node set.
-        If the node does not exist yet, add it.
+    def update(self, nodes):
+        """ Update the value of one or several nodes in the node set.
+        If the node(s) do(es) not exist yet, add them.
 
-        This method sends the new/updated node to the
+        This method sends the new/updated nodes to the
         remote. IT DOES NOT DIRECTLY modify the local
         copy of nodes: the roundtrip is slower, but data
         consistency is easier to ensure.
@@ -225,6 +229,7 @@ class NodesProxy:
         However, once accessed once, nodes keep their index (until a
         node with a smaller index is removed).
 
+        :param nodes: a single node instance, or a sequence of node instances.
         """
 
         # if for some reason, the previous non-blocking call to update the node is
@@ -232,33 +237,48 @@ class NodesProxy:
         if self.update_future is not None:
             self.update_future.result()
 
-        self.update_future = self._ctx.rpc.updateNode.future(
-                                 gRPC.NodeInContext(context=self._server_ctx,
-                                                    node=node.serialize(gRPC.Node)),
+        if not isinstance(nodes, list):
+            nodes = [nodes]
+
+        gRPCNodes = [node.serialize(gRPC.Node) for node in nodes]
+
+        self.update_future = self._ctx.rpc.updateNodes.future(
+                                 gRPC.NodesInContext(context=self._server_ctx,
+                                                     nodes=gRPCNodes),
                                  _TIMEOUT_SECONDS)
 
     @profile
-    def remove(self, node):
-        """ Deletes a node from the node set.
+    def remove(self, nodes):
+        """ Deletes one or several nodes from the node set.
 
         THIS METHOD DOES NOT DIRECTLY delete the local
-        copy of the node: it tells instead the server to
-        delete this node for all clients.
-        the roundtrip is slower, but data consistency is easier to ensure.
+        copy of the nodes: it tells instead the server to
+        delete these nodes for all clients.
+        The roundtrip is slower, but data consistency is easier to ensure.
 
         This means that if you delete a node, the
         node won't be actually deleted immediately. It will 
         take some time (a couple of milliseconds) to propagate
         the change.
+
+        If the deleted node(s) have children, the children are reparented to
+        the root node.
+
+        :param nodes: a single node instance, or a sequence of node instances.
         """
         # if for some reason, the previous non-blocking call to delete the node is
         # not yet complete, finish it now
         if self.remove_future is not None:
             self.remove_future.result()
 
-        self.remove_future = self._ctx.rpc.deleteNode.future(
-                                 gRPC.NodeInContext(context=self._server_ctx,
-                                                    node=node.serialize(gRPC.Node)),
+        if not isinstance(nodes, list):
+            nodes = [nodes]
+
+        gRPCNodes = [node.serialize(gRPC.Node) for node in nodes]
+
+        self.remove_future = self._ctx.rpc.deleteNodes.future(
+                                 gRPC.NodesInContext(context=self._server_ctx,
+                                                    nodes=gRPCNodes),
                                  _TIMEOUT_SECONDS)
 
 
@@ -280,7 +300,7 @@ class SceneProxy(object):
         added or removed) or the timeout is over.
 
         :param timeout: timeout in seconds (float value)
-        :returns: the change that occured as a pair [node id, operation]
+        :returns: the change that occured as a pair [[node ids], operation]
         (operation is one of gRPC.Invalidation.UPDATE,
         gRPC.Invalidation.NEW, gRPC.Invalidation.DELETE) or None if the
         timeout has been reached.
@@ -305,21 +325,20 @@ class SceneProxy(object):
                 nodes.append(n)
         return nodes
 
-    def append_and_propagate(self, node):
+    def append_and_propagate(self, nodes):
         """An alias for NodesProxy.append
         """
-        self.nodes.append(node)
+        self.nodes.append(nodes)
 
-    def update_and_propagate(self, node):
+    def update_and_propagate(self, nodes):
         """An alias for NodesProxy.update
         """
-        self.nodes.update(node)
+        self.nodes.update(nodes)
 
-    def remove_and_propagate(self, node):
+    def remove_and_propagate(self, nodes):
         """An alias for NodesProxy.remove
         """
-        self.nodes.remove(node)
-
+        self.nodes.remove(nodes)
 
 
 class TimelineProxy:
@@ -359,37 +378,39 @@ class TimelineProxy:
         self.lastchange = None
 
     @profile
-    def _on_remotely_added_situation(self, id):
+    def _on_remotely_updated_situations(self, ids):
 
-
-        self._len += 1 # not atomic, but still fine since I'm the only one to write it
-
-        if id not in self._updated_ids:
-            self._updated_ids.append(id)
+        for id in ids:
+            if id not in self._updated_ids:
+                self._updated_ids.append(id)
 
         with self.waitforchanges_cv:
-            self.lastchange = (id, gRPC.Invalidation.NEW)
+            self.lastchange = (ids, gRPC.Invalidation.UPDATE)
             self.waitforchanges_cv.notify_all()
 
     @profile
-    def _on_remotely_updated_situation(self, id):
+    def _on_remotely_added_situations(self, ids):
 
-        if id not in self._updated_ids:
-            self._updated_ids.append(id)
+
+        self._len += len(ids)
+
+        for id in ids:
+            if id not in self._updated_ids:
+                self._updated_ids.append(id)
 
         with self.waitforchanges_cv:
-            self.lastchange = (id, gRPC.Invalidation.UPDATE)
+            self.lastchange = (ids, gRPC.Invalidation.NEW)
             self.waitforchanges_cv.notify_all()
 
 
     @profile
-    def _on_remotely_deleted_situation(self, id):
+    def _on_remotely_deleted_situations(self, ids):
 
-        self._len -= 1 # not atomic, but still fine since I'm the only one to write it
-        self._deleted_ids.append(id)
+        self._len -= len(ids)
+        self._deleted_ids.extend(ids)
 
         with self.waitforchanges_cv:
-            self.lastchange = (id, gRPC.Invalidation.DELETE)
+            self.lastchange = (ids, gRPC.Invalidation.DELETE)
             self.waitforchanges_cv.notify_all()
 
     def _get_more_situations(self):
@@ -546,21 +567,23 @@ class TimelineProxy:
         self.update(situation)
         return situation
 
-    def append(self, situation):
-        """ Adds a new situation to the timeline.
+    def append(self, situations):
+        """ Adds one or several new situations to the timeline.
 
         It is actually an alias for TimelineProxy.update: all the restrictions
         regarding ordering or propagation time apply as well.
+
+        :param situations: a single situation instance, or a sequence of situation instances.
         """
-        return self.update(situation)
+        return self.update(situations)
 
 
     @profile
-    def update(self, situation):
+    def update(self, situations):
         """ Update the value of a situation.
         If the situation does not exist yet, add it.
 
-        This method sends the new/updated situation to the
+        This method sends the new/updated situations to the
         remote. IT DOES NOT DIRECTLY modify the local
         copy of situations: the roundtrip is slower, but data
         consistency is easier to ensure.
@@ -582,6 +605,8 @@ class TimelineProxy:
 
         However, once accessed once, situations keep their index (until a
         situation with a smaller index is removed).
+
+        :param situations: a single situation instance, or a sequence of situation instances.
         """
 
         # if for some reason, the previous non-blocking call to update the situation is
@@ -589,18 +614,22 @@ class TimelineProxy:
         if self.update_future is not None:
             self.update_future.result()
 
-        self.update_future = self._ctx.rpc.updateSituation.future(
-                                 gRPC.SituationInContext(context=self._server_ctx,
-                                                    situation=situation.serialize(gRPC.Situation)),
+        if not isinstance(situations, list):
+            situations = [situations]
+
+        gRPCSituations = [situation.serialize(gRPC.Situation) for situation in situations]
+
+        self.update_future = self._ctx.rpc.updateSituations.future(
+                                 gRPC.SituationsInContext(context=self._server_ctx,
+                                                    situations=gRPCSituations),
                                  _TIMEOUT_SECONDS)
-        return situation
 
     @profile
-    def remove(self, situation):
-        """ Deletes a situation.
+    def remove(self, situations):
+        """ Deletes one or several situations.
 
         THIS METHOD DOES NOT DIRECTLY delete the local
-        copy of the situation: it tells instead the server to
+        copy of the situations: it tells instead the server to
         delete this situation for all clients.
         the roundtrip is slower, but data consistency is easier to ensure.
 
@@ -608,15 +637,22 @@ class TimelineProxy:
         situation won't be actually deleted immediately. It will 
         take some time (a couple of milliseconds) to propagate
         the change.
+
+        :param situations: a single situation instance, or a sequence of situation instances.
         """
         # if for some reason, the previous non-blocking call to delete the situation is
         # not yet complete, finish it now
         if self.remove_future is not None:
             self.remove_future.result()
 
-        self.remove_future = self._ctx.rpc.deleteSituation.future(
-                                 gRPC.SituationInContext(context=self._server_ctx,
-                                                        situation=situation.serialize(gRPC.Situation)),
+        if not isinstance(situations, list):
+            situations = [situations]
+
+        gRPCSituations = [situation.serialize(gRPC.Situation) for situation in situations]
+
+        self.remove_future = self._ctx.rpc.deleteSituations.future(
+                                 gRPC.SituationsInContext(context=self._server_ctx,
+                                                          situations=gRPCSituations),
                                  _TIMEOUT_SECONDS)
 
 
@@ -627,7 +663,7 @@ class TimelineProxy:
 
         :param timeout: timeout in seconds (float value)
 
-        :returns: the change that occured as a pair [node id, operation]
+        :returns: the change that occured as a pair [[node ids], operation]
         (operation is one of gRPC.Invalidation.UPDATE,
         gRPC.Invalidation.NEW, gRPC.Invalidation.DELETE) or None if the
         timeout has been reached.
@@ -713,31 +749,31 @@ class InvalidationServer(gRPC.BetaUnderworldsInvalidationServicer):
     def emitInvalidation(self, invalidation, context):
         logger.info("Got <emitInvalidation> for world <%s>" % invalidation.world)
        
-        target, action, world, id = invalidation.target, invalidation.type, invalidation.world, invalidation.id
+        target, action, world, ids = invalidation.target, invalidation.type, invalidation.world, invalidation.ids
 
         if target == gRPC.Invalidation.SCENE:
             if action == gRPC.Invalidation.UPDATE:
-                logger.debug("Server notification: node updated: " + id)
-                self.ctx.worlds[world].scene.nodes._on_remotely_updated_node(id)
+                logger.debug("Server notification: nodes updated: " + str(ids))
+                self.ctx.worlds[world].scene.nodes._on_remotely_updated_nodes(ids)
             elif action == gRPC.Invalidation.NEW:
-                logger.debug("Server notification: node added: " + id)
-                self.ctx.worlds[world].scene.nodes._on_remotely_added_node(id)
+                logger.debug("Server notification: nodes added: " + str(ids))
+                self.ctx.worlds[world].scene.nodes._on_remotely_added_nodes(ids)
             elif action == gRPC.Invalidation.DELETE:
-                logger.debug("Server notification: node deleted: " + id)
-                self.ctx.worlds[world].scene.nodes._on_remotely_deleted_node(id)
+                logger.debug("Server notification: nodes deleted: " + str(ids))
+                self.ctx.worlds[world].scene.nodes._on_remotely_deleted_nodes(ids)
             else:
                 raise RuntimeError("Unexpected invalidation action")
 
         elif target == gRPC.Invalidation.TIMELINE:
             if action == gRPC.Invalidation.UPDATE:
-                logger.debug("Server notification: situation updated: " + id)
-                self.ctx.worlds[world].timeline._on_remotely_updated_situation(id)
+                logger.debug("Server notification: situations updated: " + str(ids))
+                self.ctx.worlds[world].timeline._on_remotely_updated_situations(ids)
             elif action == gRPC.Invalidation.NEW:
-                logger.debug("Server notification: situation added: " + id)
-                self.ctx.worlds[world].timeline._on_remotely_added_situation(id)
+                logger.debug("Server notification: situations added: " + str(ids))
+                self.ctx.worlds[world].timeline._on_remotely_added_situations(ids)
             elif action == gRPC.Invalidation.DELETE:
-                logger.debug("Server notification: situation deleted: " + id)
-                self.ctx.worlds[world].timeline._on_remotely_deleted_situation(id)
+                logger.debug("Server notification: situations deleted: " + str(ids))
+                self.ctx.worlds[world].timeline._on_remotely_deleted_situations(ids)
             else:
                 raise RuntimeError("Unexpected invalidation action")
         else:

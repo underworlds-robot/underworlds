@@ -3,6 +3,9 @@ underworlds next
 
 (not yet released)
 
+- support for batch update/deletion of nodes. This should significantly increase
+  performances for clients touching many nodes at each iterations.
+
 
 underworlds 0.2.1
 =================

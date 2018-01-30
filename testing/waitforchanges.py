@@ -51,7 +51,7 @@ class TestWaitforchanges(unittest.TestCase):
 
         change = future.result()
         self.assertIsNotNone(change)
-        self.assertEquals(change[0], n.id)
+        self.assertEquals(change[0], [n.id])
         self.assertEquals(change[1], gRPC.Invalidation.NEW)
 
         # Now, we move the node
@@ -61,7 +61,7 @@ class TestWaitforchanges(unittest.TestCase):
 
         change = future.result()
         self.assertIsNotNone(change)
-        self.assertEquals(change[0], n.id)
+        self.assertEquals(change[0], [n.id])
         self.assertEquals(change[1], gRPC.Invalidation.UPDATE)
 
         # Finally, we remove the node
@@ -70,7 +70,7 @@ class TestWaitforchanges(unittest.TestCase):
 
         change = future.result()
         self.assertIsNotNone(change)
-        self.assertEquals(change[0], n.id)
+        self.assertEquals(change[0], [n.id])
         self.assertEquals(change[1], gRPC.Invalidation.DELETE)
 
         # Lastly, we do nothing again -> should timeout

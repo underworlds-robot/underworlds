@@ -48,11 +48,11 @@ service Underworlds {
     // Note that only the node ID is used (and thus, required).
     rpc getNode(NodeInContext) returns (Node) {}
 
-    // Updates (and broadcasts to all client) a node in a given world
-    rpc updateNode(NodeInContext) returns (Empty) {}
+    // Updates (and broadcasts to all client) nodes in a given world
+    rpc updateNodes(NodesInContext) returns (Empty) {}
 
-    // Deletes (and broadcasts to all client) a node in a given world
-    rpc deleteNode(NodeInContext) returns (Empty) {}
+    // Deletes (and broadcasts to all client) nodes in a given world
+    rpc deleteNodes(NodesInContext) returns (Empty) {}
 
     // TIMELINE
 
@@ -73,10 +73,10 @@ service Underworlds {
     rpc timelineOrigin(Context) returns (Time) {}
 
     // Updates (and broadcasts to all client) a situation in a given world
-    rpc updateSituation(SituationInContext) returns (Empty) {}
+    rpc updateSituations(SituationsInContext) returns (Empty) {}
 
     // Deletes (and broadcasts to all client) a node in a given world
-    rpc deleteSituation(SituationInContext) returns (Empty) {}
+    rpc deleteSituations(SituationsInContext) returns (Empty) {}
 
 
     // MESHES
@@ -198,8 +198,8 @@ message Invalidation {
 
     string world = 3;
 
-    // the ID of the node/situation which is being invalidated
-    string id = 4;
+    // the ID of the nodes/situations which are being invalidated
+    repeated string ids = 4;
 }
 
 /////////////////////////////////////////////
@@ -286,6 +286,12 @@ message NodeInContext {
     Node node = 2;
 }
 
+message NodesInContext {
+    Context context = 1;
+    repeated Node nodes = 2;
+}
+
+
 /////////////////////////////////////////////
 // TIMELINE-RELATED MESSAGES
 
@@ -322,6 +328,12 @@ message SituationInContext {
     Context context = 1;
     Situation situation = 2;
 }
+
+message SituationsInContext {
+    Context context = 1;
+    repeated Situation situations = 2;
+}
+
 
 /////////////////////////////////////////////
 // MESH-RELATED MESSAGES

@@ -42,17 +42,17 @@ class TestNodes(unittest.TestCase):
                 root2 = n
 
         self.assertIsNotNone(root2)
-        self.assertEquals(root2, root)
+        self.assertEqual(root2, root)
 
         root2.name = "toto"
         nodes.update(root2)
         time.sleep(PROPAGATION_TIME) # wait for propagation
 
-        self.assertEquals(root, world.scene.rootnode) # the equality test is based on the ID, and the ID did not change
-        self.assertEquals(world.scene.rootnode.name, "toto")
+        self.assertEqual(root, world.scene.rootnode) # the equality test is based on the ID, and the ID did not change
+        self.assertEqual(world.scene.rootnode.name, "toto")
 
         world2 = self.ctx2.worlds["base"]
-        self.assertEquals(world2.scene.rootnode, world.scene.rootnode)
+        self.assertEqual(world2.scene.rootnode, world.scene.rootnode)
 
 
     def test_adding_nodes(self):
@@ -195,6 +195,26 @@ class TestNodes(unittest.TestCase):
         names2 = [n.name for n in nodes2]
         self.assertListEqual(names, names2[:2])
 
+
+    def test_multiple_nodes(self):
+
+        world = self.ctx.worlds["base"]
+        nodes = world.scene.nodes
+        
+        self.assertEqual(len(nodes), 1)
+        self.assertEqual(nodes[0].name, "root")
+
+        new_nodes = [Node() for i in range(10)]
+
+        nodes.append(new_nodes)
+
+        time.sleep(PROPAGATION_TIME) # wait for propagation
+        self.assertEqual(len(nodes), 11)
+
+        nodes.remove(new_nodes)
+
+        time.sleep(PROPAGATION_TIME) # wait for propagation
+        self.assertEqual(len(nodes), 1)
 
     def tearDown(self):
         self.ctx.close()
