@@ -10,7 +10,7 @@ logging.basicConfig(level=logging.DEBUG)
 
 import underworlds
 import underworlds.server
-from underworlds.types import Node
+from underworlds.types import Node, DELETE, UPDATE
 import underworlds.underworlds_pb2 as gRPC
 
 PROPAGATION_TIME=0.05 # time to wait for node update notification propagation (in sec)
@@ -63,7 +63,7 @@ class TestWaitforchanges(unittest.TestCase):
 
         change = future.result()
         self.assertIsNotNone(change)
-        self.assertEqual(change[1], gRPC.Invalidation.UPDATE)
+        self.assertEqual(change[1], UPDATE)
         self.assertEqual(change[0], [n.id])
 
         # Finally, we remove the node
@@ -73,7 +73,7 @@ class TestWaitforchanges(unittest.TestCase):
 
         change = future.result()
         self.assertIsNotNone(change)
-        self.assertEqual(change[1], gRPC.Invalidation.DELETE)
+        self.assertEqual(change[1], DELETE)
         self.assertEqual(change[0], [n.id])
 
         # Lastly, we do nothing again -> should timeout

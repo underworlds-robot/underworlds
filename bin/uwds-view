@@ -28,7 +28,7 @@ import OpenGL
 from OpenGL.GL import *
 from OpenGL.error import GLError
 from OpenGL.GLU import *
-#from OpenGL.GLUT import *
+from OpenGL.GLUT import glutGet, GLUT_ELAPSED_TIME
 from OpenGL.arrays import vbo
 from OpenGL.GL import shaders
 

@@ -47,6 +47,16 @@ SITUATIONTYPE_NAMES = {GENERIC: "generic situation",
                        EVT_MODELLOAD: "model loading"
                       }
 
+# Invalidation types
+NEW = gRPC.Invalidation.NEW
+UPDATE = gRPC.Invalidation.UPDATE
+DELETE = gRPC.Invalidation.DELETE
+
+INVALIDATIONTYPE_NAMES = {NEW: "new",
+                          UPDATE: "update",
+                          DELETE: "delete"
+                         }
+
 class Node(object):
     def __init__(self, name = "", type = UNDEFINED):
 

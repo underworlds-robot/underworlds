@@ -58,7 +58,6 @@ DEFAULT_CLIP_PLANE_FAR = 1000.0
 
 class VisibilityMonitor:
 
-
     def __init__(self, ctx, world, w=80, h=60, create_surface=True, debug=False):
 
         self.debug = debug

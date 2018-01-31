@@ -152,14 +152,14 @@ class Server(gRPC.BetaUnderworldsServicer):
             # replace the node
             scene.nodes = [node if old == node else old for old in scene.nodes]
             
-            action = gRPC.Invalidation.UPDATE
+            action = UPDATE
 
         else: # new node
             scene.nodes.append(node)
             parent_has_changed = True
             if node.parent is None:
                 node.parent = scene.rootnode.id
-            action = gRPC.Invalidation.NEW
+            action = NEW
 
         return action, parent_has_changed
 
@@ -171,9 +171,9 @@ class Server(gRPC.BetaUnderworldsServicer):
         situation.last_update = time.time()
 
         if situation.id in timeline.situations:
-            action = gRPC.Invalidation.UPDATE
+            action = UPDATE
         else:
-            action = gRPC.Invalidation.NEW
+            action = NEW
 
         timeline.update(situation)
 
@@ -363,13 +363,13 @@ class Server(gRPC.BetaUnderworldsServicer):
 
             logger.info("<%s> %s node <%s> in world <%s>" % \
                                 (self._clientname(client_id), 
-                                "updated" if invalidation_type==gRPC.Invalidation.UPDATE else "created",
+                                "updated" if invalidation_type==UPDATE else "created",
                                 repr(node), 
                                 world))
 
-            if invalidation_type ==  gRPC.Invalidation.UPDATE:
+            if invalidation_type ==  UPDATE:
                 nodes_to_invalidate_update.append(gRPCNode.id)
-            elif invalidation_type ==  gRPC.Invalidation.NEW:
+            elif invalidation_type ==  NEW:
                 nodes_to_invalidate_new.append(gRPCNode.id)
             else:
                 raise RuntimeError("Unexpected invalidation type")
@@ -397,9 +397,9 @@ class Server(gRPC.BetaUnderworldsServicer):
                             break
 
         if nodes_to_invalidate_update:
-            self._emit_invalidation(gRPC.Invalidation.SCENE, world, nodes_to_invalidate_update, gRPC.Invalidation.UPDATE)
+            self._emit_invalidation(gRPC.Invalidation.SCENE, world, nodes_to_invalidate_update, UPDATE)
         if nodes_to_invalidate_new:
-            self._emit_invalidation(gRPC.Invalidation.SCENE, world, nodes_to_invalidate_new, gRPC.Invalidation.NEW)
+            self._emit_invalidation(gRPC.Invalidation.SCENE, world, nodes_to_invalidate_new, NEW)
 
 
         logger.debug("<updateNodes> completed")
@@ -445,9 +445,9 @@ class Server(gRPC.BetaUnderworldsServicer):
                 nodes_to_invalidate_update.append(parent.id)
 
         if nodes_to_invalidate_update:
-            self._emit_invalidation(gRPC.Invalidation.SCENE, world, nodes_to_invalidate_update, gRPC.Invalidation.UPDATE)
+            self._emit_invalidation(gRPC.Invalidation.SCENE, world, nodes_to_invalidate_update, UPDATE)
         if nodes_to_invalidate_delete:
-            self._emit_invalidation(gRPC.Invalidation.SCENE, world, nodes_to_invalidate_delete, gRPC.Invalidation.DELETE)
+            self._emit_invalidation(gRPC.Invalidation.SCENE, world, nodes_to_invalidate_delete, DELETE)
 
 
         logger.debug("<deleteNodes> completed")
@@ -551,17 +551,17 @@ class Server(gRPC.BetaUnderworldsServicer):
 
             logger.debug("Adding invalidation action [" + str(invalidation_type) + "]")
 
-            if invalidation_type ==  gRPC.Invalidation.UPDATE:
+            if invalidation_type == UPDATE:
                 situations_to_invalidate_update.append(situation.id)
-            elif invalidation_type ==  gRPC.Invalidation.NEW:
+            elif invalidation_type == NEW:
                 situations_to_invalidate_new.append(situation.id)
             else:
                 raise RuntimeError("Unexpected invalidation type")
 
         if situations_to_invalidate_update:
-            self._emit_invalidation(gRPC.Invalidation.TIMELINE, world, situations_to_invalidate_update, gRPC.Invalidation.UPDATE)
+            self._emit_invalidation(gRPC.Invalidation.TIMELINE, world, situations_to_invalidate_update, UPDATE)
         if situations_to_invalidate_new:
-            self._emit_invalidation(gRPC.Invalidation.TIMELINE, world, situations_to_invalidate_new, gRPC.Invalidation.NEW)
+            self._emit_invalidation(gRPC.Invalidation.TIMELINE, world, situations_to_invalidate_new, NEW)
 
 
         logger.debug("<updateSituations> completed")
@@ -592,7 +592,7 @@ class Server(gRPC.BetaUnderworldsServicer):
             situations_to_invalidate_delete.append(situation.id)
 
         if situations_to_invalidate_delete:
-            self._emit_invalidation(gRPC.Invalidation.TIMELINE, world, situations_to_invalidate_delete, gRPC.Invalidation.DELETE)
+            self._emit_invalidation(gRPC.Invalidation.TIMELINE, world, situations_to_invalidate_delete, DELETE)
 
         logger.debug("<deleteSituations> completed")
         return gRPC.Empty()

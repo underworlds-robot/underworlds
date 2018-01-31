@@ -16,7 +16,7 @@ from grpc.beta import implementations
 from grpc.framework.interfaces.face.face import ExpirationError,NetworkError,AbortionError
 import underworlds.underworlds_pb2 as gRPC
 
-from underworlds.types import World, Node, Situation, MeshData
+from underworlds.types import World, Node, Situation, MeshData, NEW, DELETE, UPDATE
 
 from underworlds.helpers.profile import profile, profileonce
 
@@ -68,7 +68,7 @@ class NodesProxy:
                 self._updated_ids.append(id)
 
         with self.waitforchanges_cv:
-            self.lastchange = (ids, gRPC.Invalidation.UPDATE)
+            self.lastchange = (ids, UPDATE)
             self.waitforchanges_cv.notify_all()
 
 
@@ -82,7 +82,7 @@ class NodesProxy:
                 self._updated_ids.append(id)
 
         with self.waitforchanges_cv:
-            self.lastchange = (ids, gRPC.Invalidation.NEW)
+            self.lastchange = (ids, NEW)
             self.waitforchanges_cv.notify_all()
 
 
@@ -93,7 +93,7 @@ class NodesProxy:
         self._deleted_ids.extend(ids)
 
         with self.waitforchanges_cv:
-            self.lastchange = (ids, gRPC.Invalidation.DELETE)
+            self.lastchange = (ids, DELETE)
             self.waitforchanges_cv.notify_all()
 
 
@@ -301,8 +301,8 @@ class SceneProxy(object):
 
         :param timeout: timeout in seconds (float value)
         :returns: the change that occured as a pair [[node ids], operation]
-        (operation is one of gRPC.Invalidation.UPDATE,
-        gRPC.Invalidation.NEW, gRPC.Invalidation.DELETE) or None if the
+        (operation is one of UPDATE,
+        NEW, DELETE) or None if the
         timeout has been reached.
         """
         lastchange = None
@@ -385,7 +385,7 @@ class TimelineProxy:
                 self._updated_ids.append(id)
 
         with self.waitforchanges_cv:
-            self.lastchange = (ids, gRPC.Invalidation.UPDATE)
+            self.lastchange = (ids, UPDATE)
             self.waitforchanges_cv.notify_all()
 
     @profile
@@ -399,7 +399,7 @@ class TimelineProxy:
                 self._updated_ids.append(id)
 
         with self.waitforchanges_cv:
-            self.lastchange = (ids, gRPC.Invalidation.NEW)
+            self.lastchange = (ids, NEW)
             self.waitforchanges_cv.notify_all()
 
 
@@ -410,7 +410,7 @@ class TimelineProxy:
         self._deleted_ids.extend(ids)
 
         with self.waitforchanges_cv:
-            self.lastchange = (ids, gRPC.Invalidation.DELETE)
+            self.lastchange = (ids, DELETE)
             self.waitforchanges_cv.notify_all()
 
     def _get_more_situations(self):
@@ -664,8 +664,8 @@ class TimelineProxy:
         :param timeout: timeout in seconds (float value)
 
         :returns: the change that occured as a pair [[node ids], operation]
-        (operation is one of gRPC.Invalidation.UPDATE,
-        gRPC.Invalidation.NEW, gRPC.Invalidation.DELETE) or None if the
+        (operation is one of UPDATE,
+        NEW, DELETE) or None if the
         timeout has been reached.
         """
         lastchange = None
@@ -752,26 +752,26 @@ class InvalidationServer(gRPC.BetaUnderworldsInvalidationServicer):
         target, action, world, ids = invalidation.target, invalidation.type, invalidation.world, invalidation.ids
 
         if target == gRPC.Invalidation.SCENE:
-            if action == gRPC.Invalidation.UPDATE:
+            if action == UPDATE:
                 logger.debug("Server notification: nodes updated: " + str(ids))
                 self.ctx.worlds[world].scene.nodes._on_remotely_updated_nodes(ids)
-            elif action == gRPC.Invalidation.NEW:
+            elif action == NEW:
                 logger.debug("Server notification: nodes added: " + str(ids))
                 self.ctx.worlds[world].scene.nodes._on_remotely_added_nodes(ids)
-            elif action == gRPC.Invalidation.DELETE:
+            elif action == DELETE:
                 logger.debug("Server notification: nodes deleted: " + str(ids))
                 self.ctx.worlds[world].scene.nodes._on_remotely_deleted_nodes(ids)
             else:
                 raise RuntimeError("Unexpected invalidation action")
 
         elif target == gRPC.Invalidation.TIMELINE:
-            if action == gRPC.Invalidation.UPDATE:
+            if action == UPDATE:
                 logger.debug("Server notification: situations updated: " + str(ids))
                 self.ctx.worlds[world].timeline._on_remotely_updated_situations(ids)
-            elif action == gRPC.Invalidation.NEW:
+            elif action == NEW:
                 logger.debug("Server notification: situations added: " + str(ids))
                 self.ctx.worlds[world].timeline._on_remotely_added_situations(ids)
-            elif action == gRPC.Invalidation.DELETE:
+            elif action == DELETE:
                 logger.debug("Server notification: situations deleted: " + str(ids))
                 self.ctx.worlds[world].timeline._on_remotely_deleted_situations(ids)
             else:
