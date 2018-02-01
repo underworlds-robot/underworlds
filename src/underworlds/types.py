@@ -47,8 +47,6 @@ SITUATIONTYPE_NAMES = {GENERIC: "generic situation",
                        EVT_MODELLOAD: "model loading"
                       }
 
-NOT_YET_SET = "##REQUIRED PROPERTY NOT SET##"
-
 class Node(object):
     def __init__(self, name = "", type = UNDEFINED):
 
@@ -158,7 +156,7 @@ class Node(object):
         node.last_update = self.last_update
 
         for k, v in self.properties.items():
-            if v == NOT_YET_SET:
+            if v is None:
                 raise UnderworldsError("Property %s is required but not set (and has no default value)" % k)
             
             node.properties[k] = json.dumps(v)
@@ -217,7 +215,7 @@ class Mesh(Node):
 
         # TODO: generate that list automatically from properties-registry.rst
         self.properties = {
-                "mesh_ids": NOT_YET_SET,
+                "mesh_ids": None,
                 "physics": False # no physics applied by default
             }
 
@@ -228,8 +226,8 @@ class Camera(Node):
 
         # TODO: generate that list automatically from properties-registry.rst
         self.properties = {
-                "aspect": NOT_YET_SET,
-                "horizontalfov": NOT_YET_SET,
+                "aspect": None,
+                "horizontalfov": None,
             }
 
 class MeshData(object):

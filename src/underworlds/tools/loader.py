@@ -81,7 +81,10 @@ class ModelLoader:
                 id = mesh.id
                 logger.debug("\tLoading mesh %s" % id)
                 self.meshes[id] = mesh
-                underworlds_node.properties.setdefault("mesh_ids", []).append(id)
+                if underworlds_node.properties["mesh_ids"] is None:
+                    underworlds_node.properties["mesh_ids"] = [id]
+                else:
+                    underworlds_node.properties["mesh_ids"].append(id)
 
             underworlds_node.properties["aabb"] = self.node_boundingbox(assimp_node)
 

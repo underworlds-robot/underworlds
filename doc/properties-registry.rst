@@ -39,6 +39,8 @@ Syntax and Datatypes
     - be marked as ``REQUIRED``
     - be marked as ``OPTIONAL``
     - provide a default value. In this case, they are implicitely marked as ``REQUIRED``
+- Properties values MUST NOT be None/null/nil as this value is reserved for
+  non-set properties.
 
 Registry
 --------
