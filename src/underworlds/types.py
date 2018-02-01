@@ -53,9 +53,9 @@ class Node(object):
     def __init__(self, name = "", type = UNDEFINED):
 
         if type == UNDEFINED:
-            logger.warn("Node is an abstract class. Instantiate "
-                        "instead one of its concrete subclass like"
-                        " Mesh or Camera")
+            logger.warning("Node is an abstract class. Instantiate "
+                           "instead one of its concrete subclass like"
+                           " Mesh or Camera")
 
         ################################################################
         ##                     START OF THE API                       ##
@@ -205,33 +205,32 @@ class Node(object):
 class Entity(Node):
 
     def __init__(self, name = ""):
-        # TODO: generate that list automatically from properties-registry.rst
-        self.properties = {}
-
         super(Entity, self).__init__(name, ENTITY)
 
+        # TODO: generate that list automatically from properties-registry.rst
+        self.properties = {}
 
 class Mesh(Node):
 
     def __init__(self, name = ""):
+        super(Mesh, self).__init__(name, MESH)
+
         # TODO: generate that list automatically from properties-registry.rst
         self.properties = {
-                "mesh_id": NOT_YET_SET,
+                "mesh_ids": NOT_YET_SET,
                 "physics": False # no physics applied by default
             }
-
-        super(Mesh, self).__init__(name, MESH)
 
 class Camera(Node):
 
     def __init__(self, name = ""):
+        super(Camera, self).__init__(name, CAMERA)
+
         # TODO: generate that list automatically from properties-registry.rst
         self.properties = {
                 "aspect": NOT_YET_SET,
                 "horizontalfov": NOT_YET_SET,
             }
-
-        super(Camera, self).__init__(name, CAMERA)
 
 class MeshData(object):
 

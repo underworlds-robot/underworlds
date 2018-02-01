@@ -5,7 +5,7 @@ import re
 
 import underworlds
 from underworlds.helpers import transformations
-from underworlds.types import MESH, Node
+from underworlds.types import Mesh
 from underworlds.tools.loader import ModelLoader
 from underworlds.tools.primitives_3d import Box
 
@@ -45,9 +45,8 @@ if __name__ == "__main__":
         for node in scene.nodes:
             if re.match(args.regex, node.name):
                 logger.info("Creating a MESH node for <%s> with meshes %s" % (str(node), str(mesh_ids)))
-                mesh_node = Node()
-                mesh_node.type = MESH
-                mesh_node.cad = mesh_ids
+                mesh_node = Mesh()
+                mesh_node.properties["mesh_ids"] = mesh_ids
                 mesh_node.name = "mesh_" + node.name
                 mesh_node.parent = node.id
                 new_nodes.append(mesh_node)
