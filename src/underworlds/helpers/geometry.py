@@ -30,8 +30,9 @@ def get_scene_bounding_box(scene):
 
 def _compute_bounding_box_for_node(nodes, node, bb_min, bb_max, transformation):
     
-    if node.type == MESH:
-        for v in node.aabb:
+    if node.type == MESH and "aabb" in node.properties:
+        x1,y1,z1,x2,y2,z2 = node.properties["aabb"]
+        for v in ((x1,y1,z1), (x2,y2,z2)):
             v = transform(v, transformation)
             bb_min[0] = min(bb_min[0], v[0])
             bb_min[1] = min(bb_min[1], v[1])

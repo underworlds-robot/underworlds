@@ -3,6 +3,9 @@ underworlds next
 
 (not yet released)
 
+- nodes can now have a list of arbitrary properties. Standard/recommended
+  properties (like the bounding box for meshes or the field of view for cameras)
+  are defined in [the properties registry](doc/properties-registry.rst).
 - support for batch update/deletion of nodes. This should significantly increase
   performances for clients touching many nodes at each iterations.
 - fixed 2 annoying bugs with parenting (in particular, deleting a node with

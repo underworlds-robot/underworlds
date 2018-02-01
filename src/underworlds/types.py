@@ -47,18 +47,25 @@ SITUATIONTYPE_NAMES = {GENERIC: "generic situation",
                        EVT_MODELLOAD: "model loading"
                       }
 
+NOT_YET_SET = "##REQUIRED PROPERTY NOT SET##"
+
 class Node(object):
     def __init__(self, name = "", type = UNDEFINED):
+
+        if type == UNDEFINED:
+            logger.warn("Node is an abstract class. Instantiate "
+                        "instead one of its concrete subclass like"
+                        " Mesh or Camera")
 
         ################################################################
         ##                     START OF THE API                       ##
         ################################################################
         self.id = str(uuid.uuid4())
         self.name = name
-        self.type = type #one of the node constant defined in types.py
+        self._type = type #one of the node constant defined in types.py -- THIS IS READ-ONLY
         self.parent = None # the parent node id
-        #TODO: make children read-only with @property
-        self.children = [] # the children nodes id. READ-ONLY
+
+        self._children = [] # the children nodes id. READ-ONLY
         
 
         # 4x4 transformation matrix, relative to parent. Stored as a numpy 4x4
@@ -67,23 +74,22 @@ class Node(object):
 
         self.last_update = time.time()
 
-        self.lowres = []
-        self.hires = []
-        self.cad = []
-        self.aabb = []
-
-        self.properties = {
-                "physics": False # no physics applied by default
-            }
-
-        self.clipplanenear = 0
-        self.clipplanefar = 0
-        self.aspect = 0
-        self.horizontalfov = 0
+        # empty property list for the abstract Node class. Concrete subclasses
+        # might define their own required properties
+        self.properties = {}
 
         ################################################################
         ##                     END OF THE API                         ##
         ################################################################
+
+    # getters for read-only properties
+    @property
+    def children(self):
+        return self._children
+    @property
+    def type(self):
+        return self._type
+
 
     def __repr__(self):
         return self.id + (" (" + self.name + ")" if self.name else "")
@@ -140,7 +146,7 @@ class Node(object):
         node = NodeType()
         node.id = self.id
         node.name = self.name
-        node.type = self.type
+        node.type = self._type
         node.parent = self.parent if self.parent is not None else ""
 
         for c in self.children:
@@ -151,21 +157,12 @@ class Node(object):
 
         node.last_update = self.last_update
 
+        for k, v in self.properties.items():
+            if v == NOT_YET_SET:
+                raise UnderworldsError("Property %s is required but not set (and has no default value)" % k)
+            
+            node.properties[k] = json.dumps(v)
 
-        for m in self.lowres: node.lowres.append(m)
-        for m in self.hires: node.hires.append(m)
-        for m in self.cad: node.cad.append(m)
-
-        for p in self.aabb:
-            point = node.aabb.add()
-            point.x, point.y, point.z = float(p[0]), float(p[1]), float(p[2])
-
-        node.physics = self.properties["physics"]
-
-        node.clipplanenear = self.clipplanenear
-        node.clipplanefar =  self.clipplanefar
-        node.aspect =        self.aspect
-        node.horizontalfov = self.horizontalfov
 
         return node
 
@@ -173,15 +170,24 @@ class Node(object):
     def deserialize(data):
         """Creates a node from a protobuf encoding.
         """
-        node = Node()
+
+        if data.type == UNDEFINED:
+            node = Node()
+        elif data.type == ENTITY:
+            node = Entity()
+        elif data.type == MESH:
+            node = Mesh()
+        elif data.type == CAMERA:
+            node = Camera()
+        else:
+            raise UnderworldsError("Unknown node type %s while deserializing a gRPC node" % data.type)
 
         node.id = data.id
         node.name = data.name
-        node.type = data.type
         node.parent = data.parent if data.parent else None # convert empty string to None if needed
 
         for c in data.children:
-            node.children.append(c)
+            node._children.append(c)
 
         node.transformation = [v for v in data.transformation]
 
@@ -191,23 +197,41 @@ class Node(object):
 
         node.last_update = data.last_update
 
-
-        node.lowres = [m for m in data.lowres]
-        node.hires = [m for m in data.hires]
-        node.cad = [m for m in data.cad]
-
-        node.aabb = [(p.x,p.y,p.z) for p in data.aabb]
-        if node.aabb and len(node.aabb) != 2:
-            raise RuntimeError("Received a node with an invalid bounding-box!")
-
-        node.properties["physics"] = data.physics
-
-        node.clipplanenear = data.clipplanenear
-        node.clipplanefar =  data.clipplanefar
-        node.aspect =        data.aspect
-        node.horizontalfov = data.horizontalfov
+        for k, v in data.properties.items():
+            node.properties[k] = json.loads(v)
 
         return node
+
+class Entity(Node):
+
+    def __init__(self, name = ""):
+        # TODO: generate that list automatically from properties-registry.rst
+        self.properties = {}
+
+        super(Entity, self).__init__(name, ENTITY)
+
+
+class Mesh(Node):
+
+    def __init__(self, name = ""):
+        # TODO: generate that list automatically from properties-registry.rst
+        self.properties = {
+                "mesh_id": NOT_YET_SET,
+                "physics": False # no physics applied by default
+            }
+
+        super(Mesh, self).__init__(name, MESH)
+
+class Camera(Node):
+
+    def __init__(self, name = ""):
+        # TODO: generate that list automatically from properties-registry.rst
+        self.properties = {
+                "aspect": NOT_YET_SET,
+                "horizontalfov": NOT_YET_SET,
+            }
+
+        super(Camera, self).__init__(name, CAMERA)
 
 class MeshData(object):
 
@@ -281,7 +305,7 @@ class Scene(object):
 
     def __init__(self):
 
-        self.rootnode = Node("root", ENTITY)
+        self.rootnode = Entity("root")
         self.rootnode.transformation = numpy.identity(4, dtype=numpy.float32)
 
         self.nodes = []

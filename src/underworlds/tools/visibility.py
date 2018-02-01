@@ -19,6 +19,7 @@ logger = logging.getLogger("underworlds.visibility")
 
 import underworlds
 from underworlds.types import *
+from underworlds.errors import *
 from underworlds.helpers.geometry import transform, get_world_transform
 from underworlds.helpers import transformations
 
@@ -181,14 +182,7 @@ class VisibilityMonitor:
             self.colorid2node[colorid] = node
             self.node2colorid[node] = colorid
 
-            if hasattr(node, "cad"):
-                node.glmeshes = node.cad
-            elif hasattr(node, "lowres"):
-                node.glmeshes = node.lowres
-            elif hasattr(node, "hires"):
-                node.glmeshes = node.hires
-            else:
-                raise StandardError("The node %s has no mesh available!" % node.name)
+            node.glmeshes = node.properties["mesh_ids"]
             for mesh in node.glmeshes:
                 self.prepare_gl_buffers(mesh)
 
@@ -222,10 +216,10 @@ class VisibilityMonitor:
         # Update the camera position from the server
         camera = self.scene.nodes[camera.id]
 
-        znear = camera.clipplanenear or DEFAULT_CLIP_PLANE_NEAR
-        zfar = camera.clipplanefar or DEFAULT_CLIP_PLANE_FAR
-        aspect = camera.aspect
-        fov = camera.horizontalfov
+        znear = camera.properties["clipplanenear"] or DEFAULT_CLIP_PLANE_NEAR
+        zfar = camera.properties["clipplanefar"] or DEFAULT_CLIP_PLANE_FAR
+        aspect = camera.properties["aspect"]
+        fov = camera.properties["horizontalfov"]
 
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()

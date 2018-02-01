@@ -247,34 +247,14 @@ message Node {
     // date/time of the last node's update (in sec since the epoch)
     double last_update = 8;
 
-    ////// PROPERTIES
-    // Note that most of these properties are only meaningful for certain type of node
-    // Other type should simply ignore them.
-
-    // MESH node properties
-
-    // For nodes of type MESH, the mesh IDs of the low-resolution meshes
-    // representing this object (may be empty)
-    repeated string lowres = 16;
-    // For nodes of type MESH, the mesh IDs of the high-resolution meshes
-    // representing this object (may be empty)
-    repeated string hires = 17;
-    // For nodes of type MESH, the mesh IDs of the CAD models 
-    // representing this object (may be empty)
-    repeated string cad = 18;
-
-    // When meaningful, the axis-aligned bounding-box of the node as 2 points (P1, P2).
-    // The order of the points is not guaranteed.
-    repeated Pointf aabb = 19;
-
-    // if set to true, physics-related computation are expected to be run on this node
-    bool physics = 30;
-
-    // Cameras properties
-    float clipplanenear = 40;
-    float clipplanefar = 41;
-    float aspect = 42;
-    float horizontalfov = 43;
+    // list of properties attached to this node. See doc/properties-registry.rst for
+    // permitted values.
+    // The keys of the mapping are always alphanumeric strings (starting with a
+    // letter or an underscore).
+    // The values can have various type (see registry). They are encoded in the
+    // protobuf message as json strings, but we encourage client
+    // implementations to expose the deserialized json values.
+    map<string, string> properties = 9;
 }
 
 message Nodes {

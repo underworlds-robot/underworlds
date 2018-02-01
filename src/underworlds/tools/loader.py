@@ -35,17 +35,18 @@ class ModelLoader:
         Be careful: this is the *untransformed* bounding box,
         ie, the bounding box of the mesh in the node frame.
         """
-        bb_min = [1e10, 1e10, 1e10] # x,y,z
-        bb_max = [-1e10, -1e10, -1e10] # x,y,z
+        x_min, y_min, z_min = 1e10, 1e10, 1e10
+        x_max, y_max, z_max = -1e10, -1e10, -1e10
         for mesh in node.meshes:
             for v in mesh.vertices:
-                bb_min[0] = round(min(bb_min[0], v[0]), 5)
-                bb_min[1] = round(min(bb_min[1], v[1]), 5)
-                bb_min[2] = round(min(bb_min[2], v[2]), 5)
-                bb_max[0] = round(max(bb_max[0], v[0]), 5)
-                bb_max[1] = round(max(bb_max[1], v[1]), 5)
-                bb_max[2] = round(max(bb_max[2], v[2]), 5)
-        return (bb_min, bb_max)
+                x_min = round(min(x_min, v[0]), 5)
+                y_min = round(min(y_min, v[1]), 5)
+                z_min = round(min(z_min, v[2]), 5)
+                x_max = round(max(x_max, v[0]), 5)
+                y_max = round(max(y_max, v[1]), 5)
+                z_max = round(max(z_max, v[2]), 5)
+        return float(x_min), float(y_min), float(z_min), float(x_max), float(y_max), float(z_max)
+
 
     def fill_node_details(self, 
                           assimp_node, 
@@ -69,9 +70,6 @@ class ModelLoader:
         underworlds_node.transformation = assimp_node.transformation.astype(numpy.float32)
 
         if assimp_node.meshes:
-            underworlds_node.type = MESH
-            underworlds_node.cad = []
-            underworlds_node.hires = []
 
             for m in assimp_node.meshes:
                 
@@ -83,18 +81,16 @@ class ModelLoader:
                 id = mesh.id
                 logger.debug("\tLoading mesh %s" % id)
                 self.meshes[id] = mesh
-                underworlds_node.cad.append(id)
-                underworlds_node.hires.append(id)
+                underworlds_node.properties.setdefault("mesh_ids", []).append(id)
 
-            underworlds_node.aabb = self.node_boundingbox(assimp_node)
+            underworlds_node.properties["aabb"] = self.node_boundingbox(assimp_node)
 
         elif assimp_node.name in [c.name for c in assimp_model.cameras]:
             logger.debug("\tAdding camera <%s>" % assimp_node.name)
 
             [cam] = [c for c in assimp_model.cameras if c.name == assimp_node.name]
-            underworlds_node.type = CAMERA
-            underworlds_node.clipplanenear = cam.clipplanenear
-            underworlds_node.clipplanefar = cam.clipplanefar
+            underworlds_node.properties["clipplanenear"] = cam.clipplanenear
+            underworlds_node.properties["clipplanefar"] = cam.clipplanefar
 
             if numpy.allclose(cam.lookat, [0,0,-1]) and numpy.allclose(cam.up, [0,1,0]): # Cameras in .blend files
 
@@ -105,21 +101,30 @@ class ModelLoader:
 
             if cam.aspect == 0.0:
                 logger.warning("Camera aspect not set. Setting to default 4:3")
-                underworlds_node.aspect = 1.333
+                underworlds_node.properties["aspect"] = 1.333
             else:
-                underworlds_node.aspect = cam.aspect
+                underworlds_node.properties["aspect"] = cam.aspect
 
-            underworlds_node.horizontalfov = cam.horizontalfov
+            underworlds_node.properties["horizontalfov"] = cam.horizontalfov
 
             #underworlds_node.lookat = [round(a, 5) for a in cam.lookat]
         else:
-            underworlds_node.type = ENTITY
+            # Entity
+            pass
 
     def recur_node(self, assimp_node, model, level = 0):
         logger.info("  " + "\t" * level + "- " + str(assimp_node))
 
         if assimp_node != model.rootnode: # the rootnode is already there
-            self.node_map[assimp_node.name] = (assimp_node, Node()) # cannot use assimp_node as key: it is unhashable
+            if assimp_node.meshes:
+                node = Mesh()
+            elif assimp_node.name in [c.name for c in model.cameras]:
+                node = Camera()
+            else:
+                node = Entity()
+
+            self.node_map[assimp_node.name] = (assimp_node, node) # cannot use assimp_node as key: it is unhashable
+
         for child in assimp_node.children:
             self.recur_node(child, model, level + 1)
 
@@ -165,7 +170,7 @@ class ModelLoader:
                 logger.info("Merging the root nodes")
                 self.node_map[model.rootnode.name] = (model.rootnode, ctx.worlds[world].scene.rootnode)
         else:
-            self.node_map[model.rootnode.name] = (model.rootnode, Node())
+            self.node_map[model.rootnode.name] = (model.rootnode, Entity())
 
         logger.info("Nodes found:")
         self.recur_node(model.rootnode, model)

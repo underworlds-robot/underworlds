@@ -1,7 +1,7 @@
 libunderworlds APIs
 ===================
 
-Except otherwise noted, all units follow SI. In particular, length are in meters 
+Except otherwise noted, all units follow SI. In particular, length are in metres 
 and angles in radians.
 
 Node API
@@ -11,41 +11,20 @@ node
 
  * <id> node.id
  * <string> node.name
+ * <enum> type: type of the node
  * <node> node.parent
  * <node> node.entity: if the node belongs to a group  (like a complex object), 
    the node that represent this entity.
  * <matrix4x4f> node.transformation: transformation matrix, relative to parent
- * <dict<string, ?>> node.properties
+ * <dict<string, json string>> node.properties
 
-Base set of properties (these properties are guaranteed to exist):
+Possible properties are defined in the `properties-registry`.
 
- * <string> type: type of the node
-
-Currently existing types:
+Currently defined node types:
 
  * MESH
  * ENTITY: an entity has no mesh directly attached to it. It represents a logical group of nodes
  * CAMERA
-
-Type specific properties:
- * MESH
-   * <vec3f, vec3f> aabb: axis-aligned bounding box
-   * <vec3f, vec3f, vec3f, vec3f> bb: bounding box
-   * <id*> cad: if available, the set of mesh ID of the CAD model associated to the node
-   * <id*> hires: a high resolution model representing the node
-   * <id*> lowres: a low resolution model representing the node
-   * <id> collision: a mesh suited for collision detection
-   * <float> mass
-   * <vec3f> centerofmass: if defined, in the node frame. By default, the node origin.
-   * <vec3f> lookat: if defined, the direction vector of the object. Meaningful only for objects that have a well identified face.
-
- * ENTITY
-   * <vec3f, vec3f> aabb: axis-aligned bounding box of the whole entity
-   * <vec3f, vec3f, vec3f, vec3f> bb: bounding box of the whole entity
- 
- * CAMERA
-   * <vec3f> lookat: the camera direction vector (ie, a 3D point in the camera frame, that is looked at by the camera)
-   * [TDB] camera frustrum and other features 
 
 Scene API
 ---------
@@ -71,20 +50,4 @@ High-level API
 <node*> get(<vec3f, vec3f> roi): returns all node whose bounding boxes are included in the ROI
 <node*> getentity(name): returns all nodes belonging to the entity called 'name'.
 
-
-
-Monitors
---------
-
-Monitors are processes that are attached to a specific world. They monitor the 
-geometric scene, and produce events added to the world's timeline.
-
-Examples include:
-* visibility_monitor: signal when a given entity or node is visible from a given camera
-* touch_monitor: signal when two entities touch each other
-* motion_monitor: signal when an entity is moving
-* collision_monitor: signal when two entities are colliding [or about to collide?] 
-
-Filters
--------
 

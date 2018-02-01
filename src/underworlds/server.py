@@ -147,7 +147,7 @@ class Server(gRPC.BetaUnderworldsServicer):
             parent_has_changed = oldnode.parent != node.parent
 
             # update the list of children
-            node.children = [n.id for n in scene.nodes if n.parent == node.id]
+            node._children = [n.id for n in scene.nodes if n.parent == node.id]
 
             # replace the node
             scene.nodes = [node if old == node else old for old in scene.nodes]
@@ -381,7 +381,7 @@ class Server(gRPC.BetaUnderworldsServicer):
                 if parent is None:
                     logger.warning("Node %s references a non-exisiting parent" % node)
                 elif node.id not in parent.children:
-                    parent.children.append(node.id)
+                    parent._children.append(node.id)
                     # tells everyone about the change to the parent
                     logger.debug("Adding invalidation action [update " + parent.id + "] due to hierarchy update")
                     nodes_to_invalidate_update.append(parent.id)
@@ -390,7 +390,7 @@ class Server(gRPC.BetaUnderworldsServicer):
                     # remove our node from its previous parent
                     for othernode in scene.nodes:
                         if othernode.id != parent.id and node.id in othernode.children:
-                            othernode.children.remove(node.id)
+                            othernode._children.remove(node.id)
                             # tells everyone about the change to the former parent
                             logger.debug("Adding invalidation action [update " + othernode.id + "] due to hierarchy update")
                             nodes_to_invalidate_update.append(othernode.id)
@@ -439,7 +439,7 @@ class Server(gRPC.BetaUnderworldsServicer):
             # Also remove the node from its parent's children
             parent = scene.node(node.parent)
             if parent:
-                parent.children.remove(node.id)
+                parent._children.remove(node.id)
                 # tells everyone about the change to the parent
                 logger.debug("Sent invalidation action [update " + parent.id + "] due to hierarchy update")
                 nodes_to_invalidate_update.append(parent.id)

@@ -50,12 +50,12 @@ class TestModelLoading(unittest.TestCase):
 
         time.sleep(PROPAGATION_TIME)
 
-        self.assertEquals(len(nodes), 2) # <BlenderRoot> and <tree>
-        self.assertEquals(len(world.scene.nodes), 2)
+        self.assertEqual(len(nodes), 2) # <BlenderRoot> and <tree>
+        self.assertEqual(len(world.scene.nodes), 2)
 
         trees = world.scene.nodebyname("tree")
-        self.assertEquals(len(trees), 1) # only one tree
-        self.assertEquals(trees[0].type, MESH)
+        self.assertEqual(len(trees), 1) # only one tree
+        self.assertEqual(trees[0].type, MESH)
 
     def test_complex_loading(self):
 
@@ -64,18 +64,18 @@ class TestModelLoading(unittest.TestCase):
 
         time.sleep(PROPAGATION_TIME)
 
-        self.assertEquals(len(nodes), 8)
-        self.assertEquals(len(world.scene.nodes), 8)
+        self.assertEqual(len(nodes), 8)
+        self.assertEqual(len(world.scene.nodes), 8)
 
-        self.assertEquals(len(world.scene.nodebyname("Camera1")), 1)
+        self.assertEqual(len(world.scene.nodebyname("Camera1")), 1)
         cam1 = world.scene.nodebyname("Camera1")[0]
-        self.assertEquals(cam1.type, CAMERA)
-        self.assertFalse(cam1.hires)
+        self.assertEqual(cam1.type, CAMERA)
+        self.assertFalse("mesh_ids" in cam1.properties)
 
-        self.assertEquals(len(world.scene.nodebyname("Cube1")), 1)
+        self.assertEqual(len(world.scene.nodebyname("Cube1")), 1)
         cube1 = world.scene.nodebyname("Cube1")[0]
-        self.assertEquals(cube1.type, MESH)
-        self.assertTrue(cube1.hires)
+        self.assertEqual(cube1.type, MESH)
+        self.assertTrue("mesh_ids" in cube1.properties)
 
 
     def test_double_loading(self):
@@ -86,13 +86,13 @@ class TestModelLoading(unittest.TestCase):
 
         time.sleep(PROPAGATION_TIME)
 
-        self.assertEquals(len(world.scene.nodes), 3) # one root and 2 trees
+        self.assertEqual(len(world.scene.nodes), 3) # one root and 2 trees
 
         trees = world.scene.nodebyname("tree")
-        self.assertEquals(len(trees), 2) # should have 2 trees
+        self.assertEqual(len(trees), 2) # should have 2 trees
 
-        self.assertEquals(trees[0].hires, trees[1].hires)
-        self.assertNotEquals(trees[0].id, trees[1].id)
+        self.assertEqual(trees[0].properties["mesh_ids"], trees[1].properties["mesh_ids"])
+        self.assertNotEqual(trees[0].id, trees[1].id)
 
     def test_anchoring(self):
 

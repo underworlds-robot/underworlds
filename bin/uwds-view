@@ -233,14 +233,14 @@ void main(void){
 DEFAULT_CLIP_PLANE_NEAR = 0.001
 DEFAULT_CLIP_PLANE_FAR = 1000.0
 
-class DefaultCamera():
+class DefaultCamera(Camera):
     def __init__(self, w, h, fov):
-        self.name="default camera"
-        self.type=CAMERA
-        self.clipplanenear = DEFAULT_CLIP_PLANE_NEAR
-        self.clipplanefar = DEFAULT_CLIP_PLANE_FAR
-        self.aspect = w/h
-        self.horizontalfov = fov * math.pi/180
+        super(DefaultCamera, self).__init__(name="default camera")
+
+        self.properties["clipplanenear"] = DEFAULT_CLIP_PLANE_NEAR
+        self.properties["clipplanefar"] = DEFAULT_CLIP_PLANE_FAR
+        self.properties["aspect"] = w/h
+        self.properties["horizontalfov"] = fov * math.pi/180
         self.transformation = numpy.array([[ 0.68, -0.32, 0.65, 7.48],
                                [ 0.73,  0.31, -0.61, -6.51],
                                [-0.01,  0.89,  0.44,  5.34],
@@ -438,14 +438,7 @@ class Underworlds3DViewer:
             return self.get_color_id()
 
     def is_mesh_updated(self, node):
-        if hasattr(node, "cad"):
-            return node.glmeshes != node.cad
-        elif hasattr(node, "lowres"):
-            return node.glmeshes != node.lowres
-        elif hasattr(node, "hires"):
-            return node.glmeshes != node.hires
-        else:
-            return False
+        return node.glmeshes != node.properties["mesh_ids"]
 
     def glize(self, node):
 
@@ -456,14 +449,7 @@ class Underworlds3DViewer:
             self.colorid2node[colorid] = node
             self.node2colorid[node] = colorid
 
-            if hasattr(node, "cad"):
-                node.glmeshes = node.cad
-            elif hasattr(node, "lowres"):
-                node.glmeshes = node.lowres
-            elif hasattr(node, "hires"):
-                node.glmeshes = node.hires
-            else:
-                raise StandardError("The node %s has no mesh available!" % node.name)
+            node.glmeshes = node.properties["mesh_ids"]
 
             for mesh in node.glmeshes:
                 self.prepare_gl_buffers(mesh)
@@ -516,10 +502,10 @@ class Underworlds3DViewer:
         if not camera:
             camera = self.current_cam
 
-        znear = camera.clipplanenear or DEFAULT_CLIP_PLANE_NEAR
-        zfar = camera.clipplanefar or DEFAULT_CLIP_PLANE_FAR
-        aspect = camera.aspect
-        fov = camera.horizontalfov
+        znear = camera.properties["clipplanenear"] or DEFAULT_CLIP_PLANE_NEAR
+        zfar = camera.properties["clipplanefar"] or DEFAULT_CLIP_PLANE_FAR
+        aspect = camera.properties["aspect"]
+        fov = camera.properties["horizontalfov"]
 
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
@@ -574,7 +560,8 @@ class Underworlds3DViewer:
 
         #Reinterpret the RGB pixel buffer as a 1-D array of 24bits colors
         a = numpy.ndarray(len(buf), numpy.dtype('>u1'), buf)
-        colors = numpy.zeros(len(buf) / 3, numpy.dtype('<u4'))
+        colors = numpy.zeros(int(len(buf) / 3), numpy.dtype('<u4'))
+
         for i in range(3):
             colors.view(dtype='>u1')[i::4] = a.view(dtype='>u1')[i::3]
 
@@ -759,21 +746,16 @@ class Underworlds3DViewer:
             else:
                 glColor3f(.4, .4, .4)
 
-            bb_min, bb_max = bb
-            x_min, y_min, z_min = bb_min
-            x_max, y_max, z_max = bb_max
+            x_min, y_min, z_min, x_max, y_max, z_max = bb
 
-
-            self.draw_gizmo(*bb_min,size=size)
-            self.draw_gizmo(*bb_max,size=size,orientation=(-1,-1,-1))
+            self.draw_gizmo(x_min,y_min,z_min,size=size)
+            self.draw_gizmo(x_max,y_max,z_max,size=size,orientation=(-1,-1,-1))
             self.draw_gizmo(x_min,y_max,z_max,size=size,orientation=(1,-1,-1))
             self.draw_gizmo(x_min,y_min,z_max,size=size,orientation=(1,1,-1))
             self.draw_gizmo(x_max,y_min,z_max,size=size,orientation=(-1,1,-1))
             self.draw_gizmo(x_max,y_min,z_min,size=size,orientation=(-1,1,1))
             self.draw_gizmo(x_max,y_max,z_min,size=size,orientation=(-1,-1,1))
             self.draw_gizmo(x_min,y_max,z_min,size=size,orientation=(1,-1,1))
-
-
 
             glEnd()
 
@@ -783,7 +765,7 @@ class Underworlds3DViewer:
 
         m = transformation.transpose() # OpenGL row major
 
-        aspect = camera.aspect
+        aspect = camera.properties["aspect"]
 
         u = 0.1 # unit size (in m)
         l = 3 * u # lenght of the camera cone
@@ -875,7 +857,7 @@ class Underworlds3DViewer:
         if mode == HELPERS:
             #if node.type == ENTITY:
             self.render_axis(m,
-                             bb=node.aabb,
+                             bb=node.properties.get("aabb", None),
                              label=node.name if node != self.scene.rootnode else None,
                              selected=node.selected if hasattr(node, "selected") else False)
 
