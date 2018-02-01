@@ -75,10 +75,10 @@ class ModelLoader:
 
             for m in assimp_node.meshes:
                 
-                mesh = Mesh(m.vertices.tolist(), 
-                            m.faces.tolist(), 
-                            m.normals.tolist(),
-                            m.material.properties["diffuse"])
+                mesh = MeshData(m.vertices.tolist(), 
+                                m.faces.tolist(), 
+                                m.normals.tolist(),
+                                m.material.properties["diffuse"])
 
                 id = mesh.id
                 logger.debug("\tLoading mesh %s" % id)

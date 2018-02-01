@@ -1,4 +1,4 @@
-from underworlds.types import Mesh
+from underworlds.types import MeshData
 
 class Sphere:
 
@@ -475,7 +475,7 @@ class Sphere:
         """
 
         v = [[c * radius for c in vertex] for vertex in Sphere.vertices]
-        mesh = Mesh(v, Sphere.faces, Sphere.normals, diffuse)
+        mesh = MeshData(v, Sphere.faces, Sphere.normals, diffuse)
 
 
         mesh.aabb = ((2*radius, 2*radius, 2*radius), (-2*radius, -2*radius, -2*radius))
@@ -622,7 +622,7 @@ class Box:
         sizez = float(sizez)/2
 
         v = [[vertex[0] * sizex, vertex[1] * sizey, vertex[2] * sizez] for vertex in Box.vertices]
-        mesh = Mesh(v, Box.faces, Box.normals, diffuse)
+        mesh = MeshData(v, Box.faces, Box.normals, diffuse)
 
 
         mesh.aabb = ((sizex, sizey, sizez), (-sizex, -sizey, -sizez))

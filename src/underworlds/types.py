@@ -209,7 +209,7 @@ class Node(object):
 
         return node
 
-class Mesh(object):
+class MeshData(object):
 
     def __init__(self, vertices, faces, normals, diffuse=(1,1,1,1)):
 
@@ -265,7 +265,7 @@ class Mesh(object):
         """Creates a Python mesh object from a protobuf encoding.
         """
 
-        mesh = Mesh(vertices=[(p.x,p.y,p.z) for p in data.vertices],
+        mesh = MeshData(vertices=[(p.x,p.y,p.z) for p in data.vertices],
                     faces = [(f.x,f.y,f.z) for f in data.faces],
                     normals = [(n.x,n.y,n.z) for n in data.normals],
                     diffuse = (data.diffuse.r, data.diffuse.g, data.diffuse.b, data.diffuse.a))

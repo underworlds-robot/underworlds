@@ -16,7 +16,7 @@ from grpc.beta import implementations
 from grpc.framework.interfaces.face.face import ExpirationError,NetworkError,AbortionError
 import underworlds.underworlds_pb2 as gRPC
 
-from underworlds.types import World, Node, Situation, Mesh
+from underworlds.types import World, Node, Situation, MeshData
 
 from underworlds.helpers.profile import profile, profileonce
 
@@ -878,7 +878,7 @@ class Context(object):
         mesh = self.rpc.getMesh(gRPC.MeshInContext(client=gRPC.Client(id=self.id),
                                                    mesh=gRPC.Mesh(id=id)),
                               _TIMEOUT_SECONDS_MESH_LOADING)
-        return Mesh.deserialize(mesh)
+        return MeshData.deserialize(mesh)
 
     def push_mesh(self, mesh):
 
