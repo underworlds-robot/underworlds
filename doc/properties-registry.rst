@@ -33,8 +33,9 @@ Syntax and Datatypes
 - Properties names MUST be string only using characters in ``[a-zA-Z0-9_]``.
 - Properties names MUST start with ``[a-zA-Z_]``.
 - Properties values MUST be of one of the following types: ``bool``, ``int``,
-  ``float``, ``string`` or a list of such values, as long as all the list
-  elements have the same type.
+  ``float``, ``string``, ``id`` (a unique identifier for another ``underwords``
+  object) or a list of such values, as long as all the list elements have the
+  same type.
 - Properties MUST either:
     - be marked as ``REQUIRED``
     - be marked as ``OPTIONAL``
@@ -44,6 +45,16 @@ Syntax and Datatypes
 
 Registry
 --------
+
+Properties common for all node types (including MESH, CAMERA, ENTITY)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- ``parent`` [``id``, OPTIONAL]: the parent of the node. Always non-empty,
+  except for the root node
+- ``children`` [``list<id>``, OPTIONAL]: the children of this node, if any
+- ``transformation`` [``list<float>``, REQUIRED, default: identity
+  (1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1)]: the 6-D transform of the node wrt to the
+  parent, row major.
 
 Properties for MESH nodes
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -65,3 +76,20 @@ Properties for CAMERA nodes
 - ``horizontalfov`` [``float``, REQUIRED]: the horizontal field of view (in degrees)
 - ``clipplanenear`` [``float``, OPTIONAL]: the near clipping plane of the camera (in metres)
 - ``clipplanefar`` [``float``, OPTIONAL]: the far clipping plane of the camera (in metres)
+
+
+Properties common for all temporal types (including EVENT, SITUATION)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+- ``start`` [``float``, REQUIRED]: the start time of the temporal object, as a
+  timestamp in seconds. The special value 0 means that the event/situation has
+  not started yet.
+
+Properties for SITUATION
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+- ``end`` [``float``, REQUIRED]: the end time of the temporal object, as a
+  timestamp in seconds. The special value 0 means that the situation has
+  not ended yet.
+

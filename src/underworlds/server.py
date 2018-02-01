@@ -110,6 +110,20 @@ class Server(gRPC.BetaUnderworldsServicer):
     def _new_world(self, name):
         self._worlds[name] = World(name)
 
+    def _get_object(self, ctxt, id):
+        scene, timeline = self._get_scene_timeline(ctxt)
+
+        node = scene.node(id)
+        if node is not None:
+            return node
+
+        situation = timeline.situation(id)
+
+        if situation is not None:
+            return situation
+
+        return None
+
 
     def _get_scene_timeline(self, ctxt):
 
@@ -180,18 +194,18 @@ class Server(gRPC.BetaUnderworldsServicer):
         return action
 
     @profile
-    def _emit_invalidation(self, target, world, node_ids, invalidation_type):
+    def _emit_invalidation(self, target, world, object_ids, invalidation_type):
 
         invalidation = gRPC.Invalidation(target=target,
                                          type=invalidation_type, 
                                          world=world)
-        invalidation.ids[:] = node_ids
+        invalidation.ids[:] = object_ids
 
 
         with self._client_lock:
             for client_id in self._clients:
                 if world in self._clients[client_id].links:
-                    logger.debug("Informing client <%s> that nodes have been invalidated in world <%s>" % (self._clientname(client_id), world))
+                    logger.debug("Informing client <%s> that objects have been invalidated in world <%s>" % (self._clientname(client_id), world))
                     self._clients[client_id].emit_invalidation(invalidation)
 
 
@@ -277,87 +291,91 @@ class Server(gRPC.BetaUnderworldsServicer):
 
     ############ NODES
     @profile
-    def getNodesLen(self, ctxt, context):
-        logger.debug("Got <getNodesLen> from %s" % ctxt.client)
+    def getObjectsLen(self, ctxt, context):
+        logger.debug("Got <getObjectsLen> from %s" % ctxt.client)
         self._update_current_links(ctxt.client, ctxt.world, READER)
 
-        scene,_ = self._get_scene_timeline(ctxt)
+        scene, timeline = self._get_scene_timeline(ctxt)
 
-        res = gRPC.Size(size=len(scene.nodes))
-        logger.debug("<getNodesLen> completed")
+        res = gRPC.Size(size=len(scene.nodes) + len(scene.situations))
+        logger.debug("<getObjectsLen> completed")
         return res
 
     @profile
-    def getNodesIds(self, ctxt, context):
-        logger.debug("Got <getNodesIds> from %s" % ctxt.client)
+    def getObjectsIds(self, ctxt, context):
+        logger.debug("Got <getObjectsIds> from %s" % ctxt.client)
         self._update_current_links(ctxt.client, ctxt.world, READER)
 
-        scene,_ = self._get_scene_timeline(ctxt)
+        scene, timeline = self._get_scene_timeline(ctxt)
 
-        nodes = gRPC.Nodes()
+        objects = gRPC.IdsInContext()
+        objects.context = context
+
         for n in scene.nodes:
-            nodes.ids.append(n.id)
+            objects.ids.append(n.id)
 
-        logger.debug("<getNodesIds> completed")
-        return nodes
+        for s in timeline.situations:
+            objects.ids.append(s.id)
+
+        logger.debug("<getObjectsIds> completed")
+        return objects
 
     @profile
-    def getRootNode(self, ctxt, context):
-        logger.debug("Got <getRootNode> from %s" % ctxt.client)
+    def getRootObject(self, ctxt, context):
+        logger.debug("Got <getRootObject> from %s" % ctxt.client)
         self._update_current_links(ctxt.client, ctxt.world, READER)
 
         scene,_ = self._get_scene_timeline(ctxt)
 
-        res = gRPC.Node(id=scene.rootnode.id)
-        logger.debug("<getRootNode> completed")
+        res = gRPC.Object(id=scene.rootnode.id)
+        logger.debug("<getRootObject> completed")
         return res
 
     @profile
-    def getNode(self, nodeInCtxt, context):
-        logger.debug("Got <getNode> from %s" % self._clientname(nodeInCtxt.context.client))
+    def getObject(self, objectInCtxt, context):
+        logger.debug("Got <getObject> from %s" % self._clientname(objectInCtxt.context.client))
 
-        client_id, world = nodeInCtxt.context.client, nodeInCtxt.context.world
+        client_id, world = objectInCtxt.context.client, objectInCtxt.context.world
 
-        scene,_ = self._get_scene_timeline(nodeInCtxt.context)
 
         self._update_current_links(client_id, world, READER)
 
-        if not nodeInCtxt.node.id:
-            logger.warning("%s has required a node without specifying its id!" % (self._clientname(client_id)))
+        if not objectInCtxt.id:
+            logger.warning("%s has required an object without specifying its id!" % (self._clientname(client_id)))
 
-            context.details("No node id provided")
+            context.details("No object id provided")
             context.code(beta_interfaces.StatusCode.NOT_FOUND)
-            return gRPC.Node()
+            return gRPC.Object()
 
-        node = scene.node(nodeInCtxt.node.id)
+        object = self._get_object(objectInCtxt.context, objectInCtxt.id)
 
-        if not node:
-            logger.warning("%s has required an non-existant "
-                           "node <%s> in world %s" % (self._clientname(client_id), nodeInCtxt.node.id, world))
-
-            context.details("Node <%s> does not exist in world %s" % (nodeInCtxt.node.id, world))
-            context.code(beta_interfaces.StatusCode.NOT_FOUND)
-            return gRPC.Node()
-
-
-        else:
-            res = node.serialize(gRPC.Node)
-            logger.debug("<getNode> completed")
+        if object is not None:
+            res = object.serialize(gRPC.Object)
+            logger.debug("<getObject> completed")
             return res
 
 
+        logger.warning("%s has required an non-existant "
+                        "object <%s> in world %s" % (self._clientname(client_id), objectInCtxt.node.id, world))
+
+        context.details("Object <%s> does not exist in world %s" % (objectInCtxt.node.id, world))
+        context.code(beta_interfaces.StatusCode.NOT_FOUND)
+        return gRPC.Object()
+
     @profile
-    def updateNodes(self, nodesInCtxt, context):
-        logger.debug("Got <updateNodes> from %s" % nodesInCtxt.context.client)
-        self._update_current_links(nodesInCtxt.context.client, nodesInCtxt.context.world, PROVIDER)
+    def updateObjects(self, nodesInCtxt, context):
+        logger.debug("Got <updateObjects> from %s" % nodesInCtxt.context.client)
 
         client_id, world = nodesInCtxt.context.client, nodesInCtxt.context.world
+        self._update_current_links(client_id, world, PROVIDER)
+
         scene,_ = self._get_scene_timeline(nodesInCtxt.context)
+        object = self._get_object(objectInCtxt.context, objectInCtxt.id)
 
         nodes_to_invalidate_new = []
         nodes_to_invalidate_update = []
-        for gRPCNode in nodesInCtxt.nodes:
-            node = Node.deserialize(gRPCNode)
+        for gRPCObject in nodesInCtxt.nodes:
+            node = Object.deserialize(gRPCObject)
 
             invalidation_type, parent_has_changed = self._update_node(scene, node)
 
@@ -368,9 +386,9 @@ class Server(gRPC.BetaUnderworldsServicer):
                                 world))
 
             if invalidation_type ==  gRPC.Invalidation.UPDATE:
-                nodes_to_invalidate_update.append(gRPCNode.id)
+                nodes_to_invalidate_update.append(gRPCObject.id)
             elif invalidation_type ==  gRPC.Invalidation.NEW:
-                nodes_to_invalidate_new.append(gRPCNode.id)
+                nodes_to_invalidate_new.append(gRPCObject.id)
             else:
                 raise RuntimeError("Unexpected invalidation type")
 
@@ -379,7 +397,7 @@ class Server(gRPC.BetaUnderworldsServicer):
             if parent_has_changed:
                 parent = scene.node(node.parent)
                 if parent is None:
-                    logger.warning("Node %s references a non-exisiting parent" % node)
+                    logger.warning("Object %s references a non-exisiting parent" % node)
                 elif node.id not in parent.children:
                     parent._children.append(node.id)
                     # tells everyone about the change to the parent
@@ -402,12 +420,12 @@ class Server(gRPC.BetaUnderworldsServicer):
             self._emit_invalidation(gRPC.Invalidation.SCENE, world, nodes_to_invalidate_new, gRPC.Invalidation.NEW)
 
 
-        logger.debug("<updateNodes> completed")
+        logger.debug("<updateObjects> completed")
         return gRPC.Empty()
 
     @profile
-    def deleteNodes(self, nodesInCtxt, context):
-        logger.debug("Got <deleteNodes> from %s" % nodesInCtxt.context.client)
+    def deleteObjects(self, nodesInCtxt, context):
+        logger.debug("Got <deleteObjects> from %s" % nodesInCtxt.context.client)
         self._update_current_links(nodesInCtxt.context.client, nodesInCtxt.context.world, PROVIDER)
 
         client_id, world = nodesInCtxt.context.client, nodesInCtxt.context.world
@@ -415,18 +433,18 @@ class Server(gRPC.BetaUnderworldsServicer):
 
         nodes_to_invalidate_delete = []
         nodes_to_invalidate_update = []
-        for gRPCNode in nodesInCtxt.nodes:
-            node = scene.node(gRPCNode.id)
+        for gRPCObject in nodesInCtxt.nodes:
+            node = scene.node(gRPCObject.id)
             logger.info("<%s> deleted node <%s> in world <%s>" % \
                                 (self._clientname(client_id), 
                                 repr(node), 
                                 world))
 
-            action = self._delete_node(scene, gRPCNode.id)
+            action = self._delete_node(scene, gRPCObject.id)
 
             # tells everyone about the change
             logger.debug("Sent invalidation action [delete]")
-            nodes_to_invalidate_delete.append(gRPCNode.id)
+            nodes_to_invalidate_delete.append(gRPCObject.id)
 
             # reparent children to the scene's root node
             children_to_update = []
@@ -450,7 +468,7 @@ class Server(gRPC.BetaUnderworldsServicer):
             self._emit_invalidation(gRPC.Invalidation.SCENE, world, nodes_to_invalidate_delete, gRPC.Invalidation.DELETE)
 
 
-        logger.debug("<deleteNodes> completed")
+        logger.debug("<deleteObjects> completed")
         return gRPC.Empty()
 
 
@@ -496,7 +514,7 @@ class Server(gRPC.BetaUnderworldsServicer):
 
             context.details("No situation id provided")
             context.code(beta_interfaces.StatusCode.NOT_FOUND)
-            return gRPC.Node()
+            return gRPC.Object()
 
 
         situation = timeline.situation(sitInCtxt.situation.id)

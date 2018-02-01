@@ -32,52 +32,27 @@ service Underworlds {
     // call 'helo' again).
     rpc reset(Client) returns (Empty) {}
 
-    // NODES
+    // OBJECTS
 
-    // Returns the number of nodes in a given world.
-    // Accepts a context (client ID and world) and returns the number of existing nodes.
-    rpc getNodesLen(Context) returns (Size) {}
+    // Returns the number of objects in a given world.
+    // Accepts a context (client ID and world) and returns the number of existing objects.
+    rpc getObjectsLen(Context) returns (Size) {}
 
-    // Returns the list of node IDs present in the given world
-    rpc getNodesIds(Context) returns (Nodes) {}
+    // Returns the list of object IDs present in the given world
+    rpc getObjectsIds(Context) returns (IdsInContext) {}
 
     // Returns the root node ID of the given world
-    rpc getRootNode(Context) returns (Node) {}
+    rpc getRootNode(Context) returns (Object) {}
 
-    // Returns a node from its ID in the given world.
+    // Returns an object from its ID in the given world.
     // Note that only the node ID is used (and thus, required).
-    rpc getNode(NodeInContext) returns (Node) {}
+    rpc getObject(IdInContext) returns (Object) {}
 
-    // Updates (and broadcasts to all client) nodes in a given world
-    rpc updateNodes(NodesInContext) returns (Empty) {}
+    // Updates (and broadcasts to all client) objects in a given world
+    rpc updateObjects(ObjectsInContext) returns (Empty) {}
 
-    // Deletes (and broadcasts to all client) nodes in a given world
-    rpc deleteNodes(NodesInContext) returns (Empty) {}
-
-    // TIMELINE
-
-    // Returns the number of situations in a given world.
-    // Accepts a context (client ID and world) and returns the number of
-    // existing situations.
-    rpc getSituationsLen(Context) returns (Size) {}
-
-
-    // Returns the list of situation IDs present in the given world
-    rpc getSituationsIds(Context) returns (Situations) {}
-
-    // Returns a situation from its ID.
-    // Note that only the situation ID is used (and thus, required).
-    rpc getSituation(SituationInContext) returns (Situation) {}
-
-    // Returns the timeline origin: time of the timeline creation
-    rpc timelineOrigin(Context) returns (Time) {}
-
-    // Updates (and broadcasts to all client) a situation in a given world
-    rpc updateSituations(SituationsInContext) returns (Empty) {}
-
-    // Deletes (and broadcasts to all client) a node in a given world
-    rpc deleteSituations(SituationsInContext) returns (Empty) {}
-
+    // Deletes (and broadcasts to all client) objects in a given world
+    rpc deleteObjects(IdsInContext) returns (Empty) {}
 
     // MESHES
 
@@ -150,7 +125,6 @@ message Color {
     float a = 4;
 }
 
-
 /////////////////////////////////////////////
 // CLIENT-RELATED MESSAGE
 
@@ -212,18 +186,20 @@ message Topology {
 }
 
 /////////////////////////////////////////////
-// NODE-RELATED MESSAGES
+// OBJECT-RELATED MESSAGES
 
-message Node {
+message Object {
 
-    enum NodeType {
+    enum ObjectType {
         UNDEFINED = 0;
+        EVENT = 1;
+        SITUATION = 2;
         // Entities are abstract nodes. They can represent non-physical objects
         // (like a reference frame) or groups of other objects.
-        ENTITY = 1; 
+        ENTITY = 3; 
         // a physical object, with an associated 3D mesh
-        MESH = 2;
-        CAMERA = 3;
+        MESH = 4;
+        CAMERA = 5;
     }
 
     // an unique ID
@@ -232,20 +208,11 @@ message Node {
     // a human-friendly name
     string name = 2;
 
-    // the type of node
-    NodeType type = 3;
+    // the type of object
+    ObjectType type = 3;
 
-    string parent = 4; // the parent node ID. Always non-empty, except for the root node
-
-    // the children of this node, if any
-    repeated string children = 5;
-
-    // 4x4 transformation matrix, relative to parent. Translation units are
-    // meters. Stored as a list of 16 32bit float, row-major.
-    repeated float transformation = 6;
-
-    // date/time of the last node's update (in sec since the epoch)
-    double last_update = 8;
+    // date/time of the last object's update (in sec since the epoch)
+    double last_update = 4;
 
     // list of properties attached to this node. See doc/properties-registry.rst for
     // permitted values.
@@ -254,64 +221,22 @@ message Node {
     // The values can have various type (see registry). They are encoded in the
     // protobuf message as json strings, but we encourage client
     // implementations to expose the deserialized json values.
-    map<string, string> properties = 9;
+    map<string, string> properties = 5;
 }
 
-message Nodes {
-    repeated string ids = 1;
-}
-
-message NodeInContext {
+message IdInContext {
     Context context = 1;
-    Node node = 2;
+    string id = 2;
 }
 
-message NodesInContext {
+message IdsInContext {
     Context context = 1;
-    repeated Node nodes = 2;
+    repeated string ids = 2;
 }
 
-
-/////////////////////////////////////////////
-// TIMELINE-RELATED MESSAGES
-
-
-message Situation {
-
-    enum SituationType {
-        GENERIC = 0;
-        MOTION = 1;
-        EVT_MODELLOAD = 2;
-    }
-
-    string id = 1;
-    SituationType type = 2;
-    string description = 3;
-
-    // date/time of the last node's update (in sec since the epoch)
-    double last_update = 4;
-
-
-    // start time of the situation. 0 means that the situation has not started yet
-    Time start = 5;
-    // end time of the situation. 0 means that the situation has not finished yet
-    // For events, start == end
-    Time end = 6;
-}
-
-message Situations {
-    repeated string ids = 1;
-}
-
-
-message SituationInContext {
+message ObjectsInContext {
     Context context = 1;
-    Situation situation = 2;
-}
-
-message SituationsInContext {
-    Context context = 1;
-    repeated Situation situations = 2;
+    repeated Object objects = 2;
 }
 
 
