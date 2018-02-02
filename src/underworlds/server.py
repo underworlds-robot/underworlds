@@ -3,7 +3,7 @@ import time
 import threading
 import logging;logger = logging.getLogger("underworlds.server")
 
-from underworlds.types import *
+from underworlds.types import READER
 from underworlds.helpers.profile import profile, profileonce
 from grpc.framework.interfaces.face.face import ExpirationError,NetworkError,AbortionError
 import underworlds.underworlds_pb2 as gRPC 
@@ -43,7 +43,7 @@ class Client:
             return invalidation_server
 
         except (NetworkError, AbortionError) as e:
-            logger.warn("Underworld server unable to establish a connection with Underworlds'\n"
+            logger.warning("Underworld server unable to establish a connection with Underworlds'\n"
                          " client <%> on %s:%d. Client died? Unreachable over network?\n"
                          "Removing the client.\nOriginal error: %s" % (name, host, port, str(e)))
             return None
@@ -88,6 +88,7 @@ class Server(gRPC.BetaUnderworldsServicer):
 
     def __init__(self):
 
+        # maps the worlds to a mapping {object id, gRPC object} of the objects they contain
         self._worlds = {}
 
         self._clients = {} 
@@ -108,36 +109,11 @@ class Server(gRPC.BetaUnderworldsServicer):
             return self._clients[id].name
 
     def _new_world(self, name):
-        self._worlds[name] = World(name)
+        self._worlds[name] = {}
 
     def _get_object(self, ctxt, id):
-        scene, timeline = self._get_scene_timeline(ctxt)
 
-        node = scene.node(id)
-        if node is not None:
-            return node
-
-        situation = timeline.situation(id)
-
-        if situation is not None:
-            return situation
-
-        return None
-
-
-    def _get_scene_timeline(self, ctxt):
-
-        world = ctxt.world
-
-        if world not in self._worlds:
-            self._new_world(world)
-            logger.info("<%s> created a new world <%s>" % (self._clientname(ctxt.client), 
-                                                         world))
-
-        scene = self._worlds[world].scene
-        timeline = self._worlds[world].timeline
-
-        return scene, timeline
+        return self._worlds[ctxt.world].get(id, None)
 
     def _update_current_links(self, client, world, type):
 
@@ -149,36 +125,40 @@ class Server(gRPC.BetaUnderworldsServicer):
                 type = type if current_type == READER else current_type
             self._clients[client].links[world] = (type, time.time())
 
-    def _update_node(self, scene, node):
+    def _update_object(self, world, object):
 
         parent_has_changed = False
 
-        node.last_update = time.time()
+        object.last_update = time.time()
 
-        oldnode = scene.node(node.id)
+        oldobject = self._get_object(object.id)
 
-        if oldnode: # the node already exist
-            parent_has_changed = oldnode.parent != node.parent
+        if oldobject: # the object already exist
+            parent = object.properties.get("parent", None)
+            oldparent = oldobject.properties.get("parent", None)
+            parent_has_changed = oldparent != object.parent
 
             # update the list of children
-            node._children = [n.id for n in scene.nodes if n.parent == node.id]
+            children = [id for id, obj in self._worlds[world].items() if obj.properties.get("parent", None) == object.id]
+            if children:
+                object.properties["children"] = json.dumps(children)
 
-            # replace the node
-            scene.nodes = [node if old == node else old for old in scene.nodes]
+            # replace the object
+            scene.objects = [object if old == object else old for old in scene.objects]
             
             action = gRPC.Invalidation.UPDATE
 
-        else: # new node
-            scene.nodes.append(node)
+        else: # new object
+            scene.objects.append(object)
             parent_has_changed = True
-            if node.parent is None:
-                node.parent = scene.rootnode.id
+            if object.parent is None:
+                object.parent = scene.rootobject.id
             action = gRPC.Invalidation.NEW
 
         return action, parent_has_changed
 
-    def _delete_node(self, scene, id):
-        scene.nodes.remove(scene.node(id))
+    def _delete_object(self, scene, id):
+        scene.objects.remove(scene.object(id))
 
     def _update_situation(self, timeline, situation):
 
@@ -289,7 +269,7 @@ class Server(gRPC.BetaUnderworldsServicer):
         return gRPC.Empty()
 
 
-    ############ NODES
+    ############ objectS
     @profile
     def getObjectsLen(self, ctxt, context):
         logger.debug("Got <getObjectsLen> from %s" % ctxt.client)
@@ -297,7 +277,7 @@ class Server(gRPC.BetaUnderworldsServicer):
 
         scene, timeline = self._get_scene_timeline(ctxt)
 
-        res = gRPC.Size(size=len(scene.nodes) + len(scene.situations))
+        res = gRPC.Size(size=len(scene.objects) + len(scene.situations))
         logger.debug("<getObjectsLen> completed")
         return res
 
@@ -311,7 +291,7 @@ class Server(gRPC.BetaUnderworldsServicer):
         objects = gRPC.IdsInContext()
         objects.context = context
 
-        for n in scene.nodes:
+        for n in scene.objects:
             objects.ids.append(n.id)
 
         for s in timeline.situations:
@@ -327,7 +307,7 @@ class Server(gRPC.BetaUnderworldsServicer):
 
         scene,_ = self._get_scene_timeline(ctxt)
 
-        res = gRPC.Object(id=scene.rootnode.id)
+        res = gRPC.Object(id=scene.rootobject.id)
         logger.debug("<getRootObject> completed")
         return res
 
@@ -356,116 +336,116 @@ class Server(gRPC.BetaUnderworldsServicer):
 
 
         logger.warning("%s has required an non-existant "
-                        "object <%s> in world %s" % (self._clientname(client_id), objectInCtxt.node.id, world))
+                        "object <%s> in world %s" % (self._clientname(client_id), objectInCtxt.object.id, world))
 
-        context.details("Object <%s> does not exist in world %s" % (objectInCtxt.node.id, world))
+        context.details("Object <%s> does not exist in world %s" % (objectInCtxt.object.id, world))
         context.code(beta_interfaces.StatusCode.NOT_FOUND)
         return gRPC.Object()
 
     @profile
-    def updateObjects(self, nodesInCtxt, context):
-        logger.debug("Got <updateObjects> from %s" % nodesInCtxt.context.client)
+    def updateObjects(self, objectsInCtxt, context):
+        logger.debug("Got <updateObjects> from %s" % objectsInCtxt.context.client)
 
-        client_id, world = nodesInCtxt.context.client, nodesInCtxt.context.world
+        client_id, world = objectsInCtxt.context.client, objectsInCtxt.context.world
         self._update_current_links(client_id, world, PROVIDER)
 
-        scene,_ = self._get_scene_timeline(nodesInCtxt.context)
+        scene,_ = self._get_scene_timeline(objectsInCtxt.context)
         object = self._get_object(objectInCtxt.context, objectInCtxt.id)
 
-        nodes_to_invalidate_new = []
-        nodes_to_invalidate_update = []
-        for gRPCObject in nodesInCtxt.nodes:
-            node = Object.deserialize(gRPCObject)
+        objects_to_invalidate_new = []
+        objects_to_invalidate_update = []
+        for gRPCObject in objectsInCtxt.objects:
+            object = Object.deserialize(gRPCObject)
 
-            invalidation_type, parent_has_changed = self._update_node(scene, node)
+            invalidation_type, parent_has_changed = self._update_object(scene, object)
 
-            logger.info("<%s> %s node <%s> in world <%s>" % \
+            logger.info("<%s> %s object <%s> in world <%s>" % \
                                 (self._clientname(client_id), 
                                 "updated" if invalidation_type==gRPC.Invalidation.UPDATE else "created",
-                                repr(node), 
+                                repr(object), 
                                 world))
 
             if invalidation_type ==  gRPC.Invalidation.UPDATE:
-                nodes_to_invalidate_update.append(gRPCObject.id)
+                objects_to_invalidate_update.append(gRPCObject.id)
             elif invalidation_type ==  gRPC.Invalidation.NEW:
-                nodes_to_invalidate_new.append(gRPCObject.id)
+                objects_to_invalidate_new.append(gRPCObject.id)
             else:
                 raise RuntimeError("Unexpected invalidation type")
 
 
-            ## If necessary, update the node hierarchy
+            ## If necessary, update the object hierarchy
             if parent_has_changed:
-                parent = scene.node(node.parent)
+                parent = scene.object(object.parent)
                 if parent is None:
-                    logger.warning("Object %s references a non-exisiting parent" % node)
-                elif node.id not in parent.children:
-                    parent._children.append(node.id)
+                    logger.warning("Object %s references a non-exisiting parent" % object)
+                elif object.id not in parent.children:
+                    parent._children.append(object.id)
                     # tells everyone about the change to the parent
                     logger.debug("Adding invalidation action [update " + parent.id + "] due to hierarchy update")
-                    nodes_to_invalidate_update.append(parent.id)
+                    objects_to_invalidate_update.append(parent.id)
 
-                    # As a node has only one parent, if the parent has changed we must
-                    # remove our node from its previous parent
-                    for othernode in scene.nodes:
-                        if othernode.id != parent.id and node.id in othernode.children:
-                            othernode._children.remove(node.id)
+                    # As a object has only one parent, if the parent has changed we must
+                    # remove our object from its previous parent
+                    for otherobject in scene.objects:
+                        if otherobject.id != parent.id and object.id in otherobject.children:
+                            otherobject._children.remove(object.id)
                             # tells everyone about the change to the former parent
-                            logger.debug("Adding invalidation action [update " + othernode.id + "] due to hierarchy update")
-                            nodes_to_invalidate_update.append(othernode.id)
+                            logger.debug("Adding invalidation action [update " + otherobject.id + "] due to hierarchy update")
+                            objects_to_invalidate_update.append(otherobject.id)
                             break
 
-        if nodes_to_invalidate_update:
-            self._emit_invalidation(gRPC.Invalidation.SCENE, world, nodes_to_invalidate_update, gRPC.Invalidation.UPDATE)
-        if nodes_to_invalidate_new:
-            self._emit_invalidation(gRPC.Invalidation.SCENE, world, nodes_to_invalidate_new, gRPC.Invalidation.NEW)
+        if objects_to_invalidate_update:
+            self._emit_invalidation(gRPC.Invalidation.SCENE, world, objects_to_invalidate_update, gRPC.Invalidation.UPDATE)
+        if objects_to_invalidate_new:
+            self._emit_invalidation(gRPC.Invalidation.SCENE, world, objects_to_invalidate_new, gRPC.Invalidation.NEW)
 
 
         logger.debug("<updateObjects> completed")
         return gRPC.Empty()
 
     @profile
-    def deleteObjects(self, nodesInCtxt, context):
-        logger.debug("Got <deleteObjects> from %s" % nodesInCtxt.context.client)
-        self._update_current_links(nodesInCtxt.context.client, nodesInCtxt.context.world, PROVIDER)
+    def deleteObjects(self, objectsInCtxt, context):
+        logger.debug("Got <deleteObjects> from %s" % objectsInCtxt.context.client)
+        self._update_current_links(objectsInCtxt.context.client, objectsInCtxt.context.world, PROVIDER)
 
-        client_id, world = nodesInCtxt.context.client, nodesInCtxt.context.world
-        scene,_ = self._get_scene_timeline(nodesInCtxt.context)
+        client_id, world = objectsInCtxt.context.client, objectsInCtxt.context.world
+        scene,_ = self._get_scene_timeline(objectsInCtxt.context)
 
-        nodes_to_invalidate_delete = []
-        nodes_to_invalidate_update = []
-        for gRPCObject in nodesInCtxt.nodes:
-            node = scene.node(gRPCObject.id)
-            logger.info("<%s> deleted node <%s> in world <%s>" % \
+        objects_to_invalidate_delete = []
+        objects_to_invalidate_update = []
+        for gRPCObject in objectsInCtxt.objects:
+            object = scene.object(gRPCObject.id)
+            logger.info("<%s> deleted object <%s> in world <%s>" % \
                                 (self._clientname(client_id), 
-                                repr(node), 
+                                repr(object), 
                                 world))
 
-            action = self._delete_node(scene, gRPCObject.id)
+            action = self._delete_object(scene, gRPCObject.id)
 
             # tells everyone about the change
             logger.debug("Sent invalidation action [delete]")
-            nodes_to_invalidate_delete.append(gRPCObject.id)
+            objects_to_invalidate_delete.append(gRPCObject.id)
 
-            # reparent children to the scene's root node
+            # reparent children to the scene's root object
             children_to_update = []
-            for child_id in node.children:
-                child = scene.node(child_id)
-                child.parent = scene.rootnode.id
-                logger.debug("Reparenting child " + child_id + " to root node")
-                nodes_to_invalidate_update.append(child_id)
+            for child_id in object.children:
+                child = scene.object(child_id)
+                child.parent = scene.rootobject.id
+                logger.debug("Reparenting child " + child_id + " to root object")
+                objects_to_invalidate_update.append(child_id)
 
-            # Also remove the node from its parent's children
-            parent = scene.node(node.parent)
+            # Also remove the object from its parent's children
+            parent = scene.object(object.parent)
             if parent:
-                parent._children.remove(node.id)
+                parent._children.remove(object.id)
                 # tells everyone about the change to the parent
                 logger.debug("Sent invalidation action [update " + parent.id + "] due to hierarchy update")
-                nodes_to_invalidate_update.append(parent.id)
+                objects_to_invalidate_update.append(parent.id)
 
-        if nodes_to_invalidate_update:
-            self._emit_invalidation(gRPC.Invalidation.SCENE, world, nodes_to_invalidate_update, gRPC.Invalidation.UPDATE)
-        if nodes_to_invalidate_delete:
-            self._emit_invalidation(gRPC.Invalidation.SCENE, world, nodes_to_invalidate_delete, gRPC.Invalidation.DELETE)
+        if objects_to_invalidate_update:
+            self._emit_invalidation(gRPC.Invalidation.SCENE, world, objects_to_invalidate_update, gRPC.Invalidation.UPDATE)
+        if objects_to_invalidate_delete:
+            self._emit_invalidation(gRPC.Invalidation.SCENE, world, objects_to_invalidate_delete, gRPC.Invalidation.DELETE)
 
 
         logger.debug("<deleteObjects> completed")
@@ -521,9 +501,9 @@ class Server(gRPC.BetaUnderworldsServicer):
 
         if not situation:
             logger.warning("%s has required an non-existant "
-                           "situation <%s> in world %s" % (self._clientname(client_id), sitInCtxt.node.id, world))
+                           "situation <%s> in world %s" % (self._clientname(client_id), sitInCtxt.object.id, world))
 
-            context.details("Situation <%s> does not exist in world %s" % (sitInCtxt.node.id, world))
+            context.details("Situation <%s> does not exist in world %s" % (sitInCtxt.object.id, world))
             context.code(beta_interfaces.StatusCode.NOT_FOUND)
             return gRPC.Situation()
 
