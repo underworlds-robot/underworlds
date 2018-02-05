@@ -52,7 +52,8 @@ class ModelLoader:
                           assimp_node, 
                           underworlds_node, 
                           assimp_model,
-                          custom_root=None):
+                          custom_root=None,
+                          scale=1.0):
 
         logger.debug("Parsing node " + str(assimp_node))
         underworlds_node.name = assimp_node.name
@@ -72,8 +73,11 @@ class ModelLoader:
         if assimp_node.meshes:
 
             for m in assimp_node.meshes:
-                
-                mesh = MeshData(m.vertices.tolist(), 
+                if scale != 1.0:
+                    vertices = [[vertex[0] * scale, vertex[1] * scale, vertex[2] * scale] for vertex in m.vertices]
+                else:
+                    vertices = m.vertices.tolist()
+                mesh = MeshData(vertices,
                                 m.faces.tolist(), 
                                 m.normals.tolist(),
                                 m.material.properties["diffuse"])
@@ -132,7 +136,7 @@ class ModelLoader:
             self.recur_node(child, model, level + 1)
 
 
-    def load(self, filename, ctx=None, world=DEFAULT_WORLD, root=None, only_meshes=False):
+    def load(self, filename, ctx=None, world=DEFAULT_WORLD, root=None, only_meshes=False, scale = 1.0):
         """Loads a Collada (or any Assimp compatible model) file in the world.
 
         The kinematic chains are added to the world's geometric state.
@@ -148,6 +152,7 @@ class ModelLoader:
                           node instead of the scene's root.
         :param bool only_meshes: if true, no node is created. Only the
         meshes are pushed to the server.
+        :param float scale : scale of the model
         :returns: the list of loaded underworlds nodes.
         """
 
@@ -183,7 +188,7 @@ class ModelLoader:
         for n, pair in list(self.node_map.items()):
             self.fill_node_details(*pair,
                                     assimp_model = model,
-                                    custom_root=root)
+                                    custom_root=root, scale=scale)
         logger.info("...done")
 
 
@@ -222,7 +227,7 @@ class ModelLoader:
 
         return [nodes[1] for _,nodes in self.node_map.items()]
 
-    def load_meshes(self, filename, ctx=None):
+    def load_meshes(self, filename, ctx=None, scale=1.0):
         """Pushes meshes from any Assimp-compatible 3D model to the server's
         mesh repository.
 
@@ -231,12 +236,13 @@ class ModelLoader:
         :param string path: the path (relative or absolute) to the 3D model
         :param Context ctx: an existing underworlds context. If not provided, a
                             new one is created (named 'model loader')
-        :returns: a dictionary {mesh name: mesh ID} 
+        :param float scale : scale of the model
+        :returns: a dictionary {mesh name: mesh ID}
 
         :see: `load` loads the meshes and creates corresponding nodes.
         """
 
-        return {n.name:n.cad for n in self.load(filename, ctx, None, None, True) if n.type == MESH}
+        return {n.name:n.cad for n in self.load(filename, ctx, None, None, True, scale=scale) if n.type == MESH}
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
