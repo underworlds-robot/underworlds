@@ -75,8 +75,10 @@ class ModelLoader:
             for m in assimp_node.meshes:
                 if scale != 1.0:
                     vertices = [[vertex[0] * scale, vertex[1] * scale, vertex[2] * scale] for vertex in m.vertices]
+                    m.vertices = vertices
                 else:
                     vertices = m.vertices.tolist()
+
                 mesh = MeshData(vertices,
                                 m.faces.tolist(), 
                                 m.normals.tolist(),

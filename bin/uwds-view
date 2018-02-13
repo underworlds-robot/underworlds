@@ -438,7 +438,9 @@ class Underworlds3DViewer:
             return self.get_color_id()
 
     def is_mesh_updated(self, node):
-        return node.glmeshes != node.properties["mesh_ids"]
+        if hasattr(node, "glmeshes"):
+            return node.glmeshes != node.properties["mesh_ids"]
+        return False
 
     def glize(self, node):
 
