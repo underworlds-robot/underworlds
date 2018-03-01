@@ -141,6 +141,9 @@ class Server(gRPC.BetaUnderworldsServicer):
 
         node.last_update = time.time()
 
+        if node.parent is None:
+            node.parent = scene.rootnode.id
+
         oldnode = scene.node(node.id)
 
         if oldnode: # the node already exist
@@ -157,8 +160,6 @@ class Server(gRPC.BetaUnderworldsServicer):
         else: # new node
             scene.nodes.append(node)
             parent_has_changed = True
-            if node.parent is None:
-                node.parent = scene.rootnode.id
             action = NEW
 
         return action, parent_has_changed

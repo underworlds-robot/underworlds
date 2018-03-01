@@ -132,12 +132,13 @@ class Node(object):
 
     def copy(self):
         """ Performs a deep-copy of myself, and return the copy.
-        The copy *has a new, different, unique ID* (ie, the ID is not copied).
+        The copy *has a new, different, unique ID* (ie, the ID & children are not copied).
         """
 
         import copy
         node = copy.deepcopy(self)
         node.id = str(uuid.uuid4())
+        node._children = [] # clean children when copying to let uwds fill it
 
         return node
 
