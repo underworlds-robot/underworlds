@@ -475,8 +475,8 @@ class Server(gRPC.BetaUnderworldsServicer):
         _,timeline = self._get_scene_timeline(ctxt)
 
         situations = gRPC.Situations()
-        for s in timeline.situations:
-            situations.ids.append(s.id)
+        for sit_id in timeline.situations.keys():
+            situations.ids.append(sit_id)
 
         logger.debug("<getSituationsIds> completed")
         return situations
