@@ -436,7 +436,10 @@ class Timeline(object):
         del self.situations[situation.id]
 
     def situation(self, id):
-        return self.situations[id]
+        if id in self.situations:
+            return self.situations[id]
+        else:
+            return None
 
 
 class EventMonitor(object):
@@ -510,6 +513,17 @@ class Situation(object):
 
     def __hash__(self):
         return hash(self.id)
+
+    def copy(self):
+        """ Performs a deep-copy of myself, and return the copy.
+        The copy *has a new, different, unique ID* (ie, the ID & children are not copied).
+        """
+
+        import copy
+        situation = copy.deepcopy(self)
+        situation.id = str(uuid.uuid4())
+
+        return situation
 
     def serialize(self, SituationType):
         """Outputs a protobuf encoding of the situation

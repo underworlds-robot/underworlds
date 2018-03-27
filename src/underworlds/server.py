@@ -137,8 +137,6 @@ class Server(gRPC.BetaUnderworldsServicer):
 
     def _update_node(self, scene, node):
 
-        parent_has_changed = False
-
         node.last_update = time.time()
 
         if node.parent is None:
@@ -498,7 +496,6 @@ class Server(gRPC.BetaUnderworldsServicer):
             context.details("No situation id provided")
             context.code(beta_interfaces.StatusCode.NOT_FOUND)
             return gRPC.Node()
-
 
         situation = timeline.situation(sitInCtxt.situation.id)
 
