@@ -7,22 +7,38 @@ import logging; logger = logging.getLogger("underworlds.list")
 import underworlds
 from underworlds.types import NODETYPE_NAMES
 
-def recursive_list(scene, node, level):
+def recursive_list(scene, node, level, nodemesh):
 
-    print("  " * level + "%s [%s] -- id:%s" % (node.name, NODETYPE_NAMES[node.type],node.id))
+    if NODETYPE_NAMES[node.type] == "mesh" and nodemesh:
+        print("  " * level + "%s [%s] -- id:%s -- meshes:%s" % (node.name, NODETYPE_NAMES[node.type],node.id,node.properties["mesh_ids"]))
+    else:
+        print("  " * level + "%s [%s] -- id:%s" % (node.name, NODETYPE_NAMES[node.type],node.id))
 
     for child in node.children:
         cnode = scene.nodes[child]
-        recursive_list(scene, cnode, level + 1)
+        recursive_list(scene, cnode, level + 1, nodemesh)
 
 if __name__ == "__main__":
-
+    
+    import argparse
+    parser = argparse.ArgumentParser(description="Lists details of an underworlds world from the command-line.")
+    
     logging.basicConfig(level=logging.WARNING)
-
+    
+    parser.add_argument("-n","--nodemesh", action='store_true',help="List meshes of mesh nodes")
+    #parser.add_argument("-m","--mesh", action='store_true',help="Show all meshes for the world")
+    
+    args = parser.parse_args()
+    
     with underworlds.Context("uwds-ls") as ctx:
-
+		
         for world in ctx.worlds:
-
+			
             print("WORLD %s" % world.name)
-
-            recursive_list(world.scene, world.scene.rootnode, 1)
+            
+            #if args.mesh:
+                #print("  Loaded Meshes:")
+                #for meshes in ctx.mesh():
+                    #print ("    %s" % meshes)
+                    
+            recursive_list(world.scene, world.scene.rootnode, 1, args.nodemesh)
