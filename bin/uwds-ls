@@ -26,7 +26,6 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.WARNING)
     
     parser.add_argument("-n","--nodemesh", action='store_true',help="List meshes of mesh nodes")
-    #parser.add_argument("-m","--mesh", action='store_true',help="Show all meshes for the world")
     
     args = parser.parse_args()
     
@@ -35,10 +34,5 @@ if __name__ == "__main__":
         for world in ctx.worlds:
 			
             print("WORLD %s" % world.name)
-            
-            #if args.mesh:
-                #print("  Loaded Meshes:")
-                #for meshes in ctx.mesh():
-                    #print ("    %s" % meshes)
                     
             recursive_list(world.scene, world.scene.rootnode, 1, args.nodemesh)
