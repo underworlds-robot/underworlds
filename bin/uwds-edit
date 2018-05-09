@@ -69,12 +69,12 @@ if __name__ == "__main__":
     add_mesh.add_argument("-n","--node",default=None,help="add a node id here to directly add the mesh to a node")
     commands["add-mesh"] = add_mesh
     
-    add_mesh_to_node = subparsers.add_parser("add-mesh-to-node", help="adds a mesh that has already been loaded to the world to a node")
-    add_mesh_to_node.set_defaults(which="adder", cmd="add-mesh-to-node")
-    add_mesh_to_node.add_argument("world", help="world to edit")
-    add_mesh_to_node.add_argument("node",help="node to add the mesh to")
-    add_mesh_to_node.add_argument("mesh",help="ID of the mesh being added to the node")
-    commands["add-mesh-to-node"] = add_mesh_to_node
+    add_mesh_to_node_cmd = subparsers.add_parser("add-mesh-to-node", help="adds a mesh that has already been loaded to the world to a node")
+    add_mesh_to_node_cmd.set_defaults(which="adder", cmd="add-mesh-to-node")
+    add_mesh_to_node_cmd.add_argument("world", help="world to edit")
+    add_mesh_to_node_cmd.add_argument("node",help="node to add the mesh to")
+    add_mesh_to_node_cmd.add_argument("mesh",help="ID of the mesh being added to the node")
+    commands["add-mesh-to-node"] = add_mesh_to_node_cmd
 
     rm_mesh = subparsers.add_parser("rm-mesh", help="clear a mesh from a mesh node, if all meshes are removed then remove the node")
     rm_mesh.set_defaults(which="remover", cmd="rm-mesh")
@@ -100,7 +100,8 @@ if __name__ == "__main__":
     ### ADD NODE
     ############################################################
     if args.cmd == "add-mesh-node":
-        create_mesh_node(args.world, args.name, args.mesh, args.parent)
+        
+        create_mesh_node(args.world, args.name, [args.mesh], args.parent)
 
         sys.exit(0)
 
@@ -129,14 +130,14 @@ if __name__ == "__main__":
         logger.info("Created mesh with id %s" % str(mesh_id))
         
         if args.node is not None:
-            logger.info("Attempting to add mesh %s to node %s" % (str(mesh_id),str(args.node)))
+            logger.info("Attempting to add mesh %s to world %s node %s" % (str(mesh_id),str(args.world),str(args.node)))
             add_mesh_to_node(args.world, args.node, mesh_id)
             
     ############################################################
     ### ADD MESH TO NODE
     ############################################################
     elif args.cmd == "add-mesh-to-node":
-        add_mesh_to_node(args.world, args.node, args.mesh)
+        add_mesh_to_node(args.world, args.node, [args.mesh])
 
     ############################################################
     ### REMOVE MESH
