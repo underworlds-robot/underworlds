@@ -244,7 +244,7 @@ class ModelLoader:
         :see: `load` loads the meshes and creates corresponding nodes.
         """
 
-        return {n.name:n.cad for n in self.load(filename, ctx, None, None, True, scale=scale) if n.type == MESH}
+        return {n.name:n.properties["mesh_ids"] for n in self.load(filename, ctx, None, None, True, scale=scale) if n.type == MESH}
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
