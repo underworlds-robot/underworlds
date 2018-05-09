@@ -31,7 +31,7 @@ def create_mesh_node(world, node, mesh_ids, parent="root"):
 
         logger.info("Creating Mesh Node <%s : %s> with meshes %s"%(str(new_node),str(new_node.id),str(new_node.properties["mesh_ids"])))
         target_world.scene.nodes.append(new_node)
-        if parent != "root":
+        if parent != "root" and parent != target_world.scene.rootnode.id:
             set_parent(world, new_node.id, parent)
         
 def create_camera_node(world, node, aspect=0, horizontalfov=0, parent="root"):
@@ -51,7 +51,7 @@ def create_camera_node(world, node, aspect=0, horizontalfov=0, parent="root"):
 
         logger.info("Creating Camera Node <%s : %s>"%(str(new_node),str(new_node.id)))
         target_world.scene.nodes.append(new_node)
-        if parent != "root":
+        if parent != "root" and parent != target_world.scene.rootnode.id:
             set_parent(world, new_node.id, parent)
         
 def create_entity_node(world, node, parent="root"):
@@ -70,7 +70,7 @@ def create_entity_node(world, node, parent="root"):
         logger.info("Creating Entity Node <%s : %s>"%(str(new_node),str(new_node.id)))
         target_world.scene.nodes.append(new_node)
         
-        if parent != "root":
+        if parent != "root" and parent != target_world.scene.rootnode.id:
             set_parent(world, new_node.id, parent)
         
 def remove_node(world, node):
@@ -187,7 +187,7 @@ def set_parent(world, node, parent):
             logger.error(str(e))
             sys.exit(1)
 
-        if parent != "root":
+        if parent != "root" and parent != target_world.scene.rootnode.id:
             try:
                 parent_node = target_world.scene.nodes[parent]
             except KeyError as e:
@@ -204,7 +204,7 @@ def set_parent(world, node, parent):
             logger.info("Setting parent of node %s to %s (root)" % (str(updt_node.id),str(target_world.scene.rootnode.id)))
 
         target_world.scene.nodes.update(updt_node)
-        if parent != "root":
+        if parent != "root" and parent != target_world.scene.rootnode.id:
             target_world.scene.nodes.update(parent_node)
         
         
