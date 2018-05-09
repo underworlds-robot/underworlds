@@ -26,20 +26,13 @@ def create_mesh_node(world, node, mesh_ids, parent="root"):
 
         new_node.name = node
         
-        if parent != "root":
-            try:
-                parent = target_world.scene.nodes[parent]
-            except KeyError as e:
-                logger.error(str(e))
-                sys.exit(1)
-
-            new_node.parent = parent.id
-
-        else:
-            new_node.parent = target_world.scene.rootnode.id
+        #Just add the node with root and parent so we can use the set_parent code to update to the correct parent.
+        new_node.parent = target_world.scene.rootnode.id
 
         logger.info("Creating Mesh Node <%s : %s> with meshes %s"%(str(new_node),str(new_node.id),str(new_node.properties["mesh_ids"])))
         target_world.scene.nodes.append(new_node)
+        if parent != "root":
+            set_parent(world, new_node.id, parent)
         
 def create_camera_node(world, node, aspect=0, horizontalfov=0, parent="root"):
     
@@ -53,20 +46,13 @@ def create_camera_node(world, node, aspect=0, horizontalfov=0, parent="root"):
         
         new_node.name = node
         
-        if parent != "root":
-            try:
-                parent = target_world.scene.nodes[parent]
-            except KeyError as e:
-                logger.error(str(e))
-                sys.exit(1)
-
-            new_node.parent = parent.id
-
-        else:
-            new_node.parent = target_world.scene.rootnode.id
+        #Just add the node with root and parent so we can use the set_parent code to update to the correct parent.
+        new_node.parent = target_world.scene.rootnode.id
 
         logger.info("Creating Camera Node <%s : %s>"%(str(new_node),str(new_node.id)))
         target_world.scene.nodes.append(new_node)
+        if parent != "root":
+            set_parent(world, new_node.id, parent)
         
 def create_entity_node(world, node, parent="root"):
     
@@ -78,20 +64,14 @@ def create_entity_node(world, node, parent="root"):
 
         new_node.name = node
         
-        if parent != "root":
-            try:
-                parent = target_world.scene.nodes[parent]
-            except KeyError as e:
-                logger.error(str(e))
-                sys.exit(1)
-
-            new_node.parent = parent.id
-
-        else:
-            new_node.parent = target_world.scene.rootnode.id
+        #Just add the node with root and parent so we can use the set_parent code to update to the correct parent.
+        new_node.parent = target_world.scene.rootnode.id
 
         logger.info("Creating Entity Node <%s : %s>"%(str(new_node),str(new_node.id)))
         target_world.scene.nodes.append(new_node)
+        
+        if parent != "root":
+            set_parent(world, new_node.id, parent)
         
 def remove_node(world, node):
     
@@ -124,8 +104,11 @@ def create_box_mesh(world, scaleX=1, scaleY=1, scaleZ=1, diffuse=(1,1,1,1)):
         
 def add_mesh_to_node(world, node, mesh_ids):
 
+    logger.info("Starting add_mesh_to_node")
     with underworlds.Context("edit-tool") as ctx:
-
+        
+        target_world = ctx.worlds[world]
+        
         try:
             mesh_node = target_world.scene.nodes[node]
         except KeyError as e:
@@ -143,8 +126,8 @@ def add_mesh_to_node(world, node, mesh_ids):
         
         logger.info("Adding MESH for <%s : %s> with meshes %s" % (str(mesh_node),str(mesh_node.id), str(mesh_ids)))
         
-        target_world.scene.nodes.update(b_mesh_node)
-    
+        target_world.scene.nodes.update(mesh_node)
+
 def add_sphere_mesh(world, node, radius=1, diffuse=(1,1,1,1)):
     raise NotImplementedError # issue 9
     
@@ -171,13 +154,13 @@ def remove_mesh(world, node, mesh_id):
         target_world = ctx.worlds[world]
         
         try:
-            rem_msh_node = target_world.scene.nodes[node]
+            rem_mesh_node = target_world.scene.nodes[node]
         except KeyError as e:
             logger.error(str(e))
             sys.exit(1)
             
         try:
-            cur_mesh_ids = mesh_node.properties["mesh_ids"]
+            cur_mesh_ids = rem_mesh_node.properties["mesh_ids"]
         except AttributeError as e:
             logger.error("Node is not of type Mesh.")
             sys.exit(1)
@@ -185,16 +168,18 @@ def remove_mesh(world, node, mesh_id):
         cur_mesh_ids.remove(mesh_id)
         
         if len(cur_mesh_ids) == 0:
-            logger.info("Last mesh removed, removing node %s" % str(rem_msh_node.id))
+            logger.info("Last mesh removed, removing node %s" % str(rem_mesh_node.id))
             remove_node(world, node)
         else:
-            logger.info("Removing Mesh %s from node %s" % (str(mesh_id),str(rem_msh_node.id)))
-            rem_msh_node.properties["mesh_ids"] = cur_mesh_ids
-            target_world.scene.nodes.update(rem_msh_node)
+            logger.info("Removing Mesh %s from node %s" % (str(mesh_id),str(rem_mesh_node.id)))
+            rem_mesh_node.properties["mesh_ids"] = cur_mesh_ids
+            target_world.scene.nodes.update(rem_mesh_node)
     
 def set_parent(world, node, parent):
     
     with underworlds.Context("edit-tool") as ctx:
+        
+        target_world = ctx.worlds[world]
         
         try:
             updt_node = target_world.scene.nodes[node]
@@ -202,20 +187,31 @@ def set_parent(world, node, parent):
             logger.error(str(e))
             sys.exit(1)
 
-
-        if args.parent != "root":
+        if parent != "root":
             try:
-                parent = target_world.scene.nodes[parent]
+                parent_node = target_world.scene.nodes[parent]
             except KeyError as e:
                 logger.error(str(e))
                 sys.exit(1)
 
-            updt_node.parent = parent.id
+            updt_node.parent = parent_node.id
+            parent_node.children.append(updt_node.id) #The requirement of this line might be a bug. Root node gets its children updated automatically, and the children is cleared automatically.
+            
+            logger.info("Setting parent of node %s to %s" % (str(updt_node.id),str(pare_node.id)))
 
         else:
             updt_node.parent = target_world.scene.rootnode.id
+            logger.info("Setting parent of node %s to %s (root)" % (str(updt_node.id),str(target_world.scene.rootnode.id)))
 
         target_world.scene.nodes.update(updt_node)
+        if parent != "root":
+            target_world.scene.nodes.update(parent_node)
+        
+        
+def get_mesh(id):
+    with underworlds.Context("edit-tool") as ctx:
+        
+        return ctx.mesh(id)
 
 if __name__ == "__main__":
 
