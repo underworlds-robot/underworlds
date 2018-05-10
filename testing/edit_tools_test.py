@@ -67,10 +67,12 @@ class TestEditTools(unittest.TestCase):
         self.assertFalse(unicode(mesh_id1[0], "utf-8") in tMeshNode[0].properties["mesh_ids"]) #Check Mesh has been removed.
         
         #Test removing final mesh from Node - deleting the node
+        meshNodeID = tMeshNode[0].id
         for mesh in mesh_id2:
             remove_mesh("base", tMeshNode[0].id, mesh)
             
         self.assertEqual(len(world.scene.nodes), 1) #Only the root node should be left.
+        self.assertFalse(tMeshNode[0] in world.scene.nodes)
         
     def test_edit_nodes(self):
         world = self.ctx.worlds["base"]
@@ -86,6 +88,33 @@ class TestEditTools(unittest.TestCase):
         tCEntityNode = world.scene.nodebyname("EntityChild")
         
         self.assertEqual(len(tCEntityNode), 1)
+        self.assertEqual(tPEntityNode[0].id, tCEntityNode[0].parent)
+        
+        #Change parent of node
+        set_parent("base", tCEntityNode[0].id, "root")
+        tCEntityNode = world.scene.nodebyname("EntityChild")
+        
+        self.assertEqual(len(tCEntityNode), 1)
+        self.assertEqual(world.scene.rootnode.id, tCEntityNode[0].parent)
+        
+        #Remove node
+        remove_node("base", tCEntityNode[0].id)
+        tPEntityNode = world.scene.nodebyname("EntityParent")
+        
+        self.assertEqual(len(world.scene.nodes), 2) #Only root and EntityParent should remain
+        self.assertTrue(tPEntityNode[0] in world.scene.nodes)
+        self.assertFalse(tCEntityNode[0] in world.scene.nodes)
+        
+    def test_edit_camera(self):
+		world = self.ctx.worlds["base"]
+		
+		#Test creation of a Camera node
+		create_camera_node("base", "testCamera", aspect=1, horizontalfov=2)
+		tCameraNode = world.scene.nodebyname("testCamera")
+		
+		self.assertEqual(len(tCameraNode), 1)
+		self.assertEqual(tCameraNode[0].properties["aspect"], 1)
+		self.assertEqual(tCameraNode[0].properties["horizontalfov"], 2)
         
     def tearDown(self):
         self.ctx.close()
