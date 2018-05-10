@@ -104,7 +104,8 @@ import basic_server_interaction, \
        visibility, \
        basic_server_interaction, \
        model_loading, \
-       spatial_relations_test
+       spatial_relations_test, \
+       edit_tools_test
 
 modules = [
     basic_server_interaction, \
@@ -115,7 +116,8 @@ modules = [
     waitforchanges, \
     timeline, \
     model_loading, \
-    spatial_relations_test]
+    spatial_relations_test, \
+    edit_tools_test]
 
 # add the tests which require OpenGL support
 if not nogl:
