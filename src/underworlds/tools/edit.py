@@ -197,7 +197,7 @@ def set_parent(world, node, parent):
             updt_node.parent = parent_node.id
             parent_node.children.append(updt_node.id) #The requirement of this line might be a bug. Root node gets its children updated automatically, and the children is cleared automatically.
             
-            logger.info("Setting parent of node %s to %s" % (str(updt_node.id),str(pare_node.id)))
+            logger.info("Setting parent of node %s to %s" % (str(updt_node.id),str(parent_node.id)))
 
         else:
             updt_node.parent = target_world.scene.rootnode.id
