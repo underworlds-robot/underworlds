@@ -15,6 +15,8 @@ import logging; logger = logging.getLogger("underworlds.tools.edit")
 logging.basicConfig(level=logging.INFO)
 
 def create_mesh_node(world, node, mesh_ids, parent="root"):
+    """ Creates a node of type Mesh. 
+    """
     
     with underworlds.Context("edit-tool") as ctx:
 
@@ -35,6 +37,8 @@ def create_mesh_node(world, node, mesh_ids, parent="root"):
             set_parent(world, new_node.id, parent)
         
 def create_camera_node(world, node, aspect=0, horizontalfov=0, parent="root"):
+    """ Creates a node of type Camera.
+    """
     
     with underworlds.Context("edit-tool") as ctx:
 
@@ -55,6 +59,8 @@ def create_camera_node(world, node, aspect=0, horizontalfov=0, parent="root"):
             set_parent(world, new_node.id, parent)
         
 def create_entity_node(world, node, parent="root"):
+    """ Creates a node of type Entity.
+    """
     
     with underworlds.Context("edit-tool") as ctx:
 
@@ -74,6 +80,8 @@ def create_entity_node(world, node, parent="root"):
             set_parent(world, new_node.id, parent)
         
 def remove_node(world, node):
+    """ Removes a node.
+    """
     
     with underworlds.Context("edit-tool") as ctx:
         
@@ -89,6 +97,9 @@ def remove_node(world, node):
         target_world.scene.nodes.remove(rem_node)
 
 def create_box_mesh(world, scaleX=1, scaleY=1, scaleZ=1, diffuse=(1,1,1,1)):
+    """ Creates a box mesh adds it to underworlds and returns the 
+        ids of the mesh.
+    """
     
     with underworlds.Context("edit-tool") as ctx:
 
@@ -103,6 +114,8 @@ def create_box_mesh(world, scaleX=1, scaleY=1, scaleZ=1, diffuse=(1,1,1,1)):
         return mesh_ids
         
 def add_mesh_to_node(world, node, mesh_ids):
+    """ Attaches a previously created mesh to a Mesh node
+    """
 
     logger.info("Starting add_mesh_to_node")
     with underworlds.Context("edit-tool") as ctx:
@@ -129,11 +142,17 @@ def add_mesh_to_node(world, node, mesh_ids):
         target_world.scene.nodes.update(mesh_node)
 
 def add_sphere_mesh(world, node, radius=1, diffuse=(1,1,1,1)):
-    raise NotImplementedError # issue 9
+    """ Not Implemented.
+    """
+    raise NotImplementedError # Issue 9
     
 def load_mesh(world, model):
-
-     with underworlds.Context("edit-tool") as ctx:
+    """ Loads meshes from a file and adds it to underworlds. Note
+        that the meshes loaded are stand alone and not attached to
+        a node.
+    """
+    
+    with underworlds.Context("edit-tool") as ctx:
 
         target_world = ctx.worlds[world]
 
@@ -148,6 +167,9 @@ def load_mesh(world, model):
         return mesh_ids
     
 def remove_mesh(world, node, mesh_id):
+    """ Removes a mesh from a Mesh node. If the last mesh is removed
+        then the Mesh node will be removed as well.
+    """
     
     with underworlds.Context("edit-tool") as ctx:
         
@@ -176,6 +198,8 @@ def remove_mesh(world, node, mesh_id):
             target_world.scene.nodes.update(rem_mesh_node)
     
 def set_parent(world, node, parent):
+    """ Sets the parent node of a node.
+    """
     
     with underworlds.Context("edit-tool") as ctx:
         
