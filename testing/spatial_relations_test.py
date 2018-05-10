@@ -19,6 +19,8 @@ class TestSpatialRelations(unittest.TestCase):
 
         ModelLoader().load("res/spatial.blend", world="base")
         
+        time.sleep(1) # leave some time for the loader to finish
+        
         mainbb = get_bounding_box_for_node(world.scene, world.scene.nodebyname("Main")[0])
         belowbb = get_bounding_box_for_node(world.scene, world.scene.nodebyname("Below")[0])
         insidebb = get_bounding_box_for_node(world.scene, world.scene.nodebyname("Inside")[0])
