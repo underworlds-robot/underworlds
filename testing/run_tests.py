@@ -108,7 +108,6 @@ import basic_server_interaction, \
 
 modules = [
     basic_server_interaction, \
-<<<<<<< HEAD
     topology, \
     core, \
     nodes, \
