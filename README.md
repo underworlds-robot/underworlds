@@ -2,7 +2,7 @@ Underworlds: Geometric & Temporal Representation for Robots
 ===========================================================
 
 [![Build
-Status](https://travis-ci.org/severin-lemaignan/underworlds.svg?branch=master)](https://travis-ci.org/severin-lemaignan/underworlds)
+Status](https://travis-ci.org/underworlds-robot/underworlds.svg?branch=master)](https://travis-ci.org/underworlds-robot/underworlds)
 [![Documentation Status](https://readthedocs.org/projects/underworlds/badge/?version=latest)](http://underworlds.readthedocs.org)
 
 Description
