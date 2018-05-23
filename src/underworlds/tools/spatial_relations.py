@@ -345,12 +345,12 @@ def isin(bb1, bb2):
     """
     bb1_min, _ = bb1
     bb2_min, bb2_max = bb2
-
+    
     x1,y1,z1 = bb1_min
     x2,y2,z2 = bb2_max
     x3,y3,z3 = bb2_min
-
-    if z1 > z2 + EPSILON:
+    
+    if z1 >= z2:
         return False
 
     if z1 < z3 - EPSILON:
@@ -372,7 +372,7 @@ def get_node_sr(worldName, nodeID, exclNodeID=None, perspective=[0,1,0]):
         
         for node2 in world.scene.nodes:
             
-            if node2.id == node.id or node2.id == exclNodeID:
+            if node2.id == node.id or node2.id == exclNodeID or node2.id == world.scene.rootnode.id:
                 continue
                 
             bb2 = get_bounding_box_for_node(world.scene, node2)
@@ -392,21 +392,26 @@ def get_node_sr(worldName, nodeID, exclNodeID=None, perspective=[0,1,0]):
                 rel_list.append([3, node.id, node2.id, "above"])
                 continue
                 
+            elif isbelow(bb1, bb2):
+                logger.info("%s below %s" % (node.name, node2.name))
+                rel_list.append([4, node.id, node2.id, "below"])
+                continue
+                
             elif isclose(bb1, bb2):
                 logger.info("%s close %s" % (node.name, node2.name))
-                rel_list.append([8, node.id, node2.id, "close"])
+                rel_list.append([9, node.id, node2.id, "close"])
                 if istonorth(bb1, bb2):
                     logger.info("%s to north %s" % (node.name, node2.name))
-                    rel_list.append([4, node.id, node2.id, "toNorth"])
+                    rel_list.append([5, node.id, node2.id, "toNorth"])
                 elif istoeast(bb1, bb2):
                     logger.info("%s to east %s" % (node.name, node2.name))
-                    rel_list.append([5, node.id, node2.id, "toEast"])
+                    rel_list.append([6, node.id, node2.id, "toEast"])
                 elif istosouth(bb1, bb2):
                     logger.info("%s to south %s" % (node.name, node2.name))
-                    rel_list.append([6, node.id, node2.id, "toSouth"])
+                    rel_list.append([7, node.id, node2.id, "toSouth"])
                 elif istowest(bb1, bb2):
                     logger.info("%s to west %s" % (node.name, node2.name))
-                    rel_list.append([7, node.id, node2.id, "toWest"])
+                    rel_list.append([8, node.id, node2.id, "toWest"])
                 continue
                 
         return rel_list
