@@ -2,6 +2,7 @@
 #-*- coding: UTF-8 -*-
 
 import underworlds
+import underworlds.server
 from underworlds.helpers.geometry import get_bounding_box_for_node
 from underworlds.types import MESH
 
@@ -135,6 +136,7 @@ def isbelow(bb1, bb2):
          - obj 1 is lower than obj 2
          - the bounding box footbrint of both objects must overlap
     """
+    
     if islower(bb1, bb2):
         return overlap(bb_footprint(bb1), bb_footprint(bb2))
 
@@ -355,30 +357,72 @@ def isin(bb1, bb2):
         return False
 
     return weakly_cont(bb_footprint(bb1),
-            bb_footprint(bb2))
+                   bb_footprint(bb2))
+                   
+def get_node_sr(worldName, nodeID, exclNodeID=None, perspective=[0,1,0]):
 
-def compute_relations(scene):
+    rel_list = []
+    
+    with underworlds.Context("spatial_relations") as ctx:
+        world = ctx.worlds[worldName]
 
-    boundingboxes = {n: get_bounding_box_for_node(scene, n) for n in scene.nodes if n.type == MESH}
-    allocentric_relations(boundingboxes)
+        node = world.scene.nodes[nodeID]
 
-def allocentric_relations(nodes):
-
-    for n,bb in nodes.items():
-        for n2,bb2 in nodes.items():
-            if n == n2:
+        bb1 = get_bounding_box_for_node(world.scene, world.scene.nodes[nodeID])
+        
+        for node2 in world.scene.nodes:
+            
+            if node2.id == node.id or node2.id == exclNodeID:
                 continue
+                
+            bb2 = get_bounding_box_for_node(world.scene, node2)
+            
+            if isin(bb1, bb2):
+                logger.info("%s in %s" % (node.name, node2.name))
+                rel_list.append([1, node.id, node2.id, "in"])
+                continue
+                
+            elif isontop(bb1, bb2):
+                logger.info("%s onTop %s" % (node.name, node2.name))
+                rel_list.append([2, node.id, node2.id, "onTop"])
+                continue
+                
+            elif isabove(bb1, bb2):
+                logger.info("%s above %s" % (node.name, node2.name))
+                rel_list.append([3, node.id, node2.id, "above"])
+                continue
+                
+            elif isclose(bb1, bb2):
+                logger.info("%s close %s" % (node.name, node2.name))
+                rel_list.append([8, node.id, node2.id, "close"])
+                if istonorth(bb1, bb2):
+                    logger.info("%s to north %s" % (node.name, node2.name))
+                    rel_list.append([4, node.id, node2.id, "toNorth"])
+                elif istoeast(bb1, bb2):
+                    logger.info("%s to east %s" % (node.name, node2.name))
+                    rel_list.append([5, node.id, node2.id, "toEast"])
+                elif istosouth(bb1, bb2):
+                    logger.info("%s to south %s" % (node.name, node2.name))
+                    rel_list.append([6, node.id, node2.id, "toSouth"])
+                elif istowest(bb1, bb2):
+                    logger.info("%s to west %s" % (node.name, node2.name))
+                    rel_list.append([7, node.id, node2.id, "toWest"])
+                continue
+                
+        return rel_list
 
-            if isabove(bb, bb2):
-                logger.info("%s is above %s" % (n, n2))
-                if isontop(bb, bb2):
-                    logger.info("%s is on top of %s" % (n, n2))
-
-            if isclose(bb, bb2):
-                logger.info("%s is close of %s" % (n, n2))
-
-            if isin(bb, bb2):
-                logger.info("%s is in %s" % (n, n2))
+def compute_all_relations(worldName, perspective=[0,1,0]):
+    
+    all_rel_list = []
+    
+    with underworlds.Context("spatial_relations") as ctx:
+        world = ctx.worlds[worldName]
+    
+        for node in world.scene.nodes:
+            cur_rel_list = get_node_sr(worldName, node.id)
+            all_rel_list.append({node.id, cur_rel_list})
+            
+        return all_rel_list
 
 if __name__ == "__main__":
 
@@ -390,17 +434,17 @@ if __name__ == "__main__":
     #parser.add_argument("-d", "--debug", help="run in interactive, debug mode", action="store_true")
     args = parser.parse_args()
 
-    with underworlds.Context("Geometry Reasonning") as ctx:
+    with underworlds.Context("Spatial Reasonning") as ctx:
 
         world = ctx.worlds[args.world]
 
-        compute_relations(world.scene)
+        compute_all_relations(args.world)
 
         try:
             while True:
                 world.scene.waitforchanges()
                 logger.info("Updating relations...")
-                compute_relations(world.scene)
+                compute_all_relations(args.world)
 
         except KeyboardInterrupt:
             print("Bye bye")
