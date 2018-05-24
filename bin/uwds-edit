@@ -111,7 +111,7 @@ if __name__ == "__main__":
         sys.exit(0)
         
     elif args.cmd == "add-camera-node":
-        create_camera_node(args.world, args.node, args.aspect, args.hfov, args.parent)
+        create_camera_node(args.world, args.name, args.aspect, args.hfov, args.parent)
         
         sys.exit(0)
 
