@@ -149,7 +149,7 @@ class NodesProxy:
                     del(self._nodes[id])
                     self._deleted_ids.remove(id)
                 except ValueError:
-                    logger.warning("The node %s is already removed. Feels like a synchro issue..." % id)
+                    logger.warning("The node <%s> is already removed. Feels like a synchro issue..." % id)
 
         # Then, let see what the user want:
         if type(key) is int:
@@ -185,7 +185,7 @@ class NodesProxy:
                     self._get_node_from_remote(key)
                 except ValueError:
                     #The node does not exist!!
-                    raise KeyError("The node ID %s does not exist" % key)
+                    raise KeyError("The node ID <%s> does not exist." % key)
                 return self._nodes[key]
 
     def __len__(self):
@@ -372,7 +372,7 @@ class TimelineProxy:
 
 
         self.origin = self._ctx.rpc.timelineOrigin(self._server_ctx, _TIMEOUT_SECONDS).time
-        logger.info("Accessing world <%s> (initially created on  %s)"%(self._world.name, time.asctime(time.localtime(self.origin))))
+        logger.debug("Accessing world <%s> (initially created on  %s)"%(self._world.name, time.asctime(time.localtime(self.origin))))
 
         self.waitforchanges_cv = threading.Condition()
         self.lastchange = None
@@ -747,7 +747,7 @@ class InvalidationServer(gRPC.BetaUnderworldsInvalidationServicer):
 
     @profile
     def emitInvalidation(self, invalidation, context):
-        logger.info("Got <emitInvalidation> for world <%s>" % invalidation.world)
+        logger.debug("Got <emitInvalidation> for world <%s>" % invalidation.world)
        
         target, action, world, ids = invalidation.target, invalidation.type, invalidation.world, invalidation.ids
 
@@ -793,7 +793,7 @@ class Context(object):
 
         while self.invalidation_port == 0:
             invalidation_port = random.randint(port + 1,60000)
-            logger.info("Creating my own invalidation server on port %s..." % (invalidation_port))
+            logger.debug("Creating my own invalidation server on port %s..." % (invalidation_port))
 
             self.invalidation_server = gRPC.beta_create_UnderworldsInvalidation_server(InvalidationServer(self))
             self.invalidation_port = self.invalidation_server.add_insecure_port('[::]:%d' % invalidation_port)
@@ -804,7 +804,7 @@ class Context(object):
 
         self.invalidation_server.start()
 
-        logger.info("Invalidation server created")
+        logger.debug("Invalidation server created")
 
 
         if "UWDS_SERVER" in os.environ and os.environ["UWDS_SERVER"] != "":
@@ -814,7 +814,7 @@ class Context(object):
             else:
                 host = os.environ["UWDS_SERVER"]
 
-        logger.info("Connecting to the underworlds server on %s:%s..." % (host, port))
+        logger.debug("Connecting to the underworlds server on %s:%s..." % (host, port))
 
 
         try:
@@ -825,16 +825,16 @@ class Context(object):
                                                  host="localhost", 
                                                  invalidation_server_port=self.invalidation_port), _TIMEOUT_SECONDS).id
         except NetworkError as e:
-            logger.fatal("Underworld server unreachable on %s:%d! Is it started?\n"
+            logger.fatal("Underworlds server unreachable on %s:%d! Is it started?\n"
                          "Set UWDS_SERVER=host:port if underworlded is running on a different machine.\n"
                          "Original error: %s" % (host, port, str(e)))
             sys.exit(1)
         except AbortionError as e:
-            logger.fatal("Underworld server refused connection on %s:%d.\n"
+            logger.fatal("Underworlds server refused connection on %s:%d. Is the Underworlds server daemon started?\n"
                          "Original error: %s" % (host, port, str(e)))
             sys.exit(1)
 
-        logger.info("<%s> connected to the underworlds server." % self.name)
+        logger.debug("<%s> connected to the underworlds server." % self.name)
 
 
     def reset(self):
@@ -899,10 +899,10 @@ class Context(object):
         self.close()
 
     def close(self):
-        logger.info("Closing context [%s]..." % self.name)
+        logger.debug("Closing context [%s]..." % self.name)
         self.rpc.byebye(gRPC.Client(id=self.id), _TIMEOUT_SECONDS)
         self.invalidation_server.stop(1).wait()
-        logger.info("The context [%s] is now closed." % self.name)
+        logger.debug("The context [%s] is now closed." % self.name)
 
     def __repr__(self):
         return "Underworlds context for " + self.name
