@@ -40,7 +40,7 @@ class TestEditTools(unittest.TestCase):
         tMeshNode = world.scene.nodebyname("testNode")
         
         self.assertEqual(len(tMeshNode), 1)
-        self.assertTrue(unicode(mesh_id1[0], "utf-8") in tMeshNode[0].properties["mesh_ids"]) #Check the mesh is in the Mesh Node.
+        self.assertTrue(mesh_id1[0] in tMeshNode[0].properties["mesh_ids"]) #Check the mesh is in the Mesh Node.
         
         #Test loading a Mesh
         mesh_id2 = None
@@ -54,7 +54,7 @@ class TestEditTools(unittest.TestCase):
         
         self.assertEqual(len(tMeshNode), 1) #Not created an additional node.
         self.assertEqual(len(tMeshNode[0].properties["mesh_ids"]), len(mesh_id2) + len(mesh_id1)) #Original Meshes have not been removed and new meshes added.
-        self.assertTrue(unicode(mesh_id2[0], "utf-8") in tMeshNode[0].properties["mesh_ids"]) #New mesh is in the Mesh node.
+        self.assertTrue(mesh_id2[0] in tMeshNode[0].properties["mesh_ids"]) #New mesh is in the Mesh node.
         
         #Test removing meshes from Node
         for mesh in mesh_id1:
@@ -64,7 +64,7 @@ class TestEditTools(unittest.TestCase):
         
         self.assertEqual(len(tMeshNode), 1)
         self.assertEqual(len(tMeshNode[0].properties["mesh_ids"]), len(mesh_id2)) #Parity check on number of meshes.
-        self.assertFalse(unicode(mesh_id1[0], "utf-8") in tMeshNode[0].properties["mesh_ids"]) #Check Mesh has been removed.
+        self.assertFalse(mesh_id1[0] in tMeshNode[0].properties["mesh_ids"]) #Check Mesh has been removed.
         
         #Test removing final mesh from Node - deleting the node
         meshNodeID = tMeshNode[0].id
