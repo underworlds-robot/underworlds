@@ -122,7 +122,7 @@ class NodesProxy:
         try:
             gRPCNode = self._ctx.rpc.getNode(nodeInCtxt, _TIMEOUT_SECONDS)
         except AbortionError as e:
-            raise IndexError(e.details)
+            raise ValueError(e.details)
 
         # is it a new node, or rather an update to an existing one?
         if id not in self._ids:
