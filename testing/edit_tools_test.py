@@ -106,7 +106,7 @@ class TestEditTools(unittest.TestCase):
         self.assertFalse(tCEntityNode[0] in world.scene.nodes)
         
     def test_edit_camera(self):
-        world = self.ctx.worlds["base"
+        world = self.ctx.worlds["base"]
         
         #Test creation of a Camera node
         create_camera_node("base", "testCamera", aspect=1, horizontalfov=2)
