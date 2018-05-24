@@ -106,15 +106,15 @@ class TestEditTools(unittest.TestCase):
         self.assertFalse(tCEntityNode[0] in world.scene.nodes)
         
     def test_edit_camera(self):
-		world = self.ctx.worlds["base"]
-		
-		#Test creation of a Camera node
-		create_camera_node("base", "testCamera", aspect=1, horizontalfov=2)
-		tCameraNode = world.scene.nodebyname("testCamera")
-		
-		self.assertEqual(len(tCameraNode), 1)
-		self.assertEqual(tCameraNode[0].properties["aspect"], 1)
-		self.assertEqual(tCameraNode[0].properties["horizontalfov"], 2)
+        world = self.ctx.worlds["base"
+        
+        #Test creation of a Camera node
+        create_camera_node("base", "testCamera", aspect=1, horizontalfov=2)
+        tCameraNode = world.scene.nodebyname("testCamera")
+        
+        self.assertEqual(len(tCameraNode), 1)
+        self.assertEqual(tCameraNode[0].properties["aspect"], 1)
+        self.assertEqual(tCameraNode[0].properties["horizontalfov"], 2)
         
     def tearDown(self):
         self.ctx.close()

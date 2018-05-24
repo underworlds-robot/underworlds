@@ -128,14 +128,13 @@ def isabove(bb1, bb2):
     return overlap(bb_footprint(bb1),
             bb_footprint(bb2))
 
-    def isbelow(bb1, bb2):
-        """ Returns true if ob1 is below obj 2.
+def isbelow(bb1, bb2):
+    """ Returns true if ob1 is below obj 2.
 
         For obj 1 to be below obj 2:
          - obj 1 is lower than obj 2
          - the bounding box footbrint of both objects must overlap
     """
-
     if islower(bb1, bb2):
         return overlap(bb_footprint(bb1), bb_footprint(bb2))
 
