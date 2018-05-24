@@ -15,10 +15,16 @@ import underworlds.underworlds_pb2 as gRPC
 
 PROPAGATION_TIME=0.05 # time to wait for node update notification propagation (in sec)
 
-def wait_for_changes(world):
+def wait_for_changes(world, nb_changes=1):
 
-    change = world.scene.waitforchanges(0.5)
-    return change
+    # note that if nb_changes > 1, results might be less reproducible: depending on how fast the server is, we can miss waitforchanges updates
+
+    changes = []
+
+    for i in range(nb_changes):
+        changes.append(world.scene.waitforchanges(0.5))
+
+    return changes
 
 
 class TestWaitforchanges(unittest.TestCase):
@@ -40,7 +46,7 @@ class TestWaitforchanges(unittest.TestCase):
         # start to wait for changes.
         # First, we do not perform any change -> should timeout
         future = self.executor.submit(wait_for_changes, world2)
-        self.assertIsNone(future.result())
+        self.assertIsNone(future.result()[0])
 
         # Second, we make a change -> creation of a new node
         future = self.executor.submit(wait_for_changes, world2)
@@ -50,7 +56,7 @@ class TestWaitforchanges(unittest.TestCase):
         world1.scene.append_and_propagate(n)
 
         change = future.result()
-        self.assertIsNotNone(change)
+        self.assertTrue(change) #non-empty 
         #TODO check that the change is either a new node or an update to the root node 
         # (since the new node has been parented to the root node
 
@@ -61,25 +67,29 @@ class TestWaitforchanges(unittest.TestCase):
         n.translate([0,1,0])
         world1.scene.update_and_propagate(n)
 
-        change = future.result()
-        self.assertIsNotNone(change)
-        self.assertEqual(change[1], UPDATE)
-        self.assertEqual(change[0], [n.id])
+        changes = future.result()
+        self.assertIsNotNone(changes[0])
+        self.assertEqual(changes[0][1], UPDATE)
+        self.assertEqual(changes[0][0], [n.id])
 
         # Finally, we remove the node
+        # Removing the node creates two events: one deletion, and one update of the node's parent
         time.sleep(0.1) # sleep a bit to make sure my next 'waitforchanges' is not going to trigger from still pending invalidations
-        future = self.executor.submit(wait_for_changes, world2)
+        future = self.executor.submit(wait_for_changes, world2, 2)
         world1.scene.remove_and_propagate(n)
 
-        change = future.result()
-        self.assertIsNotNone(change)
-        self.assertEqual(change[1], DELETE)
-        self.assertEqual(change[0], [n.id])
+        changes = future.result()
+        self.assertEqual(len(changes), 2)
+        self.assertIsNotNone(changes[0])
+        self.assertIsNotNone(changes[1])
+        self.assertEqual(changes[0][1], UPDATE) # update of the node's parent
+        self.assertEqual(changes[1][0], [n.id])
+        self.assertEqual(changes[1][1], DELETE)
 
         # Lastly, we do nothing again -> should timeout
         time.sleep(0.1) # sleep a bit to make sure my next 'waitforchanges' is not going to trigger from still pending invalidations
         future = self.executor.submit(wait_for_changes, world2)
-        self.assertIsNone(future.result())
+        self.assertIsNone(future.result()[0])
 
 
 

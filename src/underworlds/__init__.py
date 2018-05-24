@@ -301,8 +301,7 @@ class SceneProxy(object):
 
         :param timeout: timeout in seconds (float value)
         :returns: the change that occured as a pair [[node ids], operation]
-        (operation is one of UPDATE,
-        NEW, DELETE) or None if the
+        (operation is one of UPDATE, NEW, DELETE) or None if the
         timeout has been reached.
         """
         lastchange = None
