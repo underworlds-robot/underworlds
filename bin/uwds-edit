@@ -28,23 +28,23 @@ if __name__ == "__main__":
     parent = subparsers.add_parser("parent", help="re-parent a node")
     parent.set_defaults(which="editor", cmd="parent")
     parent.add_argument("world", help="world to edit")
-    parent.add_argument("node",help="ID of the node to re-parent")
-    parent.add_argument("parent",help="ID of the new parent")
+    parent.add_argument("node",help="ID or name of the node to re-parent")
+    parent.add_argument("parent",help="ID or name of the new parent, or 'root' to parent to the world's root node")
     commands["parent"] = parent
 
     add_mesh_node = subparsers.add_parser("add-mesh-node", help="creates a new mesh node")
     add_mesh_node.set_defaults(which="adder", cmd="add-mesh-node")
     add_mesh_node.add_argument("world", help="world to edit")
     add_mesh_node.add_argument("name",help="name of the new node to add")
-    add_mesh_node.add_argument("mesh",help="ID of the Mesh to be added")
-    add_mesh_node.add_argument("-p","--parent",default="root",help="ID of the new node's parent (default to root)")
+    add_mesh_node.add_argument("mesh",help="ID of the mesh to be added")
+    add_mesh_node.add_argument("-p","--parent",default=None,help="ID of the new node's parent (default to root)")
     commands["add-mesh-node"] = add_mesh_node
     
     add_entity_node = subparsers.add_parser("add-entity-node", help="creates a new entity node")
     add_entity_node.set_defaults(which="adder", cmd="add-entity-node")
     add_entity_node.add_argument("world", help="world to edit")
     add_entity_node.add_argument("name",help="name of the new node to add")
-    add_entity_node.add_argument("-p","--parent",default="root",help="ID of the new node's parent (default to root)")
+    add_entity_node.add_argument("-p","--parent",default=None,help="ID of the new node's parent (default to root)")
     commands["add-entity-node"] = add_entity_node
     
     add_camera_node = subparsers.add_parser("add-camera-node", help="creates a new camera node")
@@ -53,7 +53,7 @@ if __name__ == "__main__":
     add_camera_node.add_argument("name",help="name of the new node to add")
     add_camera_node.add_argument("aspect",default=0,help="aspect of the camera")
     add_camera_node.add_argument("hfov",default=0,help="horizontal field of view for camera")
-    add_camera_node.add_argument("-p","--parent",default="root",help="ID of the new node's parent (default to root)")
+    add_camera_node.add_argument("-p","--parent",default=None,help="ID of the new node's parent (default to root)")
     commands["add-camera-node"] = add_camera_node
 
     rm_node = subparsers.add_parser("rm-node", help="remove a node")
@@ -72,21 +72,21 @@ if __name__ == "__main__":
     add_mesh_to_node_cmd = subparsers.add_parser("add-mesh-to-node", help="adds a mesh that has already been loaded to the world to a node")
     add_mesh_to_node_cmd.set_defaults(which="adder", cmd="add-mesh-to-node")
     add_mesh_to_node_cmd.add_argument("world", help="world to edit")
-    add_mesh_to_node_cmd.add_argument("node",help="node to add the mesh to")
+    add_mesh_to_node_cmd.add_argument("node",help="ID or name of the node to add the mesh to")
     add_mesh_to_node_cmd.add_argument("mesh",help="ID of the mesh being added to the node")
     commands["add-mesh-to-node"] = add_mesh_to_node_cmd
 
     rm_mesh = subparsers.add_parser("rm-mesh", help="clear a mesh from a mesh node, if all meshes are removed then remove the node")
     rm_mesh.set_defaults(which="remover", cmd="rm-mesh")
     rm_mesh.add_argument("world", help="world to edit")
-    rm_mesh.add_argument("node",help="ID of the node to edit")
+    rm_mesh.add_argument("node",help="ID or name of the node to edit")
     rm_mesh.add_argument("mesh",help="ID of the mesh to be removed")
     commands["rm-mesh"] = rm_mesh
 
     transform = subparsers.add_parser("transform", help="set the transform of a node")
     transform.set_defaults(which="editor", cmd="transform")
     transform.add_argument("world", help="world to edit")
-    transform.add_argument("node",help="ID of the node to edit")
+    transform.add_argument("node",help="ID or name of the node to edit")
     transform.add_argument("transform",help="desired transform, as <x>_<y>_<z>_<rx>_<ry>_<rz> (in meters & rad)")
     commands["transform"] = transform
 
