@@ -235,9 +235,14 @@ message Node {
     // the type of node
     NodeType type = 3;
 
-    string parent = 4; // the parent node ID. Always non-empty, except for the root node
+    // the parent node ID. Always non-empty, except for the root node
+    // if this property is left empty, the server will set it automatically to
+    // match the root node ID of this node's world.
+    string parent = 4; 
 
-    // the children of this node, if any
+    // the children node IDs of this node, if any.
+    // *This is a READ-ONLY property for clients, automatically set by the server!*
+    // *!!Do not write this property!!*
     repeated string children = 5;
 
     // 4x4 transformation matrix, relative to parent. Translation units are
