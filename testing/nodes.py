@@ -134,7 +134,7 @@ class TestNodes(unittest.TestCase):
         self.assertEqual(n1, nodes[n1.id])
         self.assertEqual(n2, nodes[n2.id])
 
-        with self.assertRaises(IndexError) as context:
+        with self.assertRaises(KeyError) as context:
             nodes["non-existing-id"]
 
         with self.assertRaises(IndexError) as context:
