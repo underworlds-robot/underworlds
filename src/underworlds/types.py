@@ -31,11 +31,13 @@ UNDEFINED = gRPC.Node.UNDEFINED
 ENTITY = gRPC.Node.ENTITY
 MESH = gRPC.Node.MESH
 CAMERA = gRPC.Node.CAMERA
+COLLECTION = gRPC.Node.COLLECTION
 
 NODETYPE_NAMES = {UNDEFINED:'undefined',
                   ENTITY:'entity',
                   MESH:'mesh',
-                  CAMERA:'camera'
+                  CAMERA:'camera',
+                  COLLECTION:'collection'
                  }
 # Situation types
 GENERIC = gRPC.Situation.GENERIC
@@ -188,6 +190,8 @@ class Node(object):
             node = Mesh()
         elif data.type == CAMERA:
             node = Camera()
+        elif data.type == COLLECTION:
+            node = Collection()
         else:
             raise UnderworldsError("Unknown node type %s while deserializing a gRPC node" % data.type)
 
@@ -240,6 +244,23 @@ class Camera(Node):
                 "aspect": None,
                 "horizontalfov": None,
             }
+
+class Collection(Node):
+
+    def __init__(self, name = ""):
+        super(Collection, self).__init__(name, COLLECTION)
+
+        # TODO: generate that list automatically from properties-registry.rst
+        self.properties = {
+                "node_ids": None,
+            }
+
+    def append(self, node):
+        self.properties.setdefault("node_ids", []).append(node.id)
+
+    def remove(self, node):
+        self.properties.setdefault("node_ids", []).remove(node.id)
+
 
 class MeshData(object):
 

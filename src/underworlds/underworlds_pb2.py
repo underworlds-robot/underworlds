@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='underworlds.proto',
   package='underworlds',
   syntax='proto3',
-  serialized_pb=_b('\n\x11underworlds.proto\x12\x0bunderworlds\"\x07\n\x05\x45mpty\"\x15\n\x04\x42ool\x12\r\n\x05value\x18\x01 \x01(\x08\"\x14\n\x04Time\x12\x0c\n\x04time\x18\x01 \x01(\x01\"G\n\x07Welcome\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0c\n\x04host\x18\x02 \x01(\t\x12 \n\x18invalidation_server_port\x18\x03 \x01(\x05\"\x14\n\x04Size\x12\x0c\n\x04size\x18\x01 \x01(\x05\")\n\x06Pointf\x12\t\n\x01x\x18\x01 \x01(\x02\x12\t\n\x01y\x18\x02 \x01(\x02\x12\t\n\x01z\x18\x03 \x01(\x02\"(\n\x05Point\x12\t\n\x01x\x18\x01 \x01(\x11\x12\t\n\x01y\x18\x02 \x01(\x11\x12\t\n\x01z\x18\x03 \x01(\x11\"3\n\x05\x43olor\x12\t\n\x01r\x18\x01 \x01(\x02\x12\t\n\x01g\x18\x02 \x01(\x02\x12\t\n\x01\x62\x18\x03 \x01(\x02\x12\t\n\x01\x61\x18\x04 \x01(\x02\"Q\n\x06\x43lient\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0c\n\x04name\x18\x02 \x01(\t\x12-\n\x05links\x18\x03 \x03(\x0b\x32\x1e.underworlds.ClientInteraction\"\xd0\x01\n\x11\x43lientInteraction\x12\r\n\x05world\x18\x01 \x01(\t\x12<\n\x04type\x18\x02 \x01(\x0e\x32..underworlds.ClientInteraction.InteractionType\x12(\n\rlast_activity\x18\x03 \x01(\x0b\x32\x11.underworlds.Time\"D\n\x0fInteractionType\x12\n\n\x06READER\x10\x00\x12\x0c\n\x08PROVIDER\x10\x01\x12\x0b\n\x07MONITOR\x10\x02\x12\n\n\x06\x46ILTER\x10\x03\"(\n\x07\x43ontext\x12\x0e\n\x06\x63lient\x18\x01 \x01(\t\x12\r\n\x05world\x18\x02 \x01(\t\"\xee\x01\n\x0cInvalidation\x12\x30\n\x06target\x18\x01 \x01(\x0e\x32 .underworlds.Invalidation.Target\x12\x38\n\x04type\x18\x02 \x01(\x0e\x32*.underworlds.Invalidation.InvalidationType\x12\r\n\x05world\x18\x03 \x01(\t\x12\x0b\n\x03ids\x18\x04 \x03(\t\"!\n\x06Target\x12\t\n\x05SCENE\x10\x00\x12\x0c\n\x08TIMELINE\x10\x01\"3\n\x10InvalidationType\x12\x07\n\x03NEW\x10\x00\x12\n\n\x06UPDATE\x10\x01\x12\n\n\x06\x44\x45LETE\x10\x02\"@\n\x08Topology\x12\x0e\n\x06worlds\x18\x01 \x03(\t\x12$\n\x07\x63lients\x18\x02 \x03(\x0b\x32\x13.underworlds.Client\"\xc0\x02\n\x04Node\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0c\n\x04name\x18\x02 \x01(\t\x12(\n\x04type\x18\x03 \x01(\x0e\x32\x1a.underworlds.Node.NodeType\x12\x0e\n\x06parent\x18\x04 \x01(\t\x12\x10\n\x08\x63hildren\x18\x05 \x03(\t\x12\x16\n\x0etransformation\x18\x06 \x03(\x02\x12\x13\n\x0blast_update\x18\x08 \x01(\x01\x12\x35\n\nproperties\x18\t \x03(\x0b\x32!.underworlds.Node.PropertiesEntry\x1a\x31\n\x0fPropertiesEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\";\n\x08NodeType\x12\r\n\tUNDEFINED\x10\x00\x12\n\n\x06\x45NTITY\x10\x01\x12\x08\n\x04MESH\x10\x02\x12\n\n\x06\x43\x41MERA\x10\x03\"\x14\n\x05Nodes\x12\x0b\n\x03ids\x18\x01 \x03(\t\"W\n\rNodeInContext\x12%\n\x07\x63ontext\x18\x01 \x01(\x0b\x32\x14.underworlds.Context\x12\x1f\n\x04node\x18\x02 \x01(\x0b\x32\x11.underworlds.Node\"Y\n\x0eNodesInContext\x12%\n\x07\x63ontext\x18\x01 \x01(\x0b\x32\x14.underworlds.Context\x12 \n\x05nodes\x18\x02 \x03(\x0b\x32\x11.underworlds.Node\"\xf4\x01\n\tSituation\x12\n\n\x02id\x18\x01 \x01(\t\x12\x32\n\x04type\x18\x02 \x01(\x0e\x32$.underworlds.Situation.SituationType\x12\x13\n\x0b\x64\x65scription\x18\x03 \x01(\t\x12\x13\n\x0blast_update\x18\x04 \x01(\x01\x12 \n\x05start\x18\x05 \x01(\x0b\x32\x11.underworlds.Time\x12\x1e\n\x03\x65nd\x18\x06 \x01(\x0b\x32\x11.underworlds.Time\";\n\rSituationType\x12\x0b\n\x07GENERIC\x10\x00\x12\n\n\x06MOTION\x10\x01\x12\x11\n\rEVT_MODELLOAD\x10\x02\"\x19\n\nSituations\x12\x0b\n\x03ids\x18\x01 \x03(\t\"f\n\x12SituationInContext\x12%\n\x07\x63ontext\x18\x01 \x01(\x0b\x32\x14.underworlds.Context\x12)\n\tsituation\x18\x02 \x01(\x0b\x32\x16.underworlds.Situation\"h\n\x13SituationsInContext\x12%\n\x07\x63ontext\x18\x01 \x01(\x0b\x32\x14.underworlds.Context\x12*\n\nsituations\x18\x02 \x03(\x0b\x32\x16.underworlds.Situation\"\xb7\x01\n\x04Mesh\x12\n\n\x02id\x18\x01 \x01(\t\x12%\n\x08vertices\x18\x02 \x03(\x0b\x32\x13.underworlds.Pointf\x12!\n\x05\x66\x61\x63\x65s\x18\x03 \x03(\x0b\x32\x12.underworlds.Point\x12$\n\x07normals\x18\x04 \x03(\x0b\x32\x13.underworlds.Pointf\x12\x0e\n\x06\x63olors\x18\x05 \x03(\r\x12#\n\x07\x64iffuse\x18\x06 \x01(\x0b\x32\x12.underworlds.Color\"U\n\rMeshInContext\x12#\n\x06\x63lient\x18\x01 \x01(\x0b\x32\x13.underworlds.Client\x12\x1f\n\x04mesh\x18\x02 \x01(\x0b\x32\x11.underworlds.Mesh2\xe2\t\n\x0bUnderworlds\x12\x33\n\x04helo\x12\x14.underworlds.Welcome\x1a\x13.underworlds.Client\"\x00\x12\x33\n\x06\x62yebye\x12\x13.underworlds.Client\x1a\x12.underworlds.Empty\"\x00\x12\x32\n\x06uptime\x12\x13.underworlds.Client\x1a\x11.underworlds.Time\"\x00\x12\x38\n\x08topology\x12\x13.underworlds.Client\x1a\x15.underworlds.Topology\"\x00\x12\x32\n\x05reset\x12\x13.underworlds.Client\x1a\x12.underworlds.Empty\"\x00\x12\x38\n\x0bgetNodesLen\x12\x14.underworlds.Context\x1a\x11.underworlds.Size\"\x00\x12\x39\n\x0bgetNodesIds\x12\x14.underworlds.Context\x1a\x12.underworlds.Nodes\"\x00\x12\x38\n\x0bgetRootNode\x12\x14.underworlds.Context\x1a\x11.underworlds.Node\"\x00\x12:\n\x07getNode\x12\x1a.underworlds.NodeInContext\x1a\x11.underworlds.Node\"\x00\x12@\n\x0bupdateNodes\x12\x1b.underworlds.NodesInContext\x1a\x12.underworlds.Empty\"\x00\x12@\n\x0b\x64\x65leteNodes\x12\x1b.underworlds.NodesInContext\x1a\x12.underworlds.Empty\"\x00\x12=\n\x10getSituationsLen\x12\x14.underworlds.Context\x1a\x11.underworlds.Size\"\x00\x12\x43\n\x10getSituationsIds\x12\x14.underworlds.Context\x1a\x17.underworlds.Situations\"\x00\x12I\n\x0cgetSituation\x12\x1f.underworlds.SituationInContext\x1a\x16.underworlds.Situation\"\x00\x12;\n\x0etimelineOrigin\x12\x14.underworlds.Context\x1a\x11.underworlds.Time\"\x00\x12J\n\x10updateSituations\x12 .underworlds.SituationsInContext\x1a\x12.underworlds.Empty\"\x00\x12J\n\x10\x64\x65leteSituations\x12 .underworlds.SituationsInContext\x1a\x12.underworlds.Empty\"\x00\x12:\n\x07hasMesh\x12\x1a.underworlds.MeshInContext\x1a\x11.underworlds.Bool\"\x00\x12:\n\x07getMesh\x12\x1a.underworlds.MeshInContext\x1a\x11.underworlds.Mesh\"\x00\x12<\n\x08pushMesh\x12\x1a.underworlds.MeshInContext\x1a\x12.underworlds.Empty\"\x00\x32^\n\x17UnderworldsInvalidation\x12\x43\n\x10\x65mitInvalidation\x12\x19.underworlds.Invalidation\x1a\x12.underworlds.Empty\"\x00\x62\x06proto3')
+  serialized_pb=_b('\n\x11underworlds.proto\x12\x0bunderworlds\"\x07\n\x05\x45mpty\"\x15\n\x04\x42ool\x12\r\n\x05value\x18\x01 \x01(\x08\"\x14\n\x04Time\x12\x0c\n\x04time\x18\x01 \x01(\x01\"G\n\x07Welcome\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0c\n\x04host\x18\x02 \x01(\t\x12 \n\x18invalidation_server_port\x18\x03 \x01(\x05\"\x14\n\x04Size\x12\x0c\n\x04size\x18\x01 \x01(\x05\")\n\x06Pointf\x12\t\n\x01x\x18\x01 \x01(\x02\x12\t\n\x01y\x18\x02 \x01(\x02\x12\t\n\x01z\x18\x03 \x01(\x02\"(\n\x05Point\x12\t\n\x01x\x18\x01 \x01(\x11\x12\t\n\x01y\x18\x02 \x01(\x11\x12\t\n\x01z\x18\x03 \x01(\x11\"3\n\x05\x43olor\x12\t\n\x01r\x18\x01 \x01(\x02\x12\t\n\x01g\x18\x02 \x01(\x02\x12\t\n\x01\x62\x18\x03 \x01(\x02\x12\t\n\x01\x61\x18\x04 \x01(\x02\"Q\n\x06\x43lient\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0c\n\x04name\x18\x02 \x01(\t\x12-\n\x05links\x18\x03 \x03(\x0b\x32\x1e.underworlds.ClientInteraction\"\xd0\x01\n\x11\x43lientInteraction\x12\r\n\x05world\x18\x01 \x01(\t\x12<\n\x04type\x18\x02 \x01(\x0e\x32..underworlds.ClientInteraction.InteractionType\x12(\n\rlast_activity\x18\x03 \x01(\x0b\x32\x11.underworlds.Time\"D\n\x0fInteractionType\x12\n\n\x06READER\x10\x00\x12\x0c\n\x08PROVIDER\x10\x01\x12\x0b\n\x07MONITOR\x10\x02\x12\n\n\x06\x46ILTER\x10\x03\"(\n\x07\x43ontext\x12\x0e\n\x06\x63lient\x18\x01 \x01(\t\x12\r\n\x05world\x18\x02 \x01(\t\"\xee\x01\n\x0cInvalidation\x12\x30\n\x06target\x18\x01 \x01(\x0e\x32 .underworlds.Invalidation.Target\x12\x38\n\x04type\x18\x02 \x01(\x0e\x32*.underworlds.Invalidation.InvalidationType\x12\r\n\x05world\x18\x03 \x01(\t\x12\x0b\n\x03ids\x18\x04 \x03(\t\"!\n\x06Target\x12\t\n\x05SCENE\x10\x00\x12\x0c\n\x08TIMELINE\x10\x01\"3\n\x10InvalidationType\x12\x07\n\x03NEW\x10\x00\x12\n\n\x06UPDATE\x10\x01\x12\n\n\x06\x44\x45LETE\x10\x02\"@\n\x08Topology\x12\x0e\n\x06worlds\x18\x01 \x03(\t\x12$\n\x07\x63lients\x18\x02 \x03(\x0b\x32\x13.underworlds.Client\"\xd0\x02\n\x04Node\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0c\n\x04name\x18\x02 \x01(\t\x12(\n\x04type\x18\x03 \x01(\x0e\x32\x1a.underworlds.Node.NodeType\x12\x0e\n\x06parent\x18\x04 \x01(\t\x12\x10\n\x08\x63hildren\x18\x05 \x03(\t\x12\x16\n\x0etransformation\x18\x06 \x03(\x02\x12\x13\n\x0blast_update\x18\x08 \x01(\x01\x12\x35\n\nproperties\x18\t \x03(\x0b\x32!.underworlds.Node.PropertiesEntry\x1a\x31\n\x0fPropertiesEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"K\n\x08NodeType\x12\r\n\tUNDEFINED\x10\x00\x12\n\n\x06\x45NTITY\x10\x01\x12\x08\n\x04MESH\x10\x02\x12\n\n\x06\x43\x41MERA\x10\x03\x12\x0e\n\nCOLLECTION\x10\x04\"\x14\n\x05Nodes\x12\x0b\n\x03ids\x18\x01 \x03(\t\"W\n\rNodeInContext\x12%\n\x07\x63ontext\x18\x01 \x01(\x0b\x32\x14.underworlds.Context\x12\x1f\n\x04node\x18\x02 \x01(\x0b\x32\x11.underworlds.Node\"Y\n\x0eNodesInContext\x12%\n\x07\x63ontext\x18\x01 \x01(\x0b\x32\x14.underworlds.Context\x12 \n\x05nodes\x18\x02 \x03(\x0b\x32\x11.underworlds.Node\"\xf4\x01\n\tSituation\x12\n\n\x02id\x18\x01 \x01(\t\x12\x32\n\x04type\x18\x02 \x01(\x0e\x32$.underworlds.Situation.SituationType\x12\x13\n\x0b\x64\x65scription\x18\x03 \x01(\t\x12\x13\n\x0blast_update\x18\x04 \x01(\x01\x12 \n\x05start\x18\x05 \x01(\x0b\x32\x11.underworlds.Time\x12\x1e\n\x03\x65nd\x18\x06 \x01(\x0b\x32\x11.underworlds.Time\";\n\rSituationType\x12\x0b\n\x07GENERIC\x10\x00\x12\n\n\x06MOTION\x10\x01\x12\x11\n\rEVT_MODELLOAD\x10\x02\"\x19\n\nSituations\x12\x0b\n\x03ids\x18\x01 \x03(\t\"f\n\x12SituationInContext\x12%\n\x07\x63ontext\x18\x01 \x01(\x0b\x32\x14.underworlds.Context\x12)\n\tsituation\x18\x02 \x01(\x0b\x32\x16.underworlds.Situation\"h\n\x13SituationsInContext\x12%\n\x07\x63ontext\x18\x01 \x01(\x0b\x32\x14.underworlds.Context\x12*\n\nsituations\x18\x02 \x03(\x0b\x32\x16.underworlds.Situation\"\xb7\x01\n\x04Mesh\x12\n\n\x02id\x18\x01 \x01(\t\x12%\n\x08vertices\x18\x02 \x03(\x0b\x32\x13.underworlds.Pointf\x12!\n\x05\x66\x61\x63\x65s\x18\x03 \x03(\x0b\x32\x12.underworlds.Point\x12$\n\x07normals\x18\x04 \x03(\x0b\x32\x13.underworlds.Pointf\x12\x0e\n\x06\x63olors\x18\x05 \x03(\r\x12#\n\x07\x64iffuse\x18\x06 \x01(\x0b\x32\x12.underworlds.Color\"U\n\rMeshInContext\x12#\n\x06\x63lient\x18\x01 \x01(\x0b\x32\x13.underworlds.Client\x12\x1f\n\x04mesh\x18\x02 \x01(\x0b\x32\x11.underworlds.Mesh2\xe2\t\n\x0bUnderworlds\x12\x33\n\x04helo\x12\x14.underworlds.Welcome\x1a\x13.underworlds.Client\"\x00\x12\x33\n\x06\x62yebye\x12\x13.underworlds.Client\x1a\x12.underworlds.Empty\"\x00\x12\x32\n\x06uptime\x12\x13.underworlds.Client\x1a\x11.underworlds.Time\"\x00\x12\x38\n\x08topology\x12\x13.underworlds.Client\x1a\x15.underworlds.Topology\"\x00\x12\x32\n\x05reset\x12\x13.underworlds.Client\x1a\x12.underworlds.Empty\"\x00\x12\x38\n\x0bgetNodesLen\x12\x14.underworlds.Context\x1a\x11.underworlds.Size\"\x00\x12\x39\n\x0bgetNodesIds\x12\x14.underworlds.Context\x1a\x12.underworlds.Nodes\"\x00\x12\x38\n\x0bgetRootNode\x12\x14.underworlds.Context\x1a\x11.underworlds.Node\"\x00\x12:\n\x07getNode\x12\x1a.underworlds.NodeInContext\x1a\x11.underworlds.Node\"\x00\x12@\n\x0bupdateNodes\x12\x1b.underworlds.NodesInContext\x1a\x12.underworlds.Empty\"\x00\x12@\n\x0b\x64\x65leteNodes\x12\x1b.underworlds.NodesInContext\x1a\x12.underworlds.Empty\"\x00\x12=\n\x10getSituationsLen\x12\x14.underworlds.Context\x1a\x11.underworlds.Size\"\x00\x12\x43\n\x10getSituationsIds\x12\x14.underworlds.Context\x1a\x17.underworlds.Situations\"\x00\x12I\n\x0cgetSituation\x12\x1f.underworlds.SituationInContext\x1a\x16.underworlds.Situation\"\x00\x12;\n\x0etimelineOrigin\x12\x14.underworlds.Context\x1a\x11.underworlds.Time\"\x00\x12J\n\x10updateSituations\x12 .underworlds.SituationsInContext\x1a\x12.underworlds.Empty\"\x00\x12J\n\x10\x64\x65leteSituations\x12 .underworlds.SituationsInContext\x1a\x12.underworlds.Empty\"\x00\x12:\n\x07hasMesh\x12\x1a.underworlds.MeshInContext\x1a\x11.underworlds.Bool\"\x00\x12:\n\x07getMesh\x12\x1a.underworlds.MeshInContext\x1a\x11.underworlds.Mesh\"\x00\x12<\n\x08pushMesh\x12\x1a.underworlds.MeshInContext\x1a\x12.underworlds.Empty\"\x00\x32^\n\x17UnderworldsInvalidation\x12\x43\n\x10\x65mitInvalidation\x12\x19.underworlds.Invalidation\x1a\x12.underworlds.Empty\"\x00\x62\x06proto3')
 )
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
@@ -125,11 +125,15 @@ _NODE_NODETYPE = _descriptor.EnumDescriptor(
       name='CAMERA', index=3, number=3,
       options=None,
       type=None),
+    _descriptor.EnumValueDescriptor(
+      name='COLLECTION', index=4, number=4,
+      options=None,
+      type=None),
   ],
   containing_type=None,
   options=None,
   serialized_start=1226,
-  serialized_end=1285,
+  serialized_end=1301,
 )
 _sym_db.RegisterEnumDescriptor(_NODE_NODETYPE)
 
@@ -154,8 +158,8 @@ _SITUATION_SITUATIONTYPE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   options=None,
-  serialized_start=1675,
-  serialized_end=1734,
+  serialized_start=1691,
+  serialized_end=1750,
 )
 _sym_db.RegisterEnumDescriptor(_SITUATION_SITUATIONTYPE)
 
@@ -799,7 +803,7 @@ _NODE = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=965,
-  serialized_end=1285,
+  serialized_end=1301,
 )
 
 
@@ -829,8 +833,8 @@ _NODES = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1287,
-  serialized_end=1307,
+  serialized_start=1303,
+  serialized_end=1323,
 )
 
 
@@ -867,8 +871,8 @@ _NODEINCONTEXT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1309,
-  serialized_end=1396,
+  serialized_start=1325,
+  serialized_end=1412,
 )
 
 
@@ -905,8 +909,8 @@ _NODESINCONTEXT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1398,
-  serialized_end=1487,
+  serialized_start=1414,
+  serialized_end=1503,
 )
 
 
@@ -972,8 +976,8 @@ _SITUATION = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1490,
-  serialized_end=1734,
+  serialized_start=1506,
+  serialized_end=1750,
 )
 
 
@@ -1003,8 +1007,8 @@ _SITUATIONS = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1736,
-  serialized_end=1761,
+  serialized_start=1752,
+  serialized_end=1777,
 )
 
 
@@ -1041,8 +1045,8 @@ _SITUATIONINCONTEXT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1763,
-  serialized_end=1865,
+  serialized_start=1779,
+  serialized_end=1881,
 )
 
 
@@ -1079,8 +1083,8 @@ _SITUATIONSINCONTEXT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1867,
-  serialized_end=1971,
+  serialized_start=1883,
+  serialized_end=1987,
 )
 
 
@@ -1145,8 +1149,8 @@ _MESH = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1974,
-  serialized_end=2157,
+  serialized_start=1990,
+  serialized_end=2173,
 )
 
 
@@ -1183,8 +1187,8 @@ _MESHINCONTEXT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2159,
-  serialized_end=2244,
+  serialized_start=2175,
+  serialized_end=2260,
 )
 
 _CLIENT.fields_by_name['links'].message_type = _CLIENTINTERACTION
@@ -1414,866 +1418,911 @@ _sym_db.RegisterMessage(MeshInContext)
 
 _NODE_PROPERTIESENTRY.has_options = True
 _NODE_PROPERTIESENTRY._options = _descriptor._ParseOptions(descriptor_pb2.MessageOptions(), _b('8\001'))
-import grpc
-from grpc.beta import implementations as beta_implementations
-from grpc.beta import interfaces as beta_interfaces
-from grpc.framework.common import cardinality
-from grpc.framework.interfaces.face import utilities as face_utilities
-
-
-class UnderworldsStub(object):
-
-  def __init__(self, channel):
-    """Constructor.
-
-    Args:
-      channel: A grpc.Channel.
-    """
-    self.helo = channel.unary_unary(
-        '/underworlds.Underworlds/helo',
-        request_serializer=Welcome.SerializeToString,
-        response_deserializer=Client.FromString,
-        )
-    self.byebye = channel.unary_unary(
-        '/underworlds.Underworlds/byebye',
-        request_serializer=Client.SerializeToString,
-        response_deserializer=Empty.FromString,
-        )
-    self.uptime = channel.unary_unary(
-        '/underworlds.Underworlds/uptime',
-        request_serializer=Client.SerializeToString,
-        response_deserializer=Time.FromString,
-        )
-    self.topology = channel.unary_unary(
-        '/underworlds.Underworlds/topology',
-        request_serializer=Client.SerializeToString,
-        response_deserializer=Topology.FromString,
-        )
-    self.reset = channel.unary_unary(
-        '/underworlds.Underworlds/reset',
-        request_serializer=Client.SerializeToString,
-        response_deserializer=Empty.FromString,
-        )
-    self.getNodesLen = channel.unary_unary(
-        '/underworlds.Underworlds/getNodesLen',
-        request_serializer=Context.SerializeToString,
-        response_deserializer=Size.FromString,
-        )
-    self.getNodesIds = channel.unary_unary(
-        '/underworlds.Underworlds/getNodesIds',
-        request_serializer=Context.SerializeToString,
-        response_deserializer=Nodes.FromString,
-        )
-    self.getRootNode = channel.unary_unary(
-        '/underworlds.Underworlds/getRootNode',
-        request_serializer=Context.SerializeToString,
-        response_deserializer=Node.FromString,
-        )
-    self.getNode = channel.unary_unary(
-        '/underworlds.Underworlds/getNode',
-        request_serializer=NodeInContext.SerializeToString,
-        response_deserializer=Node.FromString,
-        )
-    self.updateNodes = channel.unary_unary(
-        '/underworlds.Underworlds/updateNodes',
-        request_serializer=NodesInContext.SerializeToString,
-        response_deserializer=Empty.FromString,
-        )
-    self.deleteNodes = channel.unary_unary(
-        '/underworlds.Underworlds/deleteNodes',
-        request_serializer=NodesInContext.SerializeToString,
-        response_deserializer=Empty.FromString,
-        )
-    self.getSituationsLen = channel.unary_unary(
-        '/underworlds.Underworlds/getSituationsLen',
-        request_serializer=Context.SerializeToString,
-        response_deserializer=Size.FromString,
-        )
-    self.getSituationsIds = channel.unary_unary(
-        '/underworlds.Underworlds/getSituationsIds',
-        request_serializer=Context.SerializeToString,
-        response_deserializer=Situations.FromString,
-        )
-    self.getSituation = channel.unary_unary(
-        '/underworlds.Underworlds/getSituation',
-        request_serializer=SituationInContext.SerializeToString,
-        response_deserializer=Situation.FromString,
-        )
-    self.timelineOrigin = channel.unary_unary(
-        '/underworlds.Underworlds/timelineOrigin',
-        request_serializer=Context.SerializeToString,
-        response_deserializer=Time.FromString,
-        )
-    self.updateSituations = channel.unary_unary(
-        '/underworlds.Underworlds/updateSituations',
-        request_serializer=SituationsInContext.SerializeToString,
-        response_deserializer=Empty.FromString,
-        )
-    self.deleteSituations = channel.unary_unary(
-        '/underworlds.Underworlds/deleteSituations',
-        request_serializer=SituationsInContext.SerializeToString,
-        response_deserializer=Empty.FromString,
-        )
-    self.hasMesh = channel.unary_unary(
-        '/underworlds.Underworlds/hasMesh',
-        request_serializer=MeshInContext.SerializeToString,
-        response_deserializer=Bool.FromString,
-        )
-    self.getMesh = channel.unary_unary(
-        '/underworlds.Underworlds/getMesh',
-        request_serializer=MeshInContext.SerializeToString,
-        response_deserializer=Mesh.FromString,
-        )
-    self.pushMesh = channel.unary_unary(
-        '/underworlds.Underworlds/pushMesh',
-        request_serializer=MeshInContext.SerializeToString,
-        response_deserializer=Empty.FromString,
-        )
-
-
-class UnderworldsServicer(object):
-
-  def helo(self, request, context):
-    """GENERAL
-
-    Establish the connection to the server, setting a human-friendly name for
-    the client.
-    The server returns a unique client ID that must be used in every subsequent
-    request to the server.
-    """
-    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-    context.set_details('Method not implemented!')
-    raise NotImplementedError('Method not implemented!')
-
-  def byebye(self, request, context):
-    """Inform the server that the client is disconnecting.
-    Before completing this call, the client must keep its invalidation
-    server open and listening.
-    After completing this call, the server should not attempt to connect to
-    the client's invalidation server.
-    """
-    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-    context.set_details('Method not implemented!')
-    raise NotImplementedError('Method not implemented!')
-
-  def uptime(self, request, context):
-    """Returns the uptime of the server, in seconds
-    """
-    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-    context.set_details('Method not implemented!')
-    raise NotImplementedError('Method not implemented!')
-
-  def topology(self, request, context):
-    """Returns the current topology of underworlds: the list of worlds and the
-    list of clients + their interactions with the worlds
-    """
-    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-    context.set_details('Method not implemented!')
-    raise NotImplementedError('Method not implemented!')
-
-  def reset(self, request, context):
-    """Hard reset of Underworlds: all the worlds are deleted.
-    The existing mesh database is kept, however.
-    This does not impact the list of known clients (ie, clients do not have to
-    call 'helo' again).
-    """
-    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-    context.set_details('Method not implemented!')
-    raise NotImplementedError('Method not implemented!')
-
-  def getNodesLen(self, request, context):
-    """NODES
-
-    Returns the number of nodes in a given world.
-    Accepts a context (client ID and world) and returns the number of existing nodes.
-    """
-    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-    context.set_details('Method not implemented!')
-    raise NotImplementedError('Method not implemented!')
-
-  def getNodesIds(self, request, context):
-    """Returns the list of node IDs present in the given world
-    """
-    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-    context.set_details('Method not implemented!')
-    raise NotImplementedError('Method not implemented!')
-
-  def getRootNode(self, request, context):
-    """Returns the root node ID of the given world
-    """
-    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-    context.set_details('Method not implemented!')
-    raise NotImplementedError('Method not implemented!')
-
-  def getNode(self, request, context):
-    """Returns a node from its ID in the given world.
-    Note that only the node ID is used (and thus, required).
-    """
-    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-    context.set_details('Method not implemented!')
-    raise NotImplementedError('Method not implemented!')
-
-  def updateNodes(self, request, context):
-    """Updates (and broadcasts to all client) nodes in a given world
-    """
-    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-    context.set_details('Method not implemented!')
-    raise NotImplementedError('Method not implemented!')
-
-  def deleteNodes(self, request, context):
-    """Deletes (and broadcasts to all client) nodes in a given world
-    """
-    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-    context.set_details('Method not implemented!')
-    raise NotImplementedError('Method not implemented!')
-
-  def getSituationsLen(self, request, context):
-    """TIMELINE
-
-    Returns the number of situations in a given world.
-    Accepts a context (client ID and world) and returns the number of
-    existing situations.
-    """
-    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-    context.set_details('Method not implemented!')
-    raise NotImplementedError('Method not implemented!')
-
-  def getSituationsIds(self, request, context):
-    """Returns the list of situation IDs present in the given world
-    """
-    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-    context.set_details('Method not implemented!')
-    raise NotImplementedError('Method not implemented!')
-
-  def getSituation(self, request, context):
-    """Returns a situation from its ID.
-    Note that only the situation ID is used (and thus, required).
-    """
-    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-    context.set_details('Method not implemented!')
-    raise NotImplementedError('Method not implemented!')
-
-  def timelineOrigin(self, request, context):
-    """Returns the timeline origin: time of the timeline creation
-    """
-    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-    context.set_details('Method not implemented!')
-    raise NotImplementedError('Method not implemented!')
-
-  def updateSituations(self, request, context):
-    """Updates (and broadcasts to all client) a situation in a given world
-    """
-    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-    context.set_details('Method not implemented!')
-    raise NotImplementedError('Method not implemented!')
-
-  def deleteSituations(self, request, context):
-    """Deletes (and broadcasts to all client) a node in a given world
-    """
-    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-    context.set_details('Method not implemented!')
-    raise NotImplementedError('Method not implemented!')
-
-  def hasMesh(self, request, context):
-    """MESHES
-
-    Returns whether the given mesh is already available on the server.
-    Note that only the mesh ID is used.
-    """
-    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-    context.set_details('Method not implemented!')
-    raise NotImplementedError('Method not implemented!')
-
-  def getMesh(self, request, context):
-    """Returns a 3D mesh.
-    Note that only the ID of the input mesh is used.
-    """
-    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-    context.set_details('Method not implemented!')
-    raise NotImplementedError('Method not implemented!')
-
-  def pushMesh(self, request, context):
-    """Sends a 3D mesh to the server.
-    """
-    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-    context.set_details('Method not implemented!')
-    raise NotImplementedError('Method not implemented!')
-
-
-def add_UnderworldsServicer_to_server(servicer, server):
-  rpc_method_handlers = {
-      'helo': grpc.unary_unary_rpc_method_handler(
-          servicer.helo,
-          request_deserializer=Welcome.FromString,
-          response_serializer=Client.SerializeToString,
-      ),
-      'byebye': grpc.unary_unary_rpc_method_handler(
-          servicer.byebye,
-          request_deserializer=Client.FromString,
-          response_serializer=Empty.SerializeToString,
-      ),
-      'uptime': grpc.unary_unary_rpc_method_handler(
-          servicer.uptime,
-          request_deserializer=Client.FromString,
-          response_serializer=Time.SerializeToString,
-      ),
-      'topology': grpc.unary_unary_rpc_method_handler(
-          servicer.topology,
-          request_deserializer=Client.FromString,
-          response_serializer=Topology.SerializeToString,
-      ),
-      'reset': grpc.unary_unary_rpc_method_handler(
-          servicer.reset,
-          request_deserializer=Client.FromString,
-          response_serializer=Empty.SerializeToString,
-      ),
-      'getNodesLen': grpc.unary_unary_rpc_method_handler(
-          servicer.getNodesLen,
-          request_deserializer=Context.FromString,
-          response_serializer=Size.SerializeToString,
-      ),
-      'getNodesIds': grpc.unary_unary_rpc_method_handler(
-          servicer.getNodesIds,
-          request_deserializer=Context.FromString,
-          response_serializer=Nodes.SerializeToString,
-      ),
-      'getRootNode': grpc.unary_unary_rpc_method_handler(
-          servicer.getRootNode,
-          request_deserializer=Context.FromString,
-          response_serializer=Node.SerializeToString,
-      ),
-      'getNode': grpc.unary_unary_rpc_method_handler(
-          servicer.getNode,
-          request_deserializer=NodeInContext.FromString,
-          response_serializer=Node.SerializeToString,
-      ),
-      'updateNodes': grpc.unary_unary_rpc_method_handler(
-          servicer.updateNodes,
-          request_deserializer=NodesInContext.FromString,
-          response_serializer=Empty.SerializeToString,
-      ),
-      'deleteNodes': grpc.unary_unary_rpc_method_handler(
-          servicer.deleteNodes,
-          request_deserializer=NodesInContext.FromString,
-          response_serializer=Empty.SerializeToString,
-      ),
-      'getSituationsLen': grpc.unary_unary_rpc_method_handler(
-          servicer.getSituationsLen,
-          request_deserializer=Context.FromString,
-          response_serializer=Size.SerializeToString,
-      ),
-      'getSituationsIds': grpc.unary_unary_rpc_method_handler(
-          servicer.getSituationsIds,
-          request_deserializer=Context.FromString,
-          response_serializer=Situations.SerializeToString,
-      ),
-      'getSituation': grpc.unary_unary_rpc_method_handler(
-          servicer.getSituation,
-          request_deserializer=SituationInContext.FromString,
-          response_serializer=Situation.SerializeToString,
-      ),
-      'timelineOrigin': grpc.unary_unary_rpc_method_handler(
-          servicer.timelineOrigin,
-          request_deserializer=Context.FromString,
-          response_serializer=Time.SerializeToString,
-      ),
-      'updateSituations': grpc.unary_unary_rpc_method_handler(
-          servicer.updateSituations,
-          request_deserializer=SituationsInContext.FromString,
-          response_serializer=Empty.SerializeToString,
-      ),
-      'deleteSituations': grpc.unary_unary_rpc_method_handler(
-          servicer.deleteSituations,
-          request_deserializer=SituationsInContext.FromString,
-          response_serializer=Empty.SerializeToString,
-      ),
-      'hasMesh': grpc.unary_unary_rpc_method_handler(
-          servicer.hasMesh,
-          request_deserializer=MeshInContext.FromString,
-          response_serializer=Bool.SerializeToString,
-      ),
-      'getMesh': grpc.unary_unary_rpc_method_handler(
-          servicer.getMesh,
-          request_deserializer=MeshInContext.FromString,
-          response_serializer=Mesh.SerializeToString,
-      ),
-      'pushMesh': grpc.unary_unary_rpc_method_handler(
-          servicer.pushMesh,
-          request_deserializer=MeshInContext.FromString,
-          response_serializer=Empty.SerializeToString,
-      ),
-  }
-  generic_handler = grpc.method_handlers_generic_handler(
-      'underworlds.Underworlds', rpc_method_handlers)
-  server.add_generic_rpc_handlers((generic_handler,))
-
-
-class BetaUnderworldsServicer(object):
-  def helo(self, request, context):
-    """GENERAL
-
-    Establish the connection to the server, setting a human-friendly name for
-    the client.
-    The server returns a unique client ID that must be used in every subsequent
-    request to the server.
-    """
-    context.code(beta_interfaces.StatusCode.UNIMPLEMENTED)
-  def byebye(self, request, context):
-    """Inform the server that the client is disconnecting.
-    Before completing this call, the client must keep its invalidation
-    server open and listening.
-    After completing this call, the server should not attempt to connect to
-    the client's invalidation server.
-    """
-    context.code(beta_interfaces.StatusCode.UNIMPLEMENTED)
-  def uptime(self, request, context):
-    """Returns the uptime of the server, in seconds
-    """
-    context.code(beta_interfaces.StatusCode.UNIMPLEMENTED)
-  def topology(self, request, context):
-    """Returns the current topology of underworlds: the list of worlds and the
-    list of clients + their interactions with the worlds
-    """
-    context.code(beta_interfaces.StatusCode.UNIMPLEMENTED)
-  def reset(self, request, context):
-    """Hard reset of Underworlds: all the worlds are deleted.
-    The existing mesh database is kept, however.
-    This does not impact the list of known clients (ie, clients do not have to
-    call 'helo' again).
-    """
-    context.code(beta_interfaces.StatusCode.UNIMPLEMENTED)
-  def getNodesLen(self, request, context):
-    """NODES
-
-    Returns the number of nodes in a given world.
-    Accepts a context (client ID and world) and returns the number of existing nodes.
-    """
-    context.code(beta_interfaces.StatusCode.UNIMPLEMENTED)
-  def getNodesIds(self, request, context):
-    """Returns the list of node IDs present in the given world
-    """
-    context.code(beta_interfaces.StatusCode.UNIMPLEMENTED)
-  def getRootNode(self, request, context):
-    """Returns the root node ID of the given world
-    """
-    context.code(beta_interfaces.StatusCode.UNIMPLEMENTED)
-  def getNode(self, request, context):
-    """Returns a node from its ID in the given world.
-    Note that only the node ID is used (and thus, required).
-    """
-    context.code(beta_interfaces.StatusCode.UNIMPLEMENTED)
-  def updateNodes(self, request, context):
-    """Updates (and broadcasts to all client) nodes in a given world
-    """
-    context.code(beta_interfaces.StatusCode.UNIMPLEMENTED)
-  def deleteNodes(self, request, context):
-    """Deletes (and broadcasts to all client) nodes in a given world
-    """
-    context.code(beta_interfaces.StatusCode.UNIMPLEMENTED)
-  def getSituationsLen(self, request, context):
-    """TIMELINE
-
-    Returns the number of situations in a given world.
-    Accepts a context (client ID and world) and returns the number of
-    existing situations.
-    """
-    context.code(beta_interfaces.StatusCode.UNIMPLEMENTED)
-  def getSituationsIds(self, request, context):
-    """Returns the list of situation IDs present in the given world
-    """
-    context.code(beta_interfaces.StatusCode.UNIMPLEMENTED)
-  def getSituation(self, request, context):
-    """Returns a situation from its ID.
-    Note that only the situation ID is used (and thus, required).
-    """
-    context.code(beta_interfaces.StatusCode.UNIMPLEMENTED)
-  def timelineOrigin(self, request, context):
-    """Returns the timeline origin: time of the timeline creation
-    """
-    context.code(beta_interfaces.StatusCode.UNIMPLEMENTED)
-  def updateSituations(self, request, context):
-    """Updates (and broadcasts to all client) a situation in a given world
-    """
-    context.code(beta_interfaces.StatusCode.UNIMPLEMENTED)
-  def deleteSituations(self, request, context):
-    """Deletes (and broadcasts to all client) a node in a given world
-    """
-    context.code(beta_interfaces.StatusCode.UNIMPLEMENTED)
-  def hasMesh(self, request, context):
-    """MESHES
-
-    Returns whether the given mesh is already available on the server.
-    Note that only the mesh ID is used.
-    """
-    context.code(beta_interfaces.StatusCode.UNIMPLEMENTED)
-  def getMesh(self, request, context):
-    """Returns a 3D mesh.
-    Note that only the ID of the input mesh is used.
-    """
-    context.code(beta_interfaces.StatusCode.UNIMPLEMENTED)
-  def pushMesh(self, request, context):
-    """Sends a 3D mesh to the server.
-    """
-    context.code(beta_interfaces.StatusCode.UNIMPLEMENTED)
-
-
-class BetaUnderworldsStub(object):
-  def helo(self, request, timeout, metadata=None, with_call=False, protocol_options=None):
-    """GENERAL
-
-    Establish the connection to the server, setting a human-friendly name for
-    the client.
-    The server returns a unique client ID that must be used in every subsequent
-    request to the server.
-    """
-    raise NotImplementedError()
-  helo.future = None
-  def byebye(self, request, timeout, metadata=None, with_call=False, protocol_options=None):
-    """Inform the server that the client is disconnecting.
-    Before completing this call, the client must keep its invalidation
-    server open and listening.
-    After completing this call, the server should not attempt to connect to
-    the client's invalidation server.
-    """
-    raise NotImplementedError()
-  byebye.future = None
-  def uptime(self, request, timeout, metadata=None, with_call=False, protocol_options=None):
-    """Returns the uptime of the server, in seconds
-    """
-    raise NotImplementedError()
-  uptime.future = None
-  def topology(self, request, timeout, metadata=None, with_call=False, protocol_options=None):
-    """Returns the current topology of underworlds: the list of worlds and the
-    list of clients + their interactions with the worlds
-    """
-    raise NotImplementedError()
-  topology.future = None
-  def reset(self, request, timeout, metadata=None, with_call=False, protocol_options=None):
-    """Hard reset of Underworlds: all the worlds are deleted.
-    The existing mesh database is kept, however.
-    This does not impact the list of known clients (ie, clients do not have to
-    call 'helo' again).
-    """
-    raise NotImplementedError()
-  reset.future = None
-  def getNodesLen(self, request, timeout, metadata=None, with_call=False, protocol_options=None):
-    """NODES
-
-    Returns the number of nodes in a given world.
-    Accepts a context (client ID and world) and returns the number of existing nodes.
-    """
-    raise NotImplementedError()
-  getNodesLen.future = None
-  def getNodesIds(self, request, timeout, metadata=None, with_call=False, protocol_options=None):
-    """Returns the list of node IDs present in the given world
-    """
-    raise NotImplementedError()
-  getNodesIds.future = None
-  def getRootNode(self, request, timeout, metadata=None, with_call=False, protocol_options=None):
-    """Returns the root node ID of the given world
-    """
-    raise NotImplementedError()
-  getRootNode.future = None
-  def getNode(self, request, timeout, metadata=None, with_call=False, protocol_options=None):
-    """Returns a node from its ID in the given world.
-    Note that only the node ID is used (and thus, required).
-    """
-    raise NotImplementedError()
-  getNode.future = None
-  def updateNodes(self, request, timeout, metadata=None, with_call=False, protocol_options=None):
-    """Updates (and broadcasts to all client) nodes in a given world
-    """
-    raise NotImplementedError()
-  updateNodes.future = None
-  def deleteNodes(self, request, timeout, metadata=None, with_call=False, protocol_options=None):
-    """Deletes (and broadcasts to all client) nodes in a given world
-    """
-    raise NotImplementedError()
-  deleteNodes.future = None
-  def getSituationsLen(self, request, timeout, metadata=None, with_call=False, protocol_options=None):
-    """TIMELINE
-
-    Returns the number of situations in a given world.
-    Accepts a context (client ID and world) and returns the number of
-    existing situations.
-    """
-    raise NotImplementedError()
-  getSituationsLen.future = None
-  def getSituationsIds(self, request, timeout, metadata=None, with_call=False, protocol_options=None):
-    """Returns the list of situation IDs present in the given world
-    """
-    raise NotImplementedError()
-  getSituationsIds.future = None
-  def getSituation(self, request, timeout, metadata=None, with_call=False, protocol_options=None):
-    """Returns a situation from its ID.
-    Note that only the situation ID is used (and thus, required).
-    """
-    raise NotImplementedError()
-  getSituation.future = None
-  def timelineOrigin(self, request, timeout, metadata=None, with_call=False, protocol_options=None):
-    """Returns the timeline origin: time of the timeline creation
-    """
-    raise NotImplementedError()
-  timelineOrigin.future = None
-  def updateSituations(self, request, timeout, metadata=None, with_call=False, protocol_options=None):
-    """Updates (and broadcasts to all client) a situation in a given world
-    """
-    raise NotImplementedError()
-  updateSituations.future = None
-  def deleteSituations(self, request, timeout, metadata=None, with_call=False, protocol_options=None):
-    """Deletes (and broadcasts to all client) a node in a given world
-    """
-    raise NotImplementedError()
-  deleteSituations.future = None
-  def hasMesh(self, request, timeout, metadata=None, with_call=False, protocol_options=None):
-    """MESHES
-
-    Returns whether the given mesh is already available on the server.
-    Note that only the mesh ID is used.
-    """
-    raise NotImplementedError()
-  hasMesh.future = None
-  def getMesh(self, request, timeout, metadata=None, with_call=False, protocol_options=None):
-    """Returns a 3D mesh.
-    Note that only the ID of the input mesh is used.
-    """
-    raise NotImplementedError()
-  getMesh.future = None
-  def pushMesh(self, request, timeout, metadata=None, with_call=False, protocol_options=None):
-    """Sends a 3D mesh to the server.
-    """
-    raise NotImplementedError()
-  pushMesh.future = None
-
-
-def beta_create_Underworlds_server(servicer, pool=None, pool_size=None, default_timeout=None, maximum_timeout=None):
-  request_deserializers = {
-    ('underworlds.Underworlds', 'byebye'): Client.FromString,
-    ('underworlds.Underworlds', 'deleteNodes'): NodesInContext.FromString,
-    ('underworlds.Underworlds', 'deleteSituations'): SituationsInContext.FromString,
-    ('underworlds.Underworlds', 'getMesh'): MeshInContext.FromString,
-    ('underworlds.Underworlds', 'getNode'): NodeInContext.FromString,
-    ('underworlds.Underworlds', 'getNodesIds'): Context.FromString,
-    ('underworlds.Underworlds', 'getNodesLen'): Context.FromString,
-    ('underworlds.Underworlds', 'getRootNode'): Context.FromString,
-    ('underworlds.Underworlds', 'getSituation'): SituationInContext.FromString,
-    ('underworlds.Underworlds', 'getSituationsIds'): Context.FromString,
-    ('underworlds.Underworlds', 'getSituationsLen'): Context.FromString,
-    ('underworlds.Underworlds', 'hasMesh'): MeshInContext.FromString,
-    ('underworlds.Underworlds', 'helo'): Welcome.FromString,
-    ('underworlds.Underworlds', 'pushMesh'): MeshInContext.FromString,
-    ('underworlds.Underworlds', 'reset'): Client.FromString,
-    ('underworlds.Underworlds', 'timelineOrigin'): Context.FromString,
-    ('underworlds.Underworlds', 'topology'): Client.FromString,
-    ('underworlds.Underworlds', 'updateNodes'): NodesInContext.FromString,
-    ('underworlds.Underworlds', 'updateSituations'): SituationsInContext.FromString,
-    ('underworlds.Underworlds', 'uptime'): Client.FromString,
-  }
-  response_serializers = {
-    ('underworlds.Underworlds', 'byebye'): Empty.SerializeToString,
-    ('underworlds.Underworlds', 'deleteNodes'): Empty.SerializeToString,
-    ('underworlds.Underworlds', 'deleteSituations'): Empty.SerializeToString,
-    ('underworlds.Underworlds', 'getMesh'): Mesh.SerializeToString,
-    ('underworlds.Underworlds', 'getNode'): Node.SerializeToString,
-    ('underworlds.Underworlds', 'getNodesIds'): Nodes.SerializeToString,
-    ('underworlds.Underworlds', 'getNodesLen'): Size.SerializeToString,
-    ('underworlds.Underworlds', 'getRootNode'): Node.SerializeToString,
-    ('underworlds.Underworlds', 'getSituation'): Situation.SerializeToString,
-    ('underworlds.Underworlds', 'getSituationsIds'): Situations.SerializeToString,
-    ('underworlds.Underworlds', 'getSituationsLen'): Size.SerializeToString,
-    ('underworlds.Underworlds', 'hasMesh'): Bool.SerializeToString,
-    ('underworlds.Underworlds', 'helo'): Client.SerializeToString,
-    ('underworlds.Underworlds', 'pushMesh'): Empty.SerializeToString,
-    ('underworlds.Underworlds', 'reset'): Empty.SerializeToString,
-    ('underworlds.Underworlds', 'timelineOrigin'): Time.SerializeToString,
-    ('underworlds.Underworlds', 'topology'): Topology.SerializeToString,
-    ('underworlds.Underworlds', 'updateNodes'): Empty.SerializeToString,
-    ('underworlds.Underworlds', 'updateSituations'): Empty.SerializeToString,
-    ('underworlds.Underworlds', 'uptime'): Time.SerializeToString,
-  }
-  method_implementations = {
-    ('underworlds.Underworlds', 'byebye'): face_utilities.unary_unary_inline(servicer.byebye),
-    ('underworlds.Underworlds', 'deleteNodes'): face_utilities.unary_unary_inline(servicer.deleteNodes),
-    ('underworlds.Underworlds', 'deleteSituations'): face_utilities.unary_unary_inline(servicer.deleteSituations),
-    ('underworlds.Underworlds', 'getMesh'): face_utilities.unary_unary_inline(servicer.getMesh),
-    ('underworlds.Underworlds', 'getNode'): face_utilities.unary_unary_inline(servicer.getNode),
-    ('underworlds.Underworlds', 'getNodesIds'): face_utilities.unary_unary_inline(servicer.getNodesIds),
-    ('underworlds.Underworlds', 'getNodesLen'): face_utilities.unary_unary_inline(servicer.getNodesLen),
-    ('underworlds.Underworlds', 'getRootNode'): face_utilities.unary_unary_inline(servicer.getRootNode),
-    ('underworlds.Underworlds', 'getSituation'): face_utilities.unary_unary_inline(servicer.getSituation),
-    ('underworlds.Underworlds', 'getSituationsIds'): face_utilities.unary_unary_inline(servicer.getSituationsIds),
-    ('underworlds.Underworlds', 'getSituationsLen'): face_utilities.unary_unary_inline(servicer.getSituationsLen),
-    ('underworlds.Underworlds', 'hasMesh'): face_utilities.unary_unary_inline(servicer.hasMesh),
-    ('underworlds.Underworlds', 'helo'): face_utilities.unary_unary_inline(servicer.helo),
-    ('underworlds.Underworlds', 'pushMesh'): face_utilities.unary_unary_inline(servicer.pushMesh),
-    ('underworlds.Underworlds', 'reset'): face_utilities.unary_unary_inline(servicer.reset),
-    ('underworlds.Underworlds', 'timelineOrigin'): face_utilities.unary_unary_inline(servicer.timelineOrigin),
-    ('underworlds.Underworlds', 'topology'): face_utilities.unary_unary_inline(servicer.topology),
-    ('underworlds.Underworlds', 'updateNodes'): face_utilities.unary_unary_inline(servicer.updateNodes),
-    ('underworlds.Underworlds', 'updateSituations'): face_utilities.unary_unary_inline(servicer.updateSituations),
-    ('underworlds.Underworlds', 'uptime'): face_utilities.unary_unary_inline(servicer.uptime),
-  }
-  server_options = beta_implementations.server_options(request_deserializers=request_deserializers, response_serializers=response_serializers, thread_pool=pool, thread_pool_size=pool_size, default_timeout=default_timeout, maximum_timeout=maximum_timeout)
-  return beta_implementations.server(method_implementations, options=server_options)
-
-
-def beta_create_Underworlds_stub(channel, host=None, metadata_transformer=None, pool=None, pool_size=None):
-  request_serializers = {
-    ('underworlds.Underworlds', 'byebye'): Client.SerializeToString,
-    ('underworlds.Underworlds', 'deleteNodes'): NodesInContext.SerializeToString,
-    ('underworlds.Underworlds', 'deleteSituations'): SituationsInContext.SerializeToString,
-    ('underworlds.Underworlds', 'getMesh'): MeshInContext.SerializeToString,
-    ('underworlds.Underworlds', 'getNode'): NodeInContext.SerializeToString,
-    ('underworlds.Underworlds', 'getNodesIds'): Context.SerializeToString,
-    ('underworlds.Underworlds', 'getNodesLen'): Context.SerializeToString,
-    ('underworlds.Underworlds', 'getRootNode'): Context.SerializeToString,
-    ('underworlds.Underworlds', 'getSituation'): SituationInContext.SerializeToString,
-    ('underworlds.Underworlds', 'getSituationsIds'): Context.SerializeToString,
-    ('underworlds.Underworlds', 'getSituationsLen'): Context.SerializeToString,
-    ('underworlds.Underworlds', 'hasMesh'): MeshInContext.SerializeToString,
-    ('underworlds.Underworlds', 'helo'): Welcome.SerializeToString,
-    ('underworlds.Underworlds', 'pushMesh'): MeshInContext.SerializeToString,
-    ('underworlds.Underworlds', 'reset'): Client.SerializeToString,
-    ('underworlds.Underworlds', 'timelineOrigin'): Context.SerializeToString,
-    ('underworlds.Underworlds', 'topology'): Client.SerializeToString,
-    ('underworlds.Underworlds', 'updateNodes'): NodesInContext.SerializeToString,
-    ('underworlds.Underworlds', 'updateSituations'): SituationsInContext.SerializeToString,
-    ('underworlds.Underworlds', 'uptime'): Client.SerializeToString,
-  }
-  response_deserializers = {
-    ('underworlds.Underworlds', 'byebye'): Empty.FromString,
-    ('underworlds.Underworlds', 'deleteNodes'): Empty.FromString,
-    ('underworlds.Underworlds', 'deleteSituations'): Empty.FromString,
-    ('underworlds.Underworlds', 'getMesh'): Mesh.FromString,
-    ('underworlds.Underworlds', 'getNode'): Node.FromString,
-    ('underworlds.Underworlds', 'getNodesIds'): Nodes.FromString,
-    ('underworlds.Underworlds', 'getNodesLen'): Size.FromString,
-    ('underworlds.Underworlds', 'getRootNode'): Node.FromString,
-    ('underworlds.Underworlds', 'getSituation'): Situation.FromString,
-    ('underworlds.Underworlds', 'getSituationsIds'): Situations.FromString,
-    ('underworlds.Underworlds', 'getSituationsLen'): Size.FromString,
-    ('underworlds.Underworlds', 'hasMesh'): Bool.FromString,
-    ('underworlds.Underworlds', 'helo'): Client.FromString,
-    ('underworlds.Underworlds', 'pushMesh'): Empty.FromString,
-    ('underworlds.Underworlds', 'reset'): Empty.FromString,
-    ('underworlds.Underworlds', 'timelineOrigin'): Time.FromString,
-    ('underworlds.Underworlds', 'topology'): Topology.FromString,
-    ('underworlds.Underworlds', 'updateNodes'): Empty.FromString,
-    ('underworlds.Underworlds', 'updateSituations'): Empty.FromString,
-    ('underworlds.Underworlds', 'uptime'): Time.FromString,
-  }
-  cardinalities = {
-    'byebye': cardinality.Cardinality.UNARY_UNARY,
-    'deleteNodes': cardinality.Cardinality.UNARY_UNARY,
-    'deleteSituations': cardinality.Cardinality.UNARY_UNARY,
-    'getMesh': cardinality.Cardinality.UNARY_UNARY,
-    'getNode': cardinality.Cardinality.UNARY_UNARY,
-    'getNodesIds': cardinality.Cardinality.UNARY_UNARY,
-    'getNodesLen': cardinality.Cardinality.UNARY_UNARY,
-    'getRootNode': cardinality.Cardinality.UNARY_UNARY,
-    'getSituation': cardinality.Cardinality.UNARY_UNARY,
-    'getSituationsIds': cardinality.Cardinality.UNARY_UNARY,
-    'getSituationsLen': cardinality.Cardinality.UNARY_UNARY,
-    'hasMesh': cardinality.Cardinality.UNARY_UNARY,
-    'helo': cardinality.Cardinality.UNARY_UNARY,
-    'pushMesh': cardinality.Cardinality.UNARY_UNARY,
-    'reset': cardinality.Cardinality.UNARY_UNARY,
-    'timelineOrigin': cardinality.Cardinality.UNARY_UNARY,
-    'topology': cardinality.Cardinality.UNARY_UNARY,
-    'updateNodes': cardinality.Cardinality.UNARY_UNARY,
-    'updateSituations': cardinality.Cardinality.UNARY_UNARY,
-    'uptime': cardinality.Cardinality.UNARY_UNARY,
-  }
-  stub_options = beta_implementations.stub_options(host=host, metadata_transformer=metadata_transformer, request_serializers=request_serializers, response_deserializers=response_deserializers, thread_pool=pool, thread_pool_size=pool_size)
-  return beta_implementations.dynamic_stub(channel, 'underworlds.Underworlds', cardinalities, options=stub_options)
-
-
-class UnderworldsInvalidationStub(object):
-
-  def __init__(self, channel):
-    """Constructor.
-
-    Args:
-      channel: A grpc.Channel.
-    """
-    self.emitInvalidation = channel.unary_unary(
-        '/underworlds.UnderworldsInvalidation/emitInvalidation',
-        request_serializer=Invalidation.SerializeToString,
-        response_deserializer=Empty.FromString,
-        )
-
-
-class UnderworldsInvalidationServicer(object):
-
-  def emitInvalidation(self, request, context):
-    """Sends (to the client's invalidation server) 'invalidated'
-    nodes/situations that need to be updated.  Invalidated nodes/situations
-    can be new nodes/situations, nodes/situations that have changed, or
-    nodes/situations that have been removed (see Invalidation.type).
-    """
-    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-    context.set_details('Method not implemented!')
-    raise NotImplementedError('Method not implemented!')
-
-
-def add_UnderworldsInvalidationServicer_to_server(servicer, server):
-  rpc_method_handlers = {
-      'emitInvalidation': grpc.unary_unary_rpc_method_handler(
-          servicer.emitInvalidation,
-          request_deserializer=Invalidation.FromString,
-          response_serializer=Empty.SerializeToString,
-      ),
-  }
-  generic_handler = grpc.method_handlers_generic_handler(
-      'underworlds.UnderworldsInvalidation', rpc_method_handlers)
-  server.add_generic_rpc_handlers((generic_handler,))
-
-
-class BetaUnderworldsInvalidationServicer(object):
-  def emitInvalidation(self, request, context):
-    """Sends (to the client's invalidation server) 'invalidated'
-    nodes/situations that need to be updated.  Invalidated nodes/situations
-    can be new nodes/situations, nodes/situations that have changed, or
-    nodes/situations that have been removed (see Invalidation.type).
-    """
-    context.code(beta_interfaces.StatusCode.UNIMPLEMENTED)
-
-
-class BetaUnderworldsInvalidationStub(object):
-  def emitInvalidation(self, request, timeout, metadata=None, with_call=False, protocol_options=None):
-    """Sends (to the client's invalidation server) 'invalidated'
-    nodes/situations that need to be updated.  Invalidated nodes/situations
-    can be new nodes/situations, nodes/situations that have changed, or
-    nodes/situations that have been removed (see Invalidation.type).
-    """
-    raise NotImplementedError()
-  emitInvalidation.future = None
-
-
-def beta_create_UnderworldsInvalidation_server(servicer, pool=None, pool_size=None, default_timeout=None, maximum_timeout=None):
-  request_deserializers = {
-    ('underworlds.UnderworldsInvalidation', 'emitInvalidation'): Invalidation.FromString,
-  }
-  response_serializers = {
-    ('underworlds.UnderworldsInvalidation', 'emitInvalidation'): Empty.SerializeToString,
-  }
-  method_implementations = {
-    ('underworlds.UnderworldsInvalidation', 'emitInvalidation'): face_utilities.unary_unary_inline(servicer.emitInvalidation),
-  }
-  server_options = beta_implementations.server_options(request_deserializers=request_deserializers, response_serializers=response_serializers, thread_pool=pool, thread_pool_size=pool_size, default_timeout=default_timeout, maximum_timeout=maximum_timeout)
-  return beta_implementations.server(method_implementations, options=server_options)
-
-
-def beta_create_UnderworldsInvalidation_stub(channel, host=None, metadata_transformer=None, pool=None, pool_size=None):
-  request_serializers = {
-    ('underworlds.UnderworldsInvalidation', 'emitInvalidation'): Invalidation.SerializeToString,
-  }
-  response_deserializers = {
-    ('underworlds.UnderworldsInvalidation', 'emitInvalidation'): Empty.FromString,
-  }
-  cardinalities = {
-    'emitInvalidation': cardinality.Cardinality.UNARY_UNARY,
-  }
-  stub_options = beta_implementations.stub_options(host=host, metadata_transformer=metadata_transformer, request_serializers=request_serializers, response_deserializers=response_deserializers, thread_pool=pool, thread_pool_size=pool_size)
-  return beta_implementations.dynamic_stub(channel, 'underworlds.UnderworldsInvalidation', cardinalities, options=stub_options)
+try:
+  # THESE ELEMENTS WILL BE DEPRECATED.
+  # Please use the generated *_pb2_grpc.py files instead.
+  import grpc
+  from grpc.beta import implementations as beta_implementations
+  from grpc.beta import interfaces as beta_interfaces
+  from grpc.framework.common import cardinality
+  from grpc.framework.interfaces.face import utilities as face_utilities
+
+
+  class UnderworldsStub(object):
+
+    def __init__(self, channel):
+      """Constructor.
+
+      Args:
+        channel: A grpc.Channel.
+      """
+      self.helo = channel.unary_unary(
+          '/underworlds.Underworlds/helo',
+          request_serializer=Welcome.SerializeToString,
+          response_deserializer=Client.FromString,
+          )
+      self.byebye = channel.unary_unary(
+          '/underworlds.Underworlds/byebye',
+          request_serializer=Client.SerializeToString,
+          response_deserializer=Empty.FromString,
+          )
+      self.uptime = channel.unary_unary(
+          '/underworlds.Underworlds/uptime',
+          request_serializer=Client.SerializeToString,
+          response_deserializer=Time.FromString,
+          )
+      self.topology = channel.unary_unary(
+          '/underworlds.Underworlds/topology',
+          request_serializer=Client.SerializeToString,
+          response_deserializer=Topology.FromString,
+          )
+      self.reset = channel.unary_unary(
+          '/underworlds.Underworlds/reset',
+          request_serializer=Client.SerializeToString,
+          response_deserializer=Empty.FromString,
+          )
+      self.getNodesLen = channel.unary_unary(
+          '/underworlds.Underworlds/getNodesLen',
+          request_serializer=Context.SerializeToString,
+          response_deserializer=Size.FromString,
+          )
+      self.getNodesIds = channel.unary_unary(
+          '/underworlds.Underworlds/getNodesIds',
+          request_serializer=Context.SerializeToString,
+          response_deserializer=Nodes.FromString,
+          )
+      self.getRootNode = channel.unary_unary(
+          '/underworlds.Underworlds/getRootNode',
+          request_serializer=Context.SerializeToString,
+          response_deserializer=Node.FromString,
+          )
+      self.getNode = channel.unary_unary(
+          '/underworlds.Underworlds/getNode',
+          request_serializer=NodeInContext.SerializeToString,
+          response_deserializer=Node.FromString,
+          )
+      self.updateNodes = channel.unary_unary(
+          '/underworlds.Underworlds/updateNodes',
+          request_serializer=NodesInContext.SerializeToString,
+          response_deserializer=Empty.FromString,
+          )
+      self.deleteNodes = channel.unary_unary(
+          '/underworlds.Underworlds/deleteNodes',
+          request_serializer=NodesInContext.SerializeToString,
+          response_deserializer=Empty.FromString,
+          )
+      self.getSituationsLen = channel.unary_unary(
+          '/underworlds.Underworlds/getSituationsLen',
+          request_serializer=Context.SerializeToString,
+          response_deserializer=Size.FromString,
+          )
+      self.getSituationsIds = channel.unary_unary(
+          '/underworlds.Underworlds/getSituationsIds',
+          request_serializer=Context.SerializeToString,
+          response_deserializer=Situations.FromString,
+          )
+      self.getSituation = channel.unary_unary(
+          '/underworlds.Underworlds/getSituation',
+          request_serializer=SituationInContext.SerializeToString,
+          response_deserializer=Situation.FromString,
+          )
+      self.timelineOrigin = channel.unary_unary(
+          '/underworlds.Underworlds/timelineOrigin',
+          request_serializer=Context.SerializeToString,
+          response_deserializer=Time.FromString,
+          )
+      self.updateSituations = channel.unary_unary(
+          '/underworlds.Underworlds/updateSituations',
+          request_serializer=SituationsInContext.SerializeToString,
+          response_deserializer=Empty.FromString,
+          )
+      self.deleteSituations = channel.unary_unary(
+          '/underworlds.Underworlds/deleteSituations',
+          request_serializer=SituationsInContext.SerializeToString,
+          response_deserializer=Empty.FromString,
+          )
+      self.hasMesh = channel.unary_unary(
+          '/underworlds.Underworlds/hasMesh',
+          request_serializer=MeshInContext.SerializeToString,
+          response_deserializer=Bool.FromString,
+          )
+      self.getMesh = channel.unary_unary(
+          '/underworlds.Underworlds/getMesh',
+          request_serializer=MeshInContext.SerializeToString,
+          response_deserializer=Mesh.FromString,
+          )
+      self.pushMesh = channel.unary_unary(
+          '/underworlds.Underworlds/pushMesh',
+          request_serializer=MeshInContext.SerializeToString,
+          response_deserializer=Empty.FromString,
+          )
+
+
+  class UnderworldsServicer(object):
+
+    def helo(self, request, context):
+      """GENERAL
+
+      Establish the connection to the server, setting a human-friendly name for
+      the client.
+      The server returns a unique client ID that must be used in every subsequent
+      request to the server.
+      """
+      context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+      context.set_details('Method not implemented!')
+      raise NotImplementedError('Method not implemented!')
+
+    def byebye(self, request, context):
+      """Inform the server that the client is disconnecting.
+      Before completing this call, the client must keep its invalidation
+      server open and listening.
+      After completing this call, the server should not attempt to connect to
+      the client's invalidation server.
+      """
+      context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+      context.set_details('Method not implemented!')
+      raise NotImplementedError('Method not implemented!')
+
+    def uptime(self, request, context):
+      """Returns the uptime of the server, in seconds
+      """
+      context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+      context.set_details('Method not implemented!')
+      raise NotImplementedError('Method not implemented!')
+
+    def topology(self, request, context):
+      """Returns the current topology of underworlds: the list of worlds and the
+      list of clients + their interactions with the worlds
+      """
+      context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+      context.set_details('Method not implemented!')
+      raise NotImplementedError('Method not implemented!')
+
+    def reset(self, request, context):
+      """Hard reset of Underworlds: all the worlds are deleted.
+      The existing mesh database is kept, however.
+      This does not impact the list of known clients (ie, clients do not have to
+      call 'helo' again).
+      """
+      context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+      context.set_details('Method not implemented!')
+      raise NotImplementedError('Method not implemented!')
+
+    def getNodesLen(self, request, context):
+      """NODES
+
+      Returns the number of nodes in a given world.
+      Accepts a context (client ID and world) and returns the number of existing nodes.
+      """
+      context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+      context.set_details('Method not implemented!')
+      raise NotImplementedError('Method not implemented!')
+
+    def getNodesIds(self, request, context):
+      """Returns the list of node IDs present in the given world
+      """
+      context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+      context.set_details('Method not implemented!')
+      raise NotImplementedError('Method not implemented!')
+
+    def getRootNode(self, request, context):
+      """Returns the root node ID of the given world
+      """
+      context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+      context.set_details('Method not implemented!')
+      raise NotImplementedError('Method not implemented!')
+
+    def getNode(self, request, context):
+      """Returns a node from its ID in the given world.
+      Note that only the node ID is used (and thus, required).
+      """
+      context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+      context.set_details('Method not implemented!')
+      raise NotImplementedError('Method not implemented!')
+
+    def updateNodes(self, request, context):
+      """Updates (and broadcasts to all client) nodes in a given world
+      """
+      context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+      context.set_details('Method not implemented!')
+      raise NotImplementedError('Method not implemented!')
+
+    def deleteNodes(self, request, context):
+      """Deletes (and broadcasts to all client) nodes in a given world
+      """
+      context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+      context.set_details('Method not implemented!')
+      raise NotImplementedError('Method not implemented!')
+
+    def getSituationsLen(self, request, context):
+      """TIMELINE
+
+      Returns the number of situations in a given world.
+      Accepts a context (client ID and world) and returns the number of
+      existing situations.
+      """
+      context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+      context.set_details('Method not implemented!')
+      raise NotImplementedError('Method not implemented!')
+
+    def getSituationsIds(self, request, context):
+      """Returns the list of situation IDs present in the given world
+      """
+      context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+      context.set_details('Method not implemented!')
+      raise NotImplementedError('Method not implemented!')
+
+    def getSituation(self, request, context):
+      """Returns a situation from its ID.
+      Note that only the situation ID is used (and thus, required).
+      """
+      context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+      context.set_details('Method not implemented!')
+      raise NotImplementedError('Method not implemented!')
+
+    def timelineOrigin(self, request, context):
+      """Returns the timeline origin: time of the timeline creation
+      """
+      context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+      context.set_details('Method not implemented!')
+      raise NotImplementedError('Method not implemented!')
+
+    def updateSituations(self, request, context):
+      """Updates (and broadcasts to all client) a situation in a given world
+      """
+      context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+      context.set_details('Method not implemented!')
+      raise NotImplementedError('Method not implemented!')
+
+    def deleteSituations(self, request, context):
+      """Deletes (and broadcasts to all client) a node in a given world
+      """
+      context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+      context.set_details('Method not implemented!')
+      raise NotImplementedError('Method not implemented!')
+
+    def hasMesh(self, request, context):
+      """MESHES
+
+      Returns whether the given mesh is already available on the server.
+      Note that only the mesh ID is used.
+      """
+      context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+      context.set_details('Method not implemented!')
+      raise NotImplementedError('Method not implemented!')
+
+    def getMesh(self, request, context):
+      """Returns a 3D mesh.
+      Note that only the ID of the input mesh is used.
+      """
+      context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+      context.set_details('Method not implemented!')
+      raise NotImplementedError('Method not implemented!')
+
+    def pushMesh(self, request, context):
+      """Sends a 3D mesh to the server.
+      """
+      context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+      context.set_details('Method not implemented!')
+      raise NotImplementedError('Method not implemented!')
+
+
+  def add_UnderworldsServicer_to_server(servicer, server):
+    rpc_method_handlers = {
+        'helo': grpc.unary_unary_rpc_method_handler(
+            servicer.helo,
+            request_deserializer=Welcome.FromString,
+            response_serializer=Client.SerializeToString,
+        ),
+        'byebye': grpc.unary_unary_rpc_method_handler(
+            servicer.byebye,
+            request_deserializer=Client.FromString,
+            response_serializer=Empty.SerializeToString,
+        ),
+        'uptime': grpc.unary_unary_rpc_method_handler(
+            servicer.uptime,
+            request_deserializer=Client.FromString,
+            response_serializer=Time.SerializeToString,
+        ),
+        'topology': grpc.unary_unary_rpc_method_handler(
+            servicer.topology,
+            request_deserializer=Client.FromString,
+            response_serializer=Topology.SerializeToString,
+        ),
+        'reset': grpc.unary_unary_rpc_method_handler(
+            servicer.reset,
+            request_deserializer=Client.FromString,
+            response_serializer=Empty.SerializeToString,
+        ),
+        'getNodesLen': grpc.unary_unary_rpc_method_handler(
+            servicer.getNodesLen,
+            request_deserializer=Context.FromString,
+            response_serializer=Size.SerializeToString,
+        ),
+        'getNodesIds': grpc.unary_unary_rpc_method_handler(
+            servicer.getNodesIds,
+            request_deserializer=Context.FromString,
+            response_serializer=Nodes.SerializeToString,
+        ),
+        'getRootNode': grpc.unary_unary_rpc_method_handler(
+            servicer.getRootNode,
+            request_deserializer=Context.FromString,
+            response_serializer=Node.SerializeToString,
+        ),
+        'getNode': grpc.unary_unary_rpc_method_handler(
+            servicer.getNode,
+            request_deserializer=NodeInContext.FromString,
+            response_serializer=Node.SerializeToString,
+        ),
+        'updateNodes': grpc.unary_unary_rpc_method_handler(
+            servicer.updateNodes,
+            request_deserializer=NodesInContext.FromString,
+            response_serializer=Empty.SerializeToString,
+        ),
+        'deleteNodes': grpc.unary_unary_rpc_method_handler(
+            servicer.deleteNodes,
+            request_deserializer=NodesInContext.FromString,
+            response_serializer=Empty.SerializeToString,
+        ),
+        'getSituationsLen': grpc.unary_unary_rpc_method_handler(
+            servicer.getSituationsLen,
+            request_deserializer=Context.FromString,
+            response_serializer=Size.SerializeToString,
+        ),
+        'getSituationsIds': grpc.unary_unary_rpc_method_handler(
+            servicer.getSituationsIds,
+            request_deserializer=Context.FromString,
+            response_serializer=Situations.SerializeToString,
+        ),
+        'getSituation': grpc.unary_unary_rpc_method_handler(
+            servicer.getSituation,
+            request_deserializer=SituationInContext.FromString,
+            response_serializer=Situation.SerializeToString,
+        ),
+        'timelineOrigin': grpc.unary_unary_rpc_method_handler(
+            servicer.timelineOrigin,
+            request_deserializer=Context.FromString,
+            response_serializer=Time.SerializeToString,
+        ),
+        'updateSituations': grpc.unary_unary_rpc_method_handler(
+            servicer.updateSituations,
+            request_deserializer=SituationsInContext.FromString,
+            response_serializer=Empty.SerializeToString,
+        ),
+        'deleteSituations': grpc.unary_unary_rpc_method_handler(
+            servicer.deleteSituations,
+            request_deserializer=SituationsInContext.FromString,
+            response_serializer=Empty.SerializeToString,
+        ),
+        'hasMesh': grpc.unary_unary_rpc_method_handler(
+            servicer.hasMesh,
+            request_deserializer=MeshInContext.FromString,
+            response_serializer=Bool.SerializeToString,
+        ),
+        'getMesh': grpc.unary_unary_rpc_method_handler(
+            servicer.getMesh,
+            request_deserializer=MeshInContext.FromString,
+            response_serializer=Mesh.SerializeToString,
+        ),
+        'pushMesh': grpc.unary_unary_rpc_method_handler(
+            servicer.pushMesh,
+            request_deserializer=MeshInContext.FromString,
+            response_serializer=Empty.SerializeToString,
+        ),
+    }
+    generic_handler = grpc.method_handlers_generic_handler(
+        'underworlds.Underworlds', rpc_method_handlers)
+    server.add_generic_rpc_handlers((generic_handler,))
+
+
+  class UnderworldsInvalidationStub(object):
+
+    def __init__(self, channel):
+      """Constructor.
+
+      Args:
+        channel: A grpc.Channel.
+      """
+      self.emitInvalidation = channel.unary_unary(
+          '/underworlds.UnderworldsInvalidation/emitInvalidation',
+          request_serializer=Invalidation.SerializeToString,
+          response_deserializer=Empty.FromString,
+          )
+
+
+  class UnderworldsInvalidationServicer(object):
+
+    def emitInvalidation(self, request, context):
+      """Sends (to the client's invalidation server) 'invalidated'
+      nodes/situations that need to be updated.  Invalidated nodes/situations
+      can be new nodes/situations, nodes/situations that have changed, or
+      nodes/situations that have been removed (see Invalidation.type).
+      """
+      context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+      context.set_details('Method not implemented!')
+      raise NotImplementedError('Method not implemented!')
+
+
+  def add_UnderworldsInvalidationServicer_to_server(servicer, server):
+    rpc_method_handlers = {
+        'emitInvalidation': grpc.unary_unary_rpc_method_handler(
+            servicer.emitInvalidation,
+            request_deserializer=Invalidation.FromString,
+            response_serializer=Empty.SerializeToString,
+        ),
+    }
+    generic_handler = grpc.method_handlers_generic_handler(
+        'underworlds.UnderworldsInvalidation', rpc_method_handlers)
+    server.add_generic_rpc_handlers((generic_handler,))
+
+
+  class BetaUnderworldsServicer(object):
+    """The Beta API is deprecated for 0.15.0 and later.
+
+    It is recommended to use the GA API (classes and functions in this
+    file not marked beta) for all further purposes. This class was generated
+    only to ease transition from grpcio<0.15.0 to grpcio>=0.15.0."""
+    def helo(self, request, context):
+      """GENERAL
+
+      Establish the connection to the server, setting a human-friendly name for
+      the client.
+      The server returns a unique client ID that must be used in every subsequent
+      request to the server.
+      """
+      context.code(beta_interfaces.StatusCode.UNIMPLEMENTED)
+    def byebye(self, request, context):
+      """Inform the server that the client is disconnecting.
+      Before completing this call, the client must keep its invalidation
+      server open and listening.
+      After completing this call, the server should not attempt to connect to
+      the client's invalidation server.
+      """
+      context.code(beta_interfaces.StatusCode.UNIMPLEMENTED)
+    def uptime(self, request, context):
+      """Returns the uptime of the server, in seconds
+      """
+      context.code(beta_interfaces.StatusCode.UNIMPLEMENTED)
+    def topology(self, request, context):
+      """Returns the current topology of underworlds: the list of worlds and the
+      list of clients + their interactions with the worlds
+      """
+      context.code(beta_interfaces.StatusCode.UNIMPLEMENTED)
+    def reset(self, request, context):
+      """Hard reset of Underworlds: all the worlds are deleted.
+      The existing mesh database is kept, however.
+      This does not impact the list of known clients (ie, clients do not have to
+      call 'helo' again).
+      """
+      context.code(beta_interfaces.StatusCode.UNIMPLEMENTED)
+    def getNodesLen(self, request, context):
+      """NODES
+
+      Returns the number of nodes in a given world.
+      Accepts a context (client ID and world) and returns the number of existing nodes.
+      """
+      context.code(beta_interfaces.StatusCode.UNIMPLEMENTED)
+    def getNodesIds(self, request, context):
+      """Returns the list of node IDs present in the given world
+      """
+      context.code(beta_interfaces.StatusCode.UNIMPLEMENTED)
+    def getRootNode(self, request, context):
+      """Returns the root node ID of the given world
+      """
+      context.code(beta_interfaces.StatusCode.UNIMPLEMENTED)
+    def getNode(self, request, context):
+      """Returns a node from its ID in the given world.
+      Note that only the node ID is used (and thus, required).
+      """
+      context.code(beta_interfaces.StatusCode.UNIMPLEMENTED)
+    def updateNodes(self, request, context):
+      """Updates (and broadcasts to all client) nodes in a given world
+      """
+      context.code(beta_interfaces.StatusCode.UNIMPLEMENTED)
+    def deleteNodes(self, request, context):
+      """Deletes (and broadcasts to all client) nodes in a given world
+      """
+      context.code(beta_interfaces.StatusCode.UNIMPLEMENTED)
+    def getSituationsLen(self, request, context):
+      """TIMELINE
+
+      Returns the number of situations in a given world.
+      Accepts a context (client ID and world) and returns the number of
+      existing situations.
+      """
+      context.code(beta_interfaces.StatusCode.UNIMPLEMENTED)
+    def getSituationsIds(self, request, context):
+      """Returns the list of situation IDs present in the given world
+      """
+      context.code(beta_interfaces.StatusCode.UNIMPLEMENTED)
+    def getSituation(self, request, context):
+      """Returns a situation from its ID.
+      Note that only the situation ID is used (and thus, required).
+      """
+      context.code(beta_interfaces.StatusCode.UNIMPLEMENTED)
+    def timelineOrigin(self, request, context):
+      """Returns the timeline origin: time of the timeline creation
+      """
+      context.code(beta_interfaces.StatusCode.UNIMPLEMENTED)
+    def updateSituations(self, request, context):
+      """Updates (and broadcasts to all client) a situation in a given world
+      """
+      context.code(beta_interfaces.StatusCode.UNIMPLEMENTED)
+    def deleteSituations(self, request, context):
+      """Deletes (and broadcasts to all client) a node in a given world
+      """
+      context.code(beta_interfaces.StatusCode.UNIMPLEMENTED)
+    def hasMesh(self, request, context):
+      """MESHES
+
+      Returns whether the given mesh is already available on the server.
+      Note that only the mesh ID is used.
+      """
+      context.code(beta_interfaces.StatusCode.UNIMPLEMENTED)
+    def getMesh(self, request, context):
+      """Returns a 3D mesh.
+      Note that only the ID of the input mesh is used.
+      """
+      context.code(beta_interfaces.StatusCode.UNIMPLEMENTED)
+    def pushMesh(self, request, context):
+      """Sends a 3D mesh to the server.
+      """
+      context.code(beta_interfaces.StatusCode.UNIMPLEMENTED)
+
+
+  class BetaUnderworldsStub(object):
+    """The Beta API is deprecated for 0.15.0 and later.
+
+    It is recommended to use the GA API (classes and functions in this
+    file not marked beta) for all further purposes. This class was generated
+    only to ease transition from grpcio<0.15.0 to grpcio>=0.15.0."""
+    def helo(self, request, timeout, metadata=None, with_call=False, protocol_options=None):
+      """GENERAL
+
+      Establish the connection to the server, setting a human-friendly name for
+      the client.
+      The server returns a unique client ID that must be used in every subsequent
+      request to the server.
+      """
+      raise NotImplementedError()
+    helo.future = None
+    def byebye(self, request, timeout, metadata=None, with_call=False, protocol_options=None):
+      """Inform the server that the client is disconnecting.
+      Before completing this call, the client must keep its invalidation
+      server open and listening.
+      After completing this call, the server should not attempt to connect to
+      the client's invalidation server.
+      """
+      raise NotImplementedError()
+    byebye.future = None
+    def uptime(self, request, timeout, metadata=None, with_call=False, protocol_options=None):
+      """Returns the uptime of the server, in seconds
+      """
+      raise NotImplementedError()
+    uptime.future = None
+    def topology(self, request, timeout, metadata=None, with_call=False, protocol_options=None):
+      """Returns the current topology of underworlds: the list of worlds and the
+      list of clients + their interactions with the worlds
+      """
+      raise NotImplementedError()
+    topology.future = None
+    def reset(self, request, timeout, metadata=None, with_call=False, protocol_options=None):
+      """Hard reset of Underworlds: all the worlds are deleted.
+      The existing mesh database is kept, however.
+      This does not impact the list of known clients (ie, clients do not have to
+      call 'helo' again).
+      """
+      raise NotImplementedError()
+    reset.future = None
+    def getNodesLen(self, request, timeout, metadata=None, with_call=False, protocol_options=None):
+      """NODES
+
+      Returns the number of nodes in a given world.
+      Accepts a context (client ID and world) and returns the number of existing nodes.
+      """
+      raise NotImplementedError()
+    getNodesLen.future = None
+    def getNodesIds(self, request, timeout, metadata=None, with_call=False, protocol_options=None):
+      """Returns the list of node IDs present in the given world
+      """
+      raise NotImplementedError()
+    getNodesIds.future = None
+    def getRootNode(self, request, timeout, metadata=None, with_call=False, protocol_options=None):
+      """Returns the root node ID of the given world
+      """
+      raise NotImplementedError()
+    getRootNode.future = None
+    def getNode(self, request, timeout, metadata=None, with_call=False, protocol_options=None):
+      """Returns a node from its ID in the given world.
+      Note that only the node ID is used (and thus, required).
+      """
+      raise NotImplementedError()
+    getNode.future = None
+    def updateNodes(self, request, timeout, metadata=None, with_call=False, protocol_options=None):
+      """Updates (and broadcasts to all client) nodes in a given world
+      """
+      raise NotImplementedError()
+    updateNodes.future = None
+    def deleteNodes(self, request, timeout, metadata=None, with_call=False, protocol_options=None):
+      """Deletes (and broadcasts to all client) nodes in a given world
+      """
+      raise NotImplementedError()
+    deleteNodes.future = None
+    def getSituationsLen(self, request, timeout, metadata=None, with_call=False, protocol_options=None):
+      """TIMELINE
+
+      Returns the number of situations in a given world.
+      Accepts a context (client ID and world) and returns the number of
+      existing situations.
+      """
+      raise NotImplementedError()
+    getSituationsLen.future = None
+    def getSituationsIds(self, request, timeout, metadata=None, with_call=False, protocol_options=None):
+      """Returns the list of situation IDs present in the given world
+      """
+      raise NotImplementedError()
+    getSituationsIds.future = None
+    def getSituation(self, request, timeout, metadata=None, with_call=False, protocol_options=None):
+      """Returns a situation from its ID.
+      Note that only the situation ID is used (and thus, required).
+      """
+      raise NotImplementedError()
+    getSituation.future = None
+    def timelineOrigin(self, request, timeout, metadata=None, with_call=False, protocol_options=None):
+      """Returns the timeline origin: time of the timeline creation
+      """
+      raise NotImplementedError()
+    timelineOrigin.future = None
+    def updateSituations(self, request, timeout, metadata=None, with_call=False, protocol_options=None):
+      """Updates (and broadcasts to all client) a situation in a given world
+      """
+      raise NotImplementedError()
+    updateSituations.future = None
+    def deleteSituations(self, request, timeout, metadata=None, with_call=False, protocol_options=None):
+      """Deletes (and broadcasts to all client) a node in a given world
+      """
+      raise NotImplementedError()
+    deleteSituations.future = None
+    def hasMesh(self, request, timeout, metadata=None, with_call=False, protocol_options=None):
+      """MESHES
+
+      Returns whether the given mesh is already available on the server.
+      Note that only the mesh ID is used.
+      """
+      raise NotImplementedError()
+    hasMesh.future = None
+    def getMesh(self, request, timeout, metadata=None, with_call=False, protocol_options=None):
+      """Returns a 3D mesh.
+      Note that only the ID of the input mesh is used.
+      """
+      raise NotImplementedError()
+    getMesh.future = None
+    def pushMesh(self, request, timeout, metadata=None, with_call=False, protocol_options=None):
+      """Sends a 3D mesh to the server.
+      """
+      raise NotImplementedError()
+    pushMesh.future = None
+
+
+  def beta_create_Underworlds_server(servicer, pool=None, pool_size=None, default_timeout=None, maximum_timeout=None):
+    """The Beta API is deprecated for 0.15.0 and later.
+
+    It is recommended to use the GA API (classes and functions in this
+    file not marked beta) for all further purposes. This function was
+    generated only to ease transition from grpcio<0.15.0 to grpcio>=0.15.0"""
+    request_deserializers = {
+      ('underworlds.Underworlds', 'byebye'): Client.FromString,
+      ('underworlds.Underworlds', 'deleteNodes'): NodesInContext.FromString,
+      ('underworlds.Underworlds', 'deleteSituations'): SituationsInContext.FromString,
+      ('underworlds.Underworlds', 'getMesh'): MeshInContext.FromString,
+      ('underworlds.Underworlds', 'getNode'): NodeInContext.FromString,
+      ('underworlds.Underworlds', 'getNodesIds'): Context.FromString,
+      ('underworlds.Underworlds', 'getNodesLen'): Context.FromString,
+      ('underworlds.Underworlds', 'getRootNode'): Context.FromString,
+      ('underworlds.Underworlds', 'getSituation'): SituationInContext.FromString,
+      ('underworlds.Underworlds', 'getSituationsIds'): Context.FromString,
+      ('underworlds.Underworlds', 'getSituationsLen'): Context.FromString,
+      ('underworlds.Underworlds', 'hasMesh'): MeshInContext.FromString,
+      ('underworlds.Underworlds', 'helo'): Welcome.FromString,
+      ('underworlds.Underworlds', 'pushMesh'): MeshInContext.FromString,
+      ('underworlds.Underworlds', 'reset'): Client.FromString,
+      ('underworlds.Underworlds', 'timelineOrigin'): Context.FromString,
+      ('underworlds.Underworlds', 'topology'): Client.FromString,
+      ('underworlds.Underworlds', 'updateNodes'): NodesInContext.FromString,
+      ('underworlds.Underworlds', 'updateSituations'): SituationsInContext.FromString,
+      ('underworlds.Underworlds', 'uptime'): Client.FromString,
+    }
+    response_serializers = {
+      ('underworlds.Underworlds', 'byebye'): Empty.SerializeToString,
+      ('underworlds.Underworlds', 'deleteNodes'): Empty.SerializeToString,
+      ('underworlds.Underworlds', 'deleteSituations'): Empty.SerializeToString,
+      ('underworlds.Underworlds', 'getMesh'): Mesh.SerializeToString,
+      ('underworlds.Underworlds', 'getNode'): Node.SerializeToString,
+      ('underworlds.Underworlds', 'getNodesIds'): Nodes.SerializeToString,
+      ('underworlds.Underworlds', 'getNodesLen'): Size.SerializeToString,
+      ('underworlds.Underworlds', 'getRootNode'): Node.SerializeToString,
+      ('underworlds.Underworlds', 'getSituation'): Situation.SerializeToString,
+      ('underworlds.Underworlds', 'getSituationsIds'): Situations.SerializeToString,
+      ('underworlds.Underworlds', 'getSituationsLen'): Size.SerializeToString,
+      ('underworlds.Underworlds', 'hasMesh'): Bool.SerializeToString,
+      ('underworlds.Underworlds', 'helo'): Client.SerializeToString,
+      ('underworlds.Underworlds', 'pushMesh'): Empty.SerializeToString,
+      ('underworlds.Underworlds', 'reset'): Empty.SerializeToString,
+      ('underworlds.Underworlds', 'timelineOrigin'): Time.SerializeToString,
+      ('underworlds.Underworlds', 'topology'): Topology.SerializeToString,
+      ('underworlds.Underworlds', 'updateNodes'): Empty.SerializeToString,
+      ('underworlds.Underworlds', 'updateSituations'): Empty.SerializeToString,
+      ('underworlds.Underworlds', 'uptime'): Time.SerializeToString,
+    }
+    method_implementations = {
+      ('underworlds.Underworlds', 'byebye'): face_utilities.unary_unary_inline(servicer.byebye),
+      ('underworlds.Underworlds', 'deleteNodes'): face_utilities.unary_unary_inline(servicer.deleteNodes),
+      ('underworlds.Underworlds', 'deleteSituations'): face_utilities.unary_unary_inline(servicer.deleteSituations),
+      ('underworlds.Underworlds', 'getMesh'): face_utilities.unary_unary_inline(servicer.getMesh),
+      ('underworlds.Underworlds', 'getNode'): face_utilities.unary_unary_inline(servicer.getNode),
+      ('underworlds.Underworlds', 'getNodesIds'): face_utilities.unary_unary_inline(servicer.getNodesIds),
+      ('underworlds.Underworlds', 'getNodesLen'): face_utilities.unary_unary_inline(servicer.getNodesLen),
+      ('underworlds.Underworlds', 'getRootNode'): face_utilities.unary_unary_inline(servicer.getRootNode),
+      ('underworlds.Underworlds', 'getSituation'): face_utilities.unary_unary_inline(servicer.getSituation),
+      ('underworlds.Underworlds', 'getSituationsIds'): face_utilities.unary_unary_inline(servicer.getSituationsIds),
+      ('underworlds.Underworlds', 'getSituationsLen'): face_utilities.unary_unary_inline(servicer.getSituationsLen),
+      ('underworlds.Underworlds', 'hasMesh'): face_utilities.unary_unary_inline(servicer.hasMesh),
+      ('underworlds.Underworlds', 'helo'): face_utilities.unary_unary_inline(servicer.helo),
+      ('underworlds.Underworlds', 'pushMesh'): face_utilities.unary_unary_inline(servicer.pushMesh),
+      ('underworlds.Underworlds', 'reset'): face_utilities.unary_unary_inline(servicer.reset),
+      ('underworlds.Underworlds', 'timelineOrigin'): face_utilities.unary_unary_inline(servicer.timelineOrigin),
+      ('underworlds.Underworlds', 'topology'): face_utilities.unary_unary_inline(servicer.topology),
+      ('underworlds.Underworlds', 'updateNodes'): face_utilities.unary_unary_inline(servicer.updateNodes),
+      ('underworlds.Underworlds', 'updateSituations'): face_utilities.unary_unary_inline(servicer.updateSituations),
+      ('underworlds.Underworlds', 'uptime'): face_utilities.unary_unary_inline(servicer.uptime),
+    }
+    server_options = beta_implementations.server_options(request_deserializers=request_deserializers, response_serializers=response_serializers, thread_pool=pool, thread_pool_size=pool_size, default_timeout=default_timeout, maximum_timeout=maximum_timeout)
+    return beta_implementations.server(method_implementations, options=server_options)
+
+
+  def beta_create_Underworlds_stub(channel, host=None, metadata_transformer=None, pool=None, pool_size=None):
+    """The Beta API is deprecated for 0.15.0 and later.
+
+    It is recommended to use the GA API (classes and functions in this
+    file not marked beta) for all further purposes. This function was
+    generated only to ease transition from grpcio<0.15.0 to grpcio>=0.15.0"""
+    request_serializers = {
+      ('underworlds.Underworlds', 'byebye'): Client.SerializeToString,
+      ('underworlds.Underworlds', 'deleteNodes'): NodesInContext.SerializeToString,
+      ('underworlds.Underworlds', 'deleteSituations'): SituationsInContext.SerializeToString,
+      ('underworlds.Underworlds', 'getMesh'): MeshInContext.SerializeToString,
+      ('underworlds.Underworlds', 'getNode'): NodeInContext.SerializeToString,
+      ('underworlds.Underworlds', 'getNodesIds'): Context.SerializeToString,
+      ('underworlds.Underworlds', 'getNodesLen'): Context.SerializeToString,
+      ('underworlds.Underworlds', 'getRootNode'): Context.SerializeToString,
+      ('underworlds.Underworlds', 'getSituation'): SituationInContext.SerializeToString,
+      ('underworlds.Underworlds', 'getSituationsIds'): Context.SerializeToString,
+      ('underworlds.Underworlds', 'getSituationsLen'): Context.SerializeToString,
+      ('underworlds.Underworlds', 'hasMesh'): MeshInContext.SerializeToString,
+      ('underworlds.Underworlds', 'helo'): Welcome.SerializeToString,
+      ('underworlds.Underworlds', 'pushMesh'): MeshInContext.SerializeToString,
+      ('underworlds.Underworlds', 'reset'): Client.SerializeToString,
+      ('underworlds.Underworlds', 'timelineOrigin'): Context.SerializeToString,
+      ('underworlds.Underworlds', 'topology'): Client.SerializeToString,
+      ('underworlds.Underworlds', 'updateNodes'): NodesInContext.SerializeToString,
+      ('underworlds.Underworlds', 'updateSituations'): SituationsInContext.SerializeToString,
+      ('underworlds.Underworlds', 'uptime'): Client.SerializeToString,
+    }
+    response_deserializers = {
+      ('underworlds.Underworlds', 'byebye'): Empty.FromString,
+      ('underworlds.Underworlds', 'deleteNodes'): Empty.FromString,
+      ('underworlds.Underworlds', 'deleteSituations'): Empty.FromString,
+      ('underworlds.Underworlds', 'getMesh'): Mesh.FromString,
+      ('underworlds.Underworlds', 'getNode'): Node.FromString,
+      ('underworlds.Underworlds', 'getNodesIds'): Nodes.FromString,
+      ('underworlds.Underworlds', 'getNodesLen'): Size.FromString,
+      ('underworlds.Underworlds', 'getRootNode'): Node.FromString,
+      ('underworlds.Underworlds', 'getSituation'): Situation.FromString,
+      ('underworlds.Underworlds', 'getSituationsIds'): Situations.FromString,
+      ('underworlds.Underworlds', 'getSituationsLen'): Size.FromString,
+      ('underworlds.Underworlds', 'hasMesh'): Bool.FromString,
+      ('underworlds.Underworlds', 'helo'): Client.FromString,
+      ('underworlds.Underworlds', 'pushMesh'): Empty.FromString,
+      ('underworlds.Underworlds', 'reset'): Empty.FromString,
+      ('underworlds.Underworlds', 'timelineOrigin'): Time.FromString,
+      ('underworlds.Underworlds', 'topology'): Topology.FromString,
+      ('underworlds.Underworlds', 'updateNodes'): Empty.FromString,
+      ('underworlds.Underworlds', 'updateSituations'): Empty.FromString,
+      ('underworlds.Underworlds', 'uptime'): Time.FromString,
+    }
+    cardinalities = {
+      'byebye': cardinality.Cardinality.UNARY_UNARY,
+      'deleteNodes': cardinality.Cardinality.UNARY_UNARY,
+      'deleteSituations': cardinality.Cardinality.UNARY_UNARY,
+      'getMesh': cardinality.Cardinality.UNARY_UNARY,
+      'getNode': cardinality.Cardinality.UNARY_UNARY,
+      'getNodesIds': cardinality.Cardinality.UNARY_UNARY,
+      'getNodesLen': cardinality.Cardinality.UNARY_UNARY,
+      'getRootNode': cardinality.Cardinality.UNARY_UNARY,
+      'getSituation': cardinality.Cardinality.UNARY_UNARY,
+      'getSituationsIds': cardinality.Cardinality.UNARY_UNARY,
+      'getSituationsLen': cardinality.Cardinality.UNARY_UNARY,
+      'hasMesh': cardinality.Cardinality.UNARY_UNARY,
+      'helo': cardinality.Cardinality.UNARY_UNARY,
+      'pushMesh': cardinality.Cardinality.UNARY_UNARY,
+      'reset': cardinality.Cardinality.UNARY_UNARY,
+      'timelineOrigin': cardinality.Cardinality.UNARY_UNARY,
+      'topology': cardinality.Cardinality.UNARY_UNARY,
+      'updateNodes': cardinality.Cardinality.UNARY_UNARY,
+      'updateSituations': cardinality.Cardinality.UNARY_UNARY,
+      'uptime': cardinality.Cardinality.UNARY_UNARY,
+    }
+    stub_options = beta_implementations.stub_options(host=host, metadata_transformer=metadata_transformer, request_serializers=request_serializers, response_deserializers=response_deserializers, thread_pool=pool, thread_pool_size=pool_size)
+    return beta_implementations.dynamic_stub(channel, 'underworlds.Underworlds', cardinalities, options=stub_options)
+
+
+  class BetaUnderworldsInvalidationServicer(object):
+    """The Beta API is deprecated for 0.15.0 and later.
+
+    It is recommended to use the GA API (classes and functions in this
+    file not marked beta) for all further purposes. This class was generated
+    only to ease transition from grpcio<0.15.0 to grpcio>=0.15.0."""
+    def emitInvalidation(self, request, context):
+      """Sends (to the client's invalidation server) 'invalidated'
+      nodes/situations that need to be updated.  Invalidated nodes/situations
+      can be new nodes/situations, nodes/situations that have changed, or
+      nodes/situations that have been removed (see Invalidation.type).
+      """
+      context.code(beta_interfaces.StatusCode.UNIMPLEMENTED)
+
+
+  class BetaUnderworldsInvalidationStub(object):
+    """The Beta API is deprecated for 0.15.0 and later.
+
+    It is recommended to use the GA API (classes and functions in this
+    file not marked beta) for all further purposes. This class was generated
+    only to ease transition from grpcio<0.15.0 to grpcio>=0.15.0."""
+    def emitInvalidation(self, request, timeout, metadata=None, with_call=False, protocol_options=None):
+      """Sends (to the client's invalidation server) 'invalidated'
+      nodes/situations that need to be updated.  Invalidated nodes/situations
+      can be new nodes/situations, nodes/situations that have changed, or
+      nodes/situations that have been removed (see Invalidation.type).
+      """
+      raise NotImplementedError()
+    emitInvalidation.future = None
+
+
+  def beta_create_UnderworldsInvalidation_server(servicer, pool=None, pool_size=None, default_timeout=None, maximum_timeout=None):
+    """The Beta API is deprecated for 0.15.0 and later.
+
+    It is recommended to use the GA API (classes and functions in this
+    file not marked beta) for all further purposes. This function was
+    generated only to ease transition from grpcio<0.15.0 to grpcio>=0.15.0"""
+    request_deserializers = {
+      ('underworlds.UnderworldsInvalidation', 'emitInvalidation'): Invalidation.FromString,
+    }
+    response_serializers = {
+      ('underworlds.UnderworldsInvalidation', 'emitInvalidation'): Empty.SerializeToString,
+    }
+    method_implementations = {
+      ('underworlds.UnderworldsInvalidation', 'emitInvalidation'): face_utilities.unary_unary_inline(servicer.emitInvalidation),
+    }
+    server_options = beta_implementations.server_options(request_deserializers=request_deserializers, response_serializers=response_serializers, thread_pool=pool, thread_pool_size=pool_size, default_timeout=default_timeout, maximum_timeout=maximum_timeout)
+    return beta_implementations.server(method_implementations, options=server_options)
+
+
+  def beta_create_UnderworldsInvalidation_stub(channel, host=None, metadata_transformer=None, pool=None, pool_size=None):
+    """The Beta API is deprecated for 0.15.0 and later.
+
+    It is recommended to use the GA API (classes and functions in this
+    file not marked beta) for all further purposes. This function was
+    generated only to ease transition from grpcio<0.15.0 to grpcio>=0.15.0"""
+    request_serializers = {
+      ('underworlds.UnderworldsInvalidation', 'emitInvalidation'): Invalidation.SerializeToString,
+    }
+    response_deserializers = {
+      ('underworlds.UnderworldsInvalidation', 'emitInvalidation'): Empty.FromString,
+    }
+    cardinalities = {
+      'emitInvalidation': cardinality.Cardinality.UNARY_UNARY,
+    }
+    stub_options = beta_implementations.stub_options(host=host, metadata_transformer=metadata_transformer, request_serializers=request_serializers, response_deserializers=response_deserializers, thread_pool=pool, thread_pool_size=pool_size)
+    return beta_implementations.dynamic_stub(channel, 'underworlds.UnderworldsInvalidation', cardinalities, options=stub_options)
+except ImportError:
+  pass
 # @@protoc_insertion_point(module_scope)

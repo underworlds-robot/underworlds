@@ -219,12 +219,23 @@ message Node {
     enum NodeType {
         UNDEFINED = 0;
         // Entities are abstract nodes. They can represent non-physical objects
-        // (like a reference frame) or groups of other objects.
+        // (like a reference frame) or the parent of a group of other nodes
         ENTITY = 1; 
         // a physical object, with an associated 3D mesh
         MESH = 2;
         CAMERA = 3;
-    }
+        // a set of nodes.
+        // Note the important distinction between *groups* and *collections*:
+        // - groups are implemented as a list of nodes parented to one ENTITY
+        //   (the group). If that entity move, all the children (ie, group
+        //   members) will move accordingly. Importantly, nodes can ever only
+        //   belong directly to *one* group.
+        // - collections, on the other hand, can be thought of as *labels* put
+        //   onto a set of nodes. Nodes can belong to as many collections as you
+        //   wish; nodes are *not* parented to the collection (and as such, do
+        //   not move with the collection); the transformation associated to a 
+        //   collection is actually irrelevant.
+        COLLECTION = 4; }
 
     // an unique ID
     string id = 1;

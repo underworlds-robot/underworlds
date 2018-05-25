@@ -57,6 +57,12 @@ Properties for MESH nodes
 - ``transparent`` [``bool``, REQUIRED, default:false]: whether the node should
   be considered transparent when performing visibility calculations
 
+Properties for COLLECTION nodes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- ``node_ids`` [``list<string>``, REQUIRED]: IDs of the nodes belonging to this
+  collection
+
 
 Properties for CAMERA nodes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
