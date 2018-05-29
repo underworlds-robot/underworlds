@@ -35,5 +35,5 @@ tracking (using OpenNI) or visibility tracking.""",
       scripts=['bin/' + f for f in os.listdir('bin')],
       packages=['underworlds', 'underworlds.helpers', 'underworlds.tools'],
       data_files=[('share/doc/underworlds', ['LICENSE', 'README.md'])],
-      install_requires=["pyassimp","grpcio","numpy","argcomplete"]
+      install_requires=["pyassimp","grpcio","numpy","argcomplete","protobuf"]
       )
