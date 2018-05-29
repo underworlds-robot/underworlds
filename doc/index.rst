@@ -6,7 +6,7 @@
 underworlds: Cascading Social Situation Assessment for Robots
 =============================================================
 
-.. figure:: images/worlds-chains-1.svg
+.. figure:: images/screenshot-l2tor.jpg
    :width: 70%
 
 
@@ -14,20 +14,33 @@ underworlds is a **distributed and lightweight framework** that facilitates
 **building and sharing models of the physical world** surrounding a robot
 amongst independent software modules.
 
-These modules can be for instance geometric reasoners (that compute topological
-relations between objects), motion planner, event monitors, viewers... any
-software that need to access a **geometric** (based on 3D meshes of objects)
-and/or **temporal** (based on events) view of the world.
+These modules, also called **clients**, can be for instance geometric reasoners
+(that compute topological relations between objects), motion planner, event
+monitors, viewers... any software that need to access a **geometric** (based on
+3D meshes of objects) and/or **temporal** (based on events) view of the world.
+
+.. note::
+
+    The list of official ``underworlds`` clients is here: `client-registry`.
+    Feel free to look at the source code of these clients, and to use them as
+    starting point for your owns.
 
 One of the main feature of underworlds is the ability to store many
 *parallel* worlds: past models of the environment, future models, models with
-some objects filtered out, models that are physically consistent, etc.
+`some objects filtered out
+<https://github.com/underworlds-robot/perspective_filter>`_, models that are
+`physically consistent <https://github.com/underworlds-robot/physics_filter>`_,
+etc.
+
+.. figure:: images/overview.svg
+   :width: 70%
+   :figwidth: 70%
+
+    An example of an ``underworlds`` network. The structure is entierly flexible, and you own will likely look different.
+
 
 This package provides the underworlds server, a Python client library, and a set
 of tools to interact with the system (viewers, scene loader, etc.).
-
-A handful of useful example applications are also provided, like skeleton
-tracking (using OpenNI) or visibility tracking.
 
 Documentation Overview
 ~~~~~~~~~~~~~~~~~~~~~~
