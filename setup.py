@@ -3,7 +3,7 @@ import os
 from setuptools import setup
 
 setup(name='underworlds',
-      version='0.2.1',
+      version='0.3.0',
       license='ISC',
       description='A framework for geometric and temporal representation of robotic worlds',
       long_description="""underworlds is a **distributed and lightweight framework** that facilitates

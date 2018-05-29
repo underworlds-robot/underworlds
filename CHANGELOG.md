@@ -1,16 +1,34 @@
-underworlds next
-================
+*this file only list the major, user-facing, changes. See git-log for the full
+list.*
 
-(not yet released)
+underworlds 0.3.0
+=================
+
+Released on: 29 May 2018
+
+Contributors: see AUTHORS
 
 - nodes can now have a list of arbitrary properties. Standard/recommended
   properties (like the bounding box for meshes or the field of view for cameras)
   are defined in [the properties registry](doc/properties-registry.rst).
 - support for batch update/deletion of nodes. This should significantly increase
   performances for clients touching many nodes at each iterations.
+- new major filters, including a [Bullet-based physics
+  filter](https://github.com/underworlds-robot/physics_filter) and a
+  [user-perspective-based
+  filter](https://github.com/underworlds-robot/perspective_filter). A new
+  [documentation
+  page](https://github.com/underworlds-robot/underworlds/blob/master/doc/client-registry.rst)
+  lists available 'official' clients.
+- major rewrite of `uwds edit`, adding several sub-tools to reparent, attach
+  meshes, etc. (C Wallbridge)
+- many improvements wrt to spatial relations. It is now a [Python
+  module](https://github.com/underworlds-robot/underworlds/blob/master/src/underworlds/tools/spatial_relations.py)
+  that can be used by all clients.
 - fixed 2 annoying bugs with parenting (in particular, deleting a node with
   children would essentially corrupt the children) and added extensive
   unit-tests for various parenting-related operations.
+- tons of other fixes all accross the board
 
 underworlds 0.2.1
 =================
