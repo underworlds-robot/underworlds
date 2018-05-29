@@ -1,0 +1,18 @@
+(as ordered by 'git shortlog -sn TAG1..TAG2')
+
+underworlds 0.3.0
+-----------------
+
+Séverin Lemaignan (Bristol Robotics Lab)
+Christopher Wallbridge (Plymouth University)
+Yoan Sallami (LAAS-CNRS)
+
+underworlds 0.2.1 (and below)
+-----------------------------
+
+Séverin Lemaignan (LAAS-CNRS, Plymouth University)
+Christopher Wallbridge (Plymouth University)
+Yoan Sallami (LAAS-CNRS)
+Matthieu Herrb (LAAS-CNRS)
+Jean-Marc Montanier
+
