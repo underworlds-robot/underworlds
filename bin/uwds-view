@@ -230,6 +230,61 @@ void main(void){
    gl_Position = u_viewProjectionMatrix * u_modelMatrix * tPos;
 }
 """
+
+MATCAP_VERTEX_SHADER="""
+#version 130
+// based on https://github.com/hughsk/matcap
+
+// attributes
+in vec3 a_vertex; // xyz - position
+in vec3 a_normal; // xyz - normal
+
+// uniforms
+uniform mat4 u_modelMatrix;
+uniform mat4 u_viewProjectionMatrix;
+uniform mat3 u_normalMatrix;
+
+uniform vec3 u_camPos;
+
+out vec3 o_normal;
+out vec3 o_eye;
+
+
+void main() {
+  o_eye = u_camPos;
+  o_normal = normalize(u_normalMatrix * a_normal);
+
+  gl_Position = u_viewProjectionMatrix * u_modelMatrix * vec4(a_vertex, 1.0);
+}
+"""
+
+MATCAP_FRAGMENT_SHADER="""
+#version 130
+// based on https://github.com/hughsk/matcap
+
+// data from vertex shader
+in vec3 o_normal;
+in vec3 o_eye;
+
+uniform sampler2D u_matcapTexture;
+
+vec2 matcap(vec3 eye, vec3 normal) {
+  vec3 reflected = reflect(eye, normal);
+  float m = 2.8284271247461903 * sqrt( reflected.z+1.0 );
+  return reflected.xy / m + 0.5;
+}
+
+
+void main() {
+  vec2 uv = matcap(o_eye, o_normal).xy;
+
+  gl_FragColor = vec4(
+    texture2D(u_matcapTexture, uv).rgb,
+    1.0
+  );
+}
+"""
+
 DEFAULT_CLIP_PLANE_NEAR = 0.001
 DEFAULT_CLIP_PLANE_FAR = 1000.0
 
@@ -357,6 +412,39 @@ class Underworlds3DViewer:
                                     ), 
                                     ('a_vertex',
                                       'a_normal'), self.gooch_shader)
+
+
+        ### Matcap shader
+        try:
+            vertex = shaders.compileShader(MATCAP_VERTEX_SHADER, GL_VERTEX_SHADER)
+            fragment = shaders.compileShader(MATCAP_FRAGMENT_SHADER, GL_FRAGMENT_SHADER)
+
+            self.matcap_shader = shaders.compileProgram(vertex,fragment)
+        except RuntimeError as re:
+            print("Error while compiling the MATCAP shader")
+            print(eval(str(re))[0])
+            sys.exit(1)
+
+        self.set_shader_accessors( ('u_modelMatrix',
+                                    'u_viewProjectionMatrix',
+                                    'u_normalMatrix',
+                                    'u_camPos',
+                                    'u_matcapTexture'), 
+                                    ('a_vertex',
+                                     'a_normal'), self.matcap_shader)
+        img = pygame.image.load("matcap.jpg")
+        #img_data = numpy.array(list(img.getdata()), numpy.uint8)
+        img_data = pygame.image.tostring(img, "RGB", 1)
+        self.matcap_texture = glGenTextures(1)
+        glPixelStorei(GL_UNPACK_ALIGNMENT,1)
+        glBindTexture(GL_TEXTURE_2D, self.matcap_texture)
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP)
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP)
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, img.get_width(), img.get_height(), 0, GL_RGB, GL_UNSIGNED_BYTE, img_data)
+
+
 
     def set_shader_accessors(self, uniforms, attributes, shader):
         # add accessors to the shaders uniforms and attributes
@@ -658,6 +746,8 @@ class Underworlds3DViewer:
         glCullFace (GL_BACK)
 
         use_gooch = False
+        use_matcap = True
+
         if use_gooch:
             shader = self.gooch_shader
 
@@ -670,6 +760,14 @@ class Underworlds3DViewer:
             glUniform1f( shader.u_alpha, .25)
             glUniform1f( shader.u_beta, .25)
             #########
+        elif use_matcap:
+            shader = self.matcap_shader
+            glUseProgram(shader)
+
+            glActiveTexture(GL_TEXTURE0)
+            glBindTexture(GL_TEXTURE_2D, self.matcap_texture)
+            glUniform1i(shader.u_matcapTexture, 0)
+            ########
         else:
             shader = self.shader
             glUseProgram(shader)
