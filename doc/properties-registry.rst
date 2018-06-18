@@ -56,6 +56,7 @@ Properties for MESH nodes
   take part to physics calculation (including collision checking)
 - ``transparent`` [``bool``, REQUIRED, default:false]: whether the node should
   be considered transparent when performing visibility calculations
+- ``facing`` [``list<float>``, OPTIONAL]: transformation to face of node
 
 
 Properties for CAMERA nodes

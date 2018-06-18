@@ -91,6 +91,8 @@ class ModelLoader:
                     underworlds_node.properties["mesh_ids"] = [id]
                 else:
                     underworlds_node.properties["mesh_ids"].append(id)
+                    
+                #underworlds_node.properties["facing"] = None
 
             underworlds_node.properties["aabb"] = self.node_boundingbox(assimp_node)
 
@@ -217,7 +219,13 @@ class ModelLoader:
             # Send the nodes to the server (only the nodes)
             logger.info("Sending the nodes to the server...")
             for name, pair in list(self.node_map.items()):
-                nodes.update(pair[1])
+                name_list = pair[1].name.split(".")
+                if name_list[0] == "face":
+                    updt_node = nodes[pair[1].parent]
+                    updt_node.properties["facing"] = pair[1].transformation.astype(numpy.float32)
+                    nodes.update(updt_node)
+                else:
+                    nodes.update(pair[1])
 
 
         pyassimp.release(model)
