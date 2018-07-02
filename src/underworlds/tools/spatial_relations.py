@@ -295,14 +295,12 @@ def istoback(ctx, scene, node1, node2, view_matrix):
     bb_min=[1e10, 1e10, 1e10] 
     bb_max=[-1e10, -1e10, -1e10]
     
-    transformation = numpy.dot(view_matrix, get_world_transform(scene, node1))
-    trans_bb1 = compute_transformed_bounding_box(ctx, scene.nodes, node1, transformation, bb_min, bb_max)
+    trans_bb1 = compute_transformed_bounding_box(ctx, scene, node1, view_matrix, bb_min, bb_max)
     
     bb_min=[1e10, 1e10, 1e10] 
     bb_max=[-1e10, -1e10, -1e10]
     
-    transformation = numpy.dot(view_matrix, get_world_transform(scene, node2))
-    trans_bb2 = compute_transformed_bounding_box(ctx, scene.nodes, node2, transformation, bb_min, bb_max)
+    trans_bb2 = compute_transformed_bounding_box(ctx, scene, node2, view_matrix, bb_min, bb_max)
     
     return istonorth(trans_bb1, trans_bb2)
     
@@ -327,14 +325,12 @@ def isfacing(ctx, scene, node1, node2):
     
     view_matrix = get_spatial_view_matrix(face_pos, False)
     
-    transformation = numpy.dot(view_matrix, n2_pos)
-    trans_bb2 = compute_transformed_bounding_box(ctx, scene.nodes, node1, transformation, bb_min, bb_max)
+    trans_bb2 = compute_transformed_bounding_box(ctx, scene, node2, view_matrix, bb_min, bb_max)
     
     bb_min=[1e10, 1e10, 1e10] 
     bb_max=[-1e10, -1e10, -1e10]
     
-    transformation = numpy.dot(view_matrix, get_world_transform(scene, node1))
-    trans_bb1 = compute_transformed_bounding_box(ctx, scene.nodes, node1, transformation, bb_min, bb_max)
+    trans_bb1 = compute_transformed_bounding_box(ctx, scene, node1, view_matrix, bb_min, bb_max)
     
     return istonorth(trans_bb1, trans_bb2)
 
@@ -369,14 +365,12 @@ def istoright(ctx, scene, node1, node2, view_matrix):
     bb_min=[1e10, 1e10, 1e10] 
     bb_max=[-1e10, -1e10, -1e10]
     
-    transformation = numpy.dot(view_matrix, get_world_transform(scene, node1))
-    trans_bb1 = compute_transformed_bounding_box(ctx, scene.nodes, node1, transformation, bb_min, bb_max)
+    trans_bb1 = compute_transformed_bounding_box(ctx, scene, node1, view_matrix, bb_min, bb_max)
     
     bb_min=[1e10, 1e10, 1e10] 
     bb_max=[-1e10, -1e10, -1e10]
     
-    transformation = numpy.dot(view_matrix, get_world_transform(scene, node2))
-    trans_bb2 = compute_transformed_bounding_box(ctx, scene.nodes, node2, transformation, bb_min, bb_max)
+    trans_bb2 = compute_transformed_bounding_box(ctx, scene, node2, view_matrix, bb_min, bb_max)
     
     return istoeast(trans_bb1, trans_bb2)
     
@@ -401,14 +395,12 @@ def isstarboard(ctx, scene, node1, node2):
     
     view_matrix = get_spatial_view_matrix(face_pos, False)
     
-    transformation = numpy.dot(view_matrix, n2_pos)
-    trans_bb2 = compute_transformed_bounding_box(ctx, scene.nodes, node1, transformation, bb_min, bb_max)
+    trans_bb2 = compute_transformed_bounding_box(ctx, scene, node2, view_matrix, bb_min, bb_max)
     
     bb_min=[1e10, 1e10, 1e10] 
     bb_max=[-1e10, -1e10, -1e10]
     
-    transformation = numpy.dot(view_matrix, get_world_transform(scene, node1))
-    trans_bb1 = compute_transformed_bounding_box(ctx, scene.nodes, node1, transformation, bb_min, bb_max)
+    trans_bb1 = compute_transformed_bounding_box(ctx, scene, node1, view_matrix, bb_min, bb_max)
     
     return istoeast(trans_bb1, trans_bb2)
     
@@ -444,14 +436,12 @@ def istofront(ctx, scene, node1, node2, view_matrix):
     bb_min=[1e10, 1e10, 1e10] 
     bb_max=[-1e10, -1e10, -1e10]
     
-    transformation = numpy.dot(view_matrix, get_world_transform(scene, node1))
-    trans_bb1 = compute_transformed_bounding_box(ctx, scene.nodes, node1, transformation, bb_min, bb_max)
+    trans_bb1 = compute_transformed_bounding_box(ctx, scene, node1, view_matrix, bb_min, bb_max)
     
     bb_min=[1e10, 1e10, 1e10] 
     bb_max=[-1e10, -1e10, -1e10]
     
-    transformation = numpy.dot(view_matrix, get_world_transform(scene, node2))
-    trans_bb2 = compute_transformed_bounding_box(ctx, scene.nodes, node2, transformation, bb_min, bb_max)
+    trans_bb2 = compute_transformed_bounding_box(ctx, scene, node2, view_matrix, bb_min, bb_max)
     
     return istosouth(trans_bb1, trans_bb2)
     
@@ -476,14 +466,12 @@ def isbehind(ctx, scene, node1, node2):
     
     view_matrix = get_spatial_view_matrix(face_pos, False)
     
-    transformation = numpy.dot(view_matrix, n2_pos)
-    trans_bb2 = compute_transformed_bounding_box(ctx, scene.nodes, node1, transformation, bb_min, bb_max)
+    trans_bb2 = compute_transformed_bounding_box(ctx, scene, node2, view_matrix, bb_min, bb_max)
     
     bb_min=[1e10, 1e10, 1e10] 
     bb_max=[-1e10, -1e10, -1e10]
     
-    transformation = numpy.dot(view_matrix, get_world_transform(scene, node1))
-    trans_bb1 = compute_transformed_bounding_box(ctx, scene.nodes, node1, transformation, bb_min, bb_max)
+    trans_bb1 = compute_transformed_bounding_box(ctx, scene, node1, view_matrix, bb_min, bb_max)
     
     return istosouth(trans_bb1, trans_bb2)
 
@@ -518,14 +506,12 @@ def istoleft(ctx, scene, node1, node2, view_matrix):
     bb_min=[1e10, 1e10, 1e10] 
     bb_max=[-1e10, -1e10, -1e10]
     
-    transformation = numpy.dot(view_matrix, get_world_transform(scene, node1))
-    trans_bb1 = compute_transformed_bounding_box(ctx, scene.nodes, node1, transformation, bb_min, bb_max)
+    trans_bb1 = compute_transformed_bounding_box(ctx, scene, node1, view_matrix, bb_min, bb_max)
     
     bb_min=[1e10, 1e10, 1e10] 
     bb_max=[-1e10, -1e10, -1e10]
     
-    transformation = numpy.dot(view_matrix, get_world_transform(scene, node2))
-    trans_bb2 = compute_transformed_bounding_box(ctx, scene.nodes, node2, transformation, bb_min, bb_max)
+    trans_bb2 = compute_transformed_bounding_box(ctx, scene, node2, view_matrix, bb_min, bb_max)
     
     return istowest(trans_bb1, trans_bb2)
     
@@ -550,14 +536,12 @@ def isport(ctx, scene, node1, node2):
     
     view_matrix = get_spatial_view_matrix(face_pos, False)
     
-    transformation = numpy.dot(view_matrix, n2_pos)
-    trans_bb2 = compute_transformed_bounding_box(ctx, scene.nodes, node1, transformation, bb_min, bb_max)
+    trans_bb2 = compute_transformed_bounding_box(ctx, scene, node2, view_matrix, bb_min, bb_max)
     
     bb_min=[1e10, 1e10, 1e10] 
     bb_max=[-1e10, -1e10, -1e10]
     
-    transformation = numpy.dot(view_matrix, get_world_transform(scene, node1))
-    trans_bb1 = compute_transformed_bounding_box(ctx, scene.nodes, node1, transformation, bb_min, bb_max)
+    trans_bb1 = compute_transformed_bounding_box(ctx, scene, node1, view_matrix, bb_min, bb_max)
     
     return istowest(trans_bb1, trans_bb2)
 

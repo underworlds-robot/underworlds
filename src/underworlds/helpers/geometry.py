@@ -86,9 +86,13 @@ def transformed_aabb(scene, node):
     return transform(node.aabb[0], global_transformation), \
            transform(node.aabb[1], global_transformation)
            
-def compute_transformed_bounding_box(ctx, nodes, node, transformation, bb_min, bb_max):
+def compute_transformed_bounding_box(ctx, scene, node, trans_matrix, bb_min, bb_max):
     """ Computes an AABB bounding box based on the transformed vertices that make up its mesh.
     """
+    
+    pos = get_world_transform(scene, node)
+    
+    transformation = numpy.dot(trans_matrix, pos)
     
     for mesh_id in node.properties["mesh_ids"]:
         mesh = ctx.mesh(mesh_id)
@@ -102,6 +106,6 @@ def compute_transformed_bounding_box(ctx, nodes, node, transformation, bb_min, b
             bb_max[2] = float(round(max(bb_max[2], v[2]), 5))
     
     for child in node.children:
-        bb_min, bb_max = compute_transformed_bounding_box(nodes, nodes[child], transformation, bb_min, bb_max)
+        bb_min, bb_max = compute_transformed_bounding_box(ctx, scene, scene.nodes[child], trans_matrix, bb_min, bb_max)
     
     return bb_min, bb_max
