@@ -8,6 +8,8 @@ import underworlds.server
 from underworlds.tools.loader import ModelLoader
 from underworlds.tools.spatial_relations import *
 
+import os.path as path
+
 class TestSpatialRelations(unittest.TestCase):
 
     # workaround for https://github.com/grpc/grpc/issues/14088
@@ -31,7 +33,7 @@ class TestSpatialRelations(unittest.TestCase):
     def test_spatial_relations(self):
         world = self.ctx.worlds["base"]
 
-        ModelLoader().load("res/spatial.blend", world="base")
+        ModelLoader().load(path.join("res","spatial.blend"), world="base")
         
         time.sleep(1) # leave some time for the loader to finish
         
@@ -55,7 +57,7 @@ class TestSpatialRelations(unittest.TestCase):
     def test_spatial_relations_perspective(self):
         world = self.ctx.worlds["base"]
 
-        ModelLoader().load("res/spatial.blend", world="base")
+        ModelLoader().load(path.join("res","spatial.blend"), world="base")
         
         time.sleep(1) # leave some time for the loader to finish
         
