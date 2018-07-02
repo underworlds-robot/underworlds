@@ -305,22 +305,22 @@ def isfacing(ctx, scene, node1, node2):
     bb_min=[1e10, 1e10, 1e10] 
     bb_max=[-1e10, -1e10, -1e10]
     
-    if "facing" not in node1.properties:
-        return false
+    if "facing" not in node2.properties:
+        return False
         
-    n1_pos = get_world_transform(scene, node1)
-    face_pos = numpy.dot(node1.properties["facing"], n1_pos)
+    n2_pos = get_world_transform(scene, node2)
+    face_pos = numpy.dot(node2.properties["facing"], n2_pos)
     
     view_matrix = get_spatial_view_matrix(face_pos, False)
     
-    transformation = numpy.dot(view_matrix, n1_pos)
-    trans_bb1 = compute_transformed_bounding_box(ctx, scene.nodes, node1, transformation, bb_min, bb_max)
+    transformation = numpy.dot(view_matrix, n2_pos)
+    trans_bb2 = compute_transformed_bounding_box(ctx, scene.nodes, node1, transformation, bb_min, bb_max)
     
     bb_min=[1e10, 1e10, 1e10] 
     bb_max=[-1e10, -1e10, -1e10]
     
-    transformation = numpy.dot(view_matrix, get_world_transform(scene, node2))
-    trans_bb2 = compute_transformed_bounding_box(ctx, scene.nodes, node2, transformation, bb_min, bb_max)
+    transformation = numpy.dot(view_matrix, get_world_transform(scene, node1))
+    trans_bb1 = compute_transformed_bounding_box(ctx, scene.nodes, node1, transformation, bb_min, bb_max)
     
     return istonorth(trans_bb1, trans_bb2)
 
@@ -365,22 +365,22 @@ def isstarboard(ctx, scene, node1, node2):
     bb_min=[1e10, 1e10, 1e10] 
     bb_max=[-1e10, -1e10, -1e10]
     
-    if "facing" not in node1.properties:
-        return false
+    if "facing" not in node2.properties:
+        return False
         
-    n1_pos = get_world_transform(scene, node1)
-    face_pos = numpy.dot(node1.properties["facing"], n1_pos)
+    n2_pos = get_world_transform(scene, node2)
+    face_pos = numpy.dot(node2.properties["facing"], n2_pos)
     
     view_matrix = get_spatial_view_matrix(face_pos, False)
     
-    transformation = numpy.dot(view_matrix, n1_pos)
-    trans_bb1 = compute_transformed_bounding_box(ctx, scene.nodes, node1, transformation, bb_min, bb_max)
+    transformation = numpy.dot(view_matrix, n2_pos)
+    trans_bb2 = compute_transformed_bounding_box(ctx, scene.nodes, node1, transformation, bb_min, bb_max)
     
     bb_min=[1e10, 1e10, 1e10] 
     bb_max=[-1e10, -1e10, -1e10]
     
-    transformation = numpy.dot(view_matrix, get_world_transform(scene, node2))
-    trans_bb2 = compute_transformed_bounding_box(ctx, scene.nodes, node2, transformation, bb_min, bb_max)
+    transformation = numpy.dot(view_matrix, get_world_transform(scene, node1))
+    trans_bb1 = compute_transformed_bounding_box(ctx, scene.nodes, node1, transformation, bb_min, bb_max)
     
     return istoeast(trans_bb1, trans_bb2)
     
@@ -426,22 +426,22 @@ def isbehind(ctx, scene, node1, node2):
     bb_min=[1e10, 1e10, 1e10] 
     bb_max=[-1e10, -1e10, -1e10]
     
-    if "facing" not in node1.properties:
-        return false
+    if "facing" not in node2.properties:
+        return False
         
-    n1_pos = get_world_transform(scene, node1)
-    face_pos = numpy.dot(node1.properties["facing"], n1_pos)
+    n2_pos = get_world_transform(scene, node2)
+    face_pos = numpy.dot(node2.properties["facing"], n2_pos)
     
     view_matrix = get_spatial_view_matrix(face_pos, False)
     
-    transformation = numpy.dot(view_matrix, n1_pos)
-    trans_bb1 = compute_transformed_bounding_box(ctx, scene.nodes, node1, transformation, bb_min, bb_max)
+    transformation = numpy.dot(view_matrix, n2_pos)
+    trans_bb2 = compute_transformed_bounding_box(ctx, scene.nodes, node1, transformation, bb_min, bb_max)
     
     bb_min=[1e10, 1e10, 1e10] 
     bb_max=[-1e10, -1e10, -1e10]
     
-    transformation = numpy.dot(view_matrix, get_world_transform(scene, node2))
-    trans_bb2 = compute_transformed_bounding_box(ctx, scene.nodes, node2, transformation, bb_min, bb_max)
+    transformation = numpy.dot(view_matrix, get_world_transform(scene, node1))
+    trans_bb1 = compute_transformed_bounding_box(ctx, scene.nodes, node1, transformation, bb_min, bb_max)
     
     return istosouth(trans_bb1, trans_bb2)
 
@@ -486,22 +486,22 @@ def isport(ctx, scene, node1, node2):
     bb_min=[1e10, 1e10, 1e10] 
     bb_max=[-1e10, -1e10, -1e10]
     
-    if "facing" not in node1.properties:
-        return false
+    if "facing" not in node2.properties:
+        return False
         
-    n1_pos = get_world_transform(scene, node1)
-    face_pos = numpy.dot(node1.properties["facing"], n1_pos)
+    n2_pos = get_world_transform(scene, node2)
+    face_pos = numpy.dot(node2.properties["facing"], n2_pos)
     
     view_matrix = get_spatial_view_matrix(face_pos, False)
     
-    transformation = numpy.dot(view_matrix, n1_pos)
-    trans_bb1 = compute_transformed_bounding_box(ctx, scene.nodes, node1, transformation, bb_min, bb_max)
+    transformation = numpy.dot(view_matrix, n2_pos)
+    trans_bb2 = compute_transformed_bounding_box(ctx, scene.nodes, node1, transformation, bb_min, bb_max)
     
     bb_min=[1e10, 1e10, 1e10] 
     bb_max=[-1e10, -1e10, -1e10]
     
-    transformation = numpy.dot(view_matrix, get_world_transform(scene, node2))
-    trans_bb2 = compute_transformed_bounding_box(ctx, scene.nodes, node2, transformation, bb_min, bb_max)
+    transformation = numpy.dot(view_matrix, get_world_transform(scene, node1))
+    trans_bb1 = compute_transformed_bounding_box(ctx, scene.nodes, node1, transformation, bb_min, bb_max)
     
     return istowest(trans_bb1, trans_bb2)
 
@@ -532,7 +532,6 @@ def get_spatial_view_matrix(trans_matrix=numpy.identity(4, dtype = numpy.float32
     if gravity_bias == True:
         #Remove pitch,roll and z translation. (This assumes that gravity is in the negative z direction)
         scale, shear, angles, translate, perspective = decompose_matrix(trans_matrix)
-        print angles
         trans_matrix = compose_matrix(scale, shear, (0,0,angles[2]), (translate[0],translate[1],0), perspective)
         #trans_matrix = compose_matrix((1,1,1), (0,0,0), (0,0,angles[2]), (translate[0],translate[1],0), perspective)
         

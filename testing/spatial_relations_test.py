@@ -88,11 +88,13 @@ class TestSpatialRelations(unittest.TestCase):
         #This test currently failing, issue with the way matrix is decomposed? See note on angle ranges http://nghiaho.com/?page_id=846 
         #self.assertTrue(istoright(self.ctx, world.scene, world.scene.nodebyname("ToSouth")[0], world.scene.nodebyname("Main")[0], view_matrix4))
         
-        #self.assertTrue(isfacing(self.ctx, world.scene, world.scene.nodebyname("ToNorth")[0], world.scene.nodebyname("Main")[0]))
+        self.assertTrue(isport(self.ctx, world.scene, world.scene.nodebyname("ToEast")[0], world.scene.nodebyname("Main")[0]))
+        self.assertTrue(isfacing(self.ctx, world.scene, world.scene.nodebyname("ToSouth")[0], world.scene.nodebyname("Main")[0]))
+        self.assertTrue(isbehind(self.ctx, world.scene, world.scene.nodebyname("ToNorth")[0], world.scene.nodebyname("Main")[0]))
+        self.assertTrue(isstarboard(self.ctx, world.scene, world.scene.nodebyname("ToWest")[0], world.scene.nodebyname("Main")[0]))
         
-        
-        
-        
+        self.assertTrue(isfacing(self.ctx, world.scene, world.scene.nodebyname("Main")[0], world.scene.nodebyname("ToWest")[0]))
+
     def tearDown(self):
         self.ctx.close()
     

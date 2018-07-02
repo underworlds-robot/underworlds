@@ -218,15 +218,18 @@ class ModelLoader:
 
             # Send the nodes to the server (only the nodes)
             logger.info("Sending the nodes to the server...")
+            faces = []
             for name, pair in list(self.node_map.items()):
                 name_list = pair[1].name.split(".")
                 if name_list[0] == "face":
-                    updt_node = nodes[pair[1].parent]
-                    updt_node.properties["facing"] = pair[1].transformation.astype(numpy.float32)
-                    nodes.update(updt_node)
+                    faces.append(pair[1])
                 else:
                     nodes.update(pair[1])
-
+                    
+            for face in faces:
+                updt_node = nodes[face.parent]
+                updt_node.properties["facing"] = face.transformation.astype(numpy.float32)
+                nodes.update(updt_node)
 
         pyassimp.release(model)
 
