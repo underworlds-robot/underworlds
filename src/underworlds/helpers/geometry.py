@@ -85,3 +85,21 @@ def transformed_aabb(scene, node):
     
     return transform(node.aabb[0], global_transformation), \
            transform(node.aabb[1], global_transformation)
+           
+def compute_transformed_bounding_box(ctx, nodes, node, transformation, bb_min, bb_max):
+    
+    for mesh_id in node.properties["mesh_ids"]:
+        mesh = ctx.mesh(mesh_id)
+        for v in mesh.vertices:
+            v = transform(v, transformation)
+            bb_min[0] = float(round(min(bb_min[0], v[0]), 5))
+            bb_min[1] = float(round(min(bb_min[1], v[1]), 5))
+            bb_min[2] = float(round(min(bb_min[2], v[2]), 5))
+            bb_max[0] = float(round(max(bb_max[0], v[0]), 5))
+            bb_max[1] = float(round(max(bb_max[1], v[1]), 5))
+            bb_max[2] = float(round(max(bb_max[2], v[2]), 5))
+    
+    for child in node.children:
+        bb_min, bb_max = compute_transformed_bounding_box(nodes, nodes[child], transformation, bb_min, bb_max)
+    
+    return bb_min, bb_max
