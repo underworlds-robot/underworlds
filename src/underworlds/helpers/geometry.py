@@ -87,6 +87,8 @@ def transformed_aabb(scene, node):
            transform(node.aabb[1], global_transformation)
            
 def compute_transformed_bounding_box(ctx, nodes, node, transformation, bb_min, bb_max):
+    """ Computes an AABB bounding box based on the transformed vertices that make up its mesh.
+    """
     
     for mesh_id in node.properties["mesh_ids"]:
         mesh = ctx.mesh(mesh_id)
