@@ -116,9 +116,17 @@ class TestModelLoading(unittest.TestCase):
         self.assertEqual(world.scene.nodes[tree.id].transformation[0,3], 2)
         
     def test_facing_property(self):
+        
         world = self.ctx.worlds["test"]
+        
+        ModelLoader().load(path.join("res","facing.blend"), world="test")
+        node = world.scene.nodebyname("ToNorth")[0]
+        
+        self.assertTrue("facing" in node.properties)
+        
+        world = self.ctx.worlds["test2"]
 
-        ModelLoader().load(path.join("res","spatial.blend"), world="test")
+        ModelLoader().load(path.join("res","spatial.blend"), world="test2")
         
         node1 = world.scene.nodebyname("ToWest")[0]
         node2 = world.scene.nodebyname("Main")[0]
