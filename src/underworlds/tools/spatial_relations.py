@@ -285,6 +285,12 @@ def istonorth(bb1, bb2, north_vector=[0,1,0]):
     return False
     
 def istoback(ctx, scene, node1, node2, view_matrix):
+    """ Returns True if node1 is to the back of node2 based on a view matrix
+    
+    For node1 to be to the back of node2:
+        - the view transformed bounding box of node 1 is to north of the
+          the view transformed bounding box of node 2. 
+    """
     
     bb_min=[1e10, 1e10, 1e10] 
     bb_max=[-1e10, -1e10, -1e10]
@@ -301,6 +307,14 @@ def istoback(ctx, scene, node1, node2, view_matrix):
     return istonorth(trans_bb1, trans_bb2)
     
 def isfacing(ctx, scene, node1, node2):
+    """ Returns True if node2 is facing node1 based on a view matrix
+        calculated from the 'face' of node 2.
+    
+    For node2 to be facing node1:
+        - node2 to must be considered to have a front face.
+        - the view transformed bounding box of node 1 is to north of the
+          the view transformed bounding box of node 2. 
+    """
     
     bb_min=[1e10, 1e10, 1e10] 
     bb_max=[-1e10, -1e10, -1e10]
@@ -345,6 +359,12 @@ def istoeast(bb1, bb2, north_vector=[0,1,0]):
     return False
     
 def istoright(ctx, scene, node1, node2, view_matrix):
+    """ Returns True if node1 is to the right of node2 based on a view matrix
+    
+    For node1 to be to the right of node2:
+        - the view transformed bounding box of node 1 is to east of the
+          the view transformed bounding box of node 2. 
+    """
     
     bb_min=[1e10, 1e10, 1e10] 
     bb_max=[-1e10, -1e10, -1e10]
@@ -361,6 +381,14 @@ def istoright(ctx, scene, node1, node2, view_matrix):
     return istoeast(trans_bb1, trans_bb2)
     
 def isstarboard(ctx, scene, node1, node2):
+    """ Returns True if node1 is on the right of node2 based on a view matrix
+        calculated from the 'face' of node 2.
+    
+    For node1 to be on the right of node2:
+        - node2 to must be considered to have a front face.
+        - the view transformed bounding box of node 1 is to east of the
+          the view transformed bounding box of node 2. 
+    """
     
     bb_min=[1e10, 1e10, 1e10] 
     bb_max=[-1e10, -1e10, -1e10]
@@ -406,6 +434,12 @@ def istosouth(bb1, bb2, north_vector=[0,1,0]):
     return False
 
 def istofront(ctx, scene, node1, node2, view_matrix):
+    """ Returns True if node 1 is to the front of node 2 based on a view matrix
+    
+    For node1 to be to the front of node2:
+        - the view transformed bounding box of node 1 is to south of the
+          the view transformed bounding box of node 2. 
+    """
     
     bb_min=[1e10, 1e10, 1e10] 
     bb_max=[-1e10, -1e10, -1e10]
@@ -422,6 +456,14 @@ def istofront(ctx, scene, node1, node2, view_matrix):
     return istosouth(trans_bb1, trans_bb2)
     
 def isbehind(ctx, scene, node1, node2):
+    """ Returns True if node 1 is behind node 2 based on a view matrix
+        calculated from the 'face' of node 2.
+    
+    For node1 to be behind node2:
+        - node2 to must be considered to have a front face.
+        - the view transformed bounding box of node 1 is to north of the
+          the view transformed bounding box of node 2. 
+    """
     
     bb_min=[1e10, 1e10, 1e10] 
     bb_max=[-1e10, -1e10, -1e10]
@@ -466,6 +508,12 @@ def istowest(bb1, bb2, north_vector=[0,1,0]):
     return False
     
 def istoleft(ctx, scene, node1, node2, view_matrix):
+    """ Returns True if node 1 is to the left of node 2 based on a view matrix
+    
+    For node1 to be to the left of node2:
+        - the view transformed bounding box of node 1 is to west of the
+          the view transformed bounding box of node 2. 
+    """
     
     bb_min=[1e10, 1e10, 1e10] 
     bb_max=[-1e10, -1e10, -1e10]
@@ -482,6 +530,14 @@ def istoleft(ctx, scene, node1, node2, view_matrix):
     return istowest(trans_bb1, trans_bb2)
     
 def isport(ctx, scene, node1, node2):
+    """ Returns True if node1 is on the left of node2 based on a view matrix
+        calculated from the 'face' of node 2.
+    
+    For node1 to be on the left of node2:
+        - node2 to must be considered to have a front face.
+        - the view transformed bounding box of node 1 is to west of the
+          the view transformed bounding box of node 2. 
+    """
     
     bb_min=[1e10, 1e10, 1e10] 
     bb_max=[-1e10, -1e10, -1e10]
