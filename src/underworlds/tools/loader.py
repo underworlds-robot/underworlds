@@ -220,8 +220,7 @@ class ModelLoader:
             logger.info("Sending the nodes to the server...")
             faces = []
             for name, pair in list(self.node_map.items()):
-                name_list = pair[1].name.split(".")
-                if name_list[0] == "face":
+                if pair[1].name[:5] == "_face":
                     faces.append(pair[1])
                 else:
                     nodes.update(pair[1])

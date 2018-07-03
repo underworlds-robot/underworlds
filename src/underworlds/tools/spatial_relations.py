@@ -8,6 +8,7 @@ from underworlds.helpers.geometry import compute_transformed_bounding_box
 from underworlds.helpers.geometry import get_world_transform
 from underworlds.helpers.transformations import compose_matrix
 from underworlds.helpers.transformations import decompose_matrix
+from underworlds.helpers.transformations import quaternion_from_matrix
 from underworlds.types import MESH
 
 import math
