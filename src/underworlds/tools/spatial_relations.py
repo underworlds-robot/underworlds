@@ -572,6 +572,7 @@ def get_spatial_view_matrix(trans_matrix=numpy.identity(4, dtype = numpy.float32
     
     if gravity_bias == True:
         #Remove pitch,roll and z translation. (This assumes that gravity is in the negative z direction)
+        #WARNING - Currently using euler angles which causes issues if the rotation angles go out of bounds. See note on angle ranges http://nghiaho.com/?page_id=846
         scale, shear, angles, translate, perspective = decompose_matrix(trans_matrix)
         trans_matrix = compose_matrix(scale, shear, (0,0,angles[2]), (translate[0],translate[1],0), perspective)
         #trans_matrix = compose_matrix((1,1,1), (0,0,0), (0,0,angles[2]), (translate[0],translate[1],0), perspective)
