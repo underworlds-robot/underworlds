@@ -581,7 +581,7 @@ def get_spatial_view_matrix(trans_matrix=numpy.identity(4, dtype = numpy.float32
     
     return view_matrix
 
-def get_node_sr(worldName, nodeID, exclNodeID=None, camera=None, gravity_bias=True):
+def get_node_sr(worldName, nodeID, camera=None, gravity_bias=True, exclNodeID=None):
 
     rel_list = []
     
@@ -591,7 +591,10 @@ def get_node_sr(worldName, nodeID, exclNodeID=None, camera=None, gravity_bias=Tr
         vm = None
         
         if camera is not None:
-            vm = get_spatial_view_matrix(get_world_transform(scene, camera), gravity_bias)
+            if camera == "default":
+                vm = get_spatial_view_matrix()
+            else:
+                vm = get_spatial_view_matrix(get_world_transform(scene, camera), gravity_bias)
             
             #vm = get_spatial_view_matrix(worldName, camera)
 
@@ -627,23 +630,144 @@ def get_node_sr(worldName, nodeID, exclNodeID=None, camera=None, gravity_bias=Tr
                 continue
                 
             elif isclose(bb1, bb2):
-                logger.info("%s close %s" % (node.name, node2.name))
-                rel_list.append([9, node.id, node2.id, "close"])
-                if istonorth(bb1, bb2):
-                    logger.info("%s to north %s" % (node.name, node2.name))
-                    rel_list.append([5, node.id, node2.id, "toNorth"])
-                elif istoeast(bb1, bb2):
-                    logger.info("%s to east %s" % (node.name, node2.name))
-                    rel_list.append([6, node.id, node2.id, "toEast"])
-                elif istosouth(bb1, bb2):
-                    logger.info("%s to south %s" % (node.name, node2.name))
-                    rel_list.append([7, node.id, node2.id, "toSouth"])
-                elif istowest(bb1, bb2):
-                    logger.info("%s to west %s" % (node.name, node2.name))
-                    rel_list.append([8, node.id, node2.id, "toWest"])
+                if vm is None:
+                    if istonorth(bb1, bb2):
+                        logger.info("%s to north %s" % (node.name, node2.name))
+                        rel_list.append([5, node.id, node2.id, "toNorth"])
+                    elif istoeast(bb1, bb2):
+                        logger.info("%s to east %s" % (node.name, node2.name))
+                        rel_list.append([6, node.id, node2.id, "toEast"])
+                    elif istosouth(bb1, bb2):
+                        logger.info("%s to south %s" % (node.name, node2.name))
+                        rel_list.append([7, node.id, node2.id, "toSouth"])
+                    elif istowest(bb1, bb2):
+                        logger.info("%s to west %s" % (node.name, node2.name))
+                        rel_list.append([8, node.id, node2.id, "toWest"])
+                    else:
+                        logger.info("%s close %s" % (node.name, node2.name))
+                        rel_list.append([9, node.id, node2.id, "close"])
+                else:
+                    if istoback(ctx, world.scene, node, node2, vm):
+                        logger.info("%s to back %s" % (node.name, node2.name))
+                        rel_list.append([5, node.id, node2.id, "toBack"])
+                    elif istoright(ctx, world.scene, node, node2, vm):
+                        logger.info("%s to right %s" % (node.name, node2.name))
+                        rel_list.append([5, node.id, node2.id, "toRight"])
+                    elif istofront(ctx, world.scene, node, node2, vm):
+                        logger.info("%s to front %s" % (node.name, node2.name))
+                        rel_list.append([5, node.id, node2.id, "toFront"])
+                    elif istoleft(ctx, world.scene, node, node2, vm):
+                        logger.info("%s to left %s" % (node.name, node2.name))
+                        rel_list.append([5, node.id, node2.id, "toLeft"])
+                    else:
+                        logger.info("%s close %s" % (node.name, node2.name))
+                        rel_list.append([9, node.id, node2.id, "close"])
+    
                 continue
                 
         return rel_list
+        
+def check_for_exclusions(worldname, rel_list, iteration, view_matrix=numpy.identity(4, dtype = numpy.float32)):
+
+    i = 0
+    relation = rel_list[iteration][3]
+    
+    if iteration > 0:
+        if relation == rel_list[iteration - 1][3]:
+            #These relations should have already been checked in a previous iteration.
+            return rel_list
+    
+    rel_poss_excl = []
+    
+    #Get a list of all the nodes that have the same relation to our current node
+    while  (iteration + i) < len(rel_list) and rel_list[iteration + i][3] == relation:
+        rel_poss_excl.append([rel_list[iteration + i][2], i])
+        i += 1
+    
+    length = len(rel_poss_excl)
+        
+    if length > 1:
+        i = 0
+        rel_excl = []
+        while(i < length):
+            
+            j = 0
+            
+            with underworlds.Context("spatial_description") as ctx:
+                world = ctx.worlds[worldname]
+                
+                node1 = world.scene.nodes[rel_poss_excl[i][0]]
+                bb1 = get_bounding_box_for_node(world.scene, node1)
+                
+                while (j < length):
+                    
+                    if i == j or j in rel_excl:
+                        j += 1
+                        continue
+                        
+                    node2 = world.scene.nodes[rel_poss_excl[j][0]]
+                    bb2 = get_bounding_box_for_node(world.scene, node2)
+                    
+                    if relation == "in":
+                        if isin(bb1, bb2):
+                            rel_excl.append(j) #Append to list to be deleted afterward
+                            
+                    elif relation == "onTop":
+                        pass
+                        
+                    elif relation == "above":
+                        if isin(bb2, bb1) or isabove(bb2, bb1):
+                            rel_excl.append(j)
+                        
+                    elif relation == "below":
+                        if isin(bb2, bb1) or isbelow(bb2, bb1) or isontop(bb2, bb1):
+                            rel_excl.append(j)
+                        
+                    elif relation == "close":
+                        pass
+                        
+                    elif relation == "toBack":
+                        if isin(bb2, bb1) or istoback(ctx, world.scene, node2, node1, view_matrix):
+                            rel_excl.append(j)
+                    
+                    elif relation == "toRight":
+                        if isin(bb2, bb1) or istoright(ctx, world.scene, node2, node1, view_matrix):
+                            rel_excl.append(j)
+                            
+                    elif relation == "toFront":
+                        if isin(bb2, bb1) or istofront(ctx, world.scene, node2, node1, view_matrix):
+                            rel_excl.append(j)
+                            
+                    elif relation == "toLeft":
+                        if isin(bb2, bb1) or istoleft(ctx, world.scene, node2, node1, view_matrix):
+                            rel_excl.append(j)
+                        
+                    elif relation == "toNorth":
+                        if isin(bb2, bb1) or istonorth(bb2, bb1):
+                            rel_excl.append(j)
+                        
+                    elif relation == "toEast":
+                        if isin(bb2, bb1) or istoeast(bb2, bb1):
+                            rel_excl.append(j)
+                        
+                    elif relation == "toSouth":
+                        if isin(bb2, bb1) or istoeast(bb2, bb1):
+                            rel_excl.append(j)
+                        
+                    elif relation == "toWest":
+                        if isin(bb2, bb1) or istowest(bb2, bb1):
+                            rel_excl.append(j)
+                            
+                    else:
+                        raise NotImplementedError
+                        
+                    j += 1
+            i += 1
+            
+        for j in reversed(sorted(rel_excl)):
+            del rel_list[iteration + j]
+            
+    return rel_list
 
 def compute_all_relations(worldName, perspective=[0,1,0]):
     
