@@ -604,7 +604,7 @@ def get_node_sr(worldName, nodeID, camera=None, gravity_bias=True, exclNodeID=No
         
         for node2 in world.scene.nodes:
             
-            if node2.id == node.id or node2.id == exclNodeID or node2.id == world.scene.rootnode.id:
+            if node2.id == node.id or node2.id == exclNodeID or node2.id == world.scene.rootnode.id or node2.name[0] == "_":
                 continue
                 
             bb2 = get_bounding_box_for_node(world.scene, node2)
@@ -652,13 +652,13 @@ def get_node_sr(worldName, nodeID, camera=None, gravity_bias=True, exclNodeID=No
                         rel_list.append([5, node.id, node2.id, "toBack"])
                     elif istoright(ctx, world.scene, node, node2, vm):
                         logger.info("%s to right %s" % (node.name, node2.name))
-                        rel_list.append([5, node.id, node2.id, "toRight"])
+                        rel_list.append([6, node.id, node2.id, "toRight"])
                     elif istofront(ctx, world.scene, node, node2, vm):
                         logger.info("%s to front %s" % (node.name, node2.name))
-                        rel_list.append([5, node.id, node2.id, "toFront"])
+                        rel_list.append([7, node.id, node2.id, "toFront"])
                     elif istoleft(ctx, world.scene, node, node2, vm):
                         logger.info("%s to left %s" % (node.name, node2.name))
-                        rel_list.append([5, node.id, node2.id, "toLeft"])
+                        rel_list.append([8, node.id, node2.id, "toLeft"])
                     else:
                         logger.info("%s close %s" % (node.name, node2.name))
                         rel_list.append([9, node.id, node2.id, "close"])
