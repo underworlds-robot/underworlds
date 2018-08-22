@@ -223,7 +223,26 @@ def set_parent(world, node, parent=None):
 
 
         target_world.scene.nodes.update(updt_node)
+        
+def format_name(world, node):
+    """ Changes the node name to be a more human readable name, removing
+    '_' and '-'.
+    """
 
+    with underworlds.Context("edit-tool") as ctx:
+
+        target_world = ctx.worlds[world]
+        fmt_node = _get_node(target_world, node)
+        
+        #Remove numbering assuming that '-' has been used to number.
+        name_split = fmt_node.name.split("-")
+        #Remove '_' spacing
+        name_split = name_split[0].split("_")
+        
+        #Put back together using actual spaces
+        fmt_node.name = ' '.join(name_split)
+        
+        target_world.scene.nodes.update(fmt_node)
 
 def get_mesh(id):
     with underworlds.Context("edit-tool") as ctx:
