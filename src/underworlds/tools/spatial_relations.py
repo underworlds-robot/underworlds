@@ -689,12 +689,13 @@ def check_for_exclusions(worldname, rel_list, iteration, view_matrix=numpy.ident
     if length > 1:
         i = 0
         rel_excl = []
-        while(i < length):
+        with underworlds.Context("spatial_description") as ctx:
             
-            j = 0
+            world = ctx.worlds[worldname]
             
-            with underworlds.Context("spatial_description") as ctx:
-                world = ctx.worlds[worldname]
+            while(i < length):
+            
+                j = 0
                 
                 node1 = world.scene.nodes[rel_poss_excl[i][0]]
                 bb1 = get_bounding_box_for_node(world.scene, node1)
@@ -762,7 +763,7 @@ def check_for_exclusions(worldname, rel_list, iteration, view_matrix=numpy.ident
                         raise NotImplementedError
                         
                     j += 1
-            i += 1
+                i += 1
             
         for j in reversed(sorted(rel_excl)):
             del rel_list[iteration + j]
