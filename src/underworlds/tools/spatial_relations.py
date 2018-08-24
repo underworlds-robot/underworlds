@@ -586,6 +586,7 @@ def get_node_sr(worldName, nodeID, camera=None, gravity_bias=True, exclNodeID=No
     rel_list = []
     
     with underworlds.Context("spatial_relations") as ctx:
+        
         world = ctx.worlds[worldName]
         
         vm = None
@@ -602,8 +603,12 @@ def get_node_sr(worldName, nodeID, camera=None, gravity_bias=True, exclNodeID=No
 
         bb1 = get_bounding_box_for_node(world.scene, world.scene.nodes[nodeID])
         
+        if vm is not None:
+            bb_min=[1e10, 1e10, 1e10] 
+            bb_max=[-1e10, -1e10, -1e10]
+            bb1_trans = compute_transformed_bounding_box(ctx, world.scene, node, vm, bb_min, bb_max)
+        
         for node2 in world.scene.nodes:
-            
             if node2.id == node.id or node2.id == exclNodeID or node2.id == world.scene.rootnode.id or node2.name[0] == "_":
                 continue
                 
@@ -613,17 +618,17 @@ def get_node_sr(worldName, nodeID, camera=None, gravity_bias=True, exclNodeID=No
                 logger.info("%s in %s" % (node.name, node2.name))
                 rel_list.append([1, node.id, node2.id, "in"])
                 continue
-                
+                   
             elif isontop(bb1, bb2):
                 logger.info("%s onTop %s" % (node.name, node2.name))
                 rel_list.append([2, node.id, node2.id, "onTop"])
                 continue
-                
+                   
             elif isabove(bb1, bb2):
                 logger.info("%s above %s" % (node.name, node2.name))
                 rel_list.append([3, node.id, node2.id, "above"])
                 continue
-                
+             
             elif isbelow(bb1, bb2):
                 logger.info("%s below %s" % (node.name, node2.name))
                 rel_list.append([4, node.id, node2.id, "below"])
@@ -647,16 +652,21 @@ def get_node_sr(worldName, nodeID, camera=None, gravity_bias=True, exclNodeID=No
                         logger.info("%s close %s" % (node.name, node2.name))
                         rel_list.append([9, node.id, node2.id, "close"])
                 else:
-                    if istoback(ctx, world.scene, node, node2, vm):
+                    bb_min=[1e10, 1e10, 1e10] 
+                    bb_max=[-1e10, -1e10, -1e10]
+                    bb2_trans = compute_transformed_bounding_box(ctx, world.scene, node2, vm, bb_min, bb_max)
+                    #Do these calculations only once for efficiency, and use the same logic to then calculate from the view matrix
+                    
+                    if istonorth(bb1_trans, bb2_trans):
                         logger.info("%s to back %s" % (node.name, node2.name))
                         rel_list.append([5, node.id, node2.id, "toBack"])
-                    elif istoright(ctx, world.scene, node, node2, vm):
+                    elif istoeast(bb1_trans, bb2_trans):
                         logger.info("%s to right %s" % (node.name, node2.name))
                         rel_list.append([6, node.id, node2.id, "toRight"])
-                    elif istofront(ctx, world.scene, node, node2, vm):
+                    elif istosouth(bb1_trans, bb2_trans):
                         logger.info("%s to front %s" % (node.name, node2.name))
                         rel_list.append([7, node.id, node2.id, "toFront"])
-                    elif istoleft(ctx, world.scene, node, node2, vm):
+                    elif istowest(bb1_trans, bb2_trans):
                         logger.info("%s to left %s" % (node.name, node2.name))
                         rel_list.append([8, node.id, node2.id, "toLeft"])
                     else:
@@ -664,7 +674,7 @@ def get_node_sr(worldName, nodeID, camera=None, gravity_bias=True, exclNodeID=No
                         rel_list.append([9, node.id, node2.id, "close"])
     
                 continue
-                
+                       
         return rel_list
         
 def check_for_exclusions(worldname, rel_list, iteration, view_matrix=numpy.identity(4, dtype = numpy.float32)):
