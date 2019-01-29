@@ -11,7 +11,6 @@ import numpy
 import underworlds.underworlds_pb2 as gRPC
 
 from underworlds.errors import *
-from underworlds.helpers.transformations import decompose_matrix
 
 # Clients types
 READER = gRPC.ClientInteraction.READER
@@ -349,22 +348,6 @@ class Scene(object):
             if n.name == name:
                 nodes.append(n)
         return nodes
-        
-    def nodebylocation(self, location):
-        """ Returns the node closest to a given location(numpy array of x-y-z).
-        """
-        min_distance = 999999
-        min_node = None
-        for n in self.nodes:
-            trans_matrix = get_world_transform(self, n)
-            _, _, _, translate, _ = decompose_matrix(trans_matrix)
-            dist = numpy.linalg.norm(location - translate)
-            if dist < min_distance:
-                min_node = n
-                min_distance = dist
-                
-        return min_node
-            
 
 class Timeline(object):
     """ Stores 'situations' (ie, either events -- temporal objects

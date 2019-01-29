@@ -16,9 +16,15 @@ from grpc.beta import implementations
 from grpc.framework.interfaces.face.face import ExpirationError,NetworkError,AbortionError
 import underworlds.underworlds_pb2 as gRPC
 
+import numpy
+from numpy import linalg
+
 from underworlds.types import World, Node, Situation, MeshData, NEW, DELETE, UPDATE
 
 from underworlds.helpers.profile import profile, profileonce
+
+from underworlds.helpers.geometry import get_world_transform
+from underworlds.helpers.transformations import decompose_matrix
 
 _TIMEOUT_SECONDS = 1
 _TIMEOUT_SECONDS_MESH_LOADING = 20
@@ -339,6 +345,25 @@ class SceneProxy(object):
         """
         self.nodes.remove(nodes)
 
+    def nodebylocation(self, location):
+        """ Returns the node closest to a given location(numpy array of x-y-z).
+        """
+        min_distance = 999999
+        min_node = None
+        for n in self.nodes:
+            #Only look at Mesh Nodes
+            try:
+                mesh_ids = n.properties["mesh_ids"]
+            except KeyError:
+                continue
+            trans_matrix = get_world_transform(self, n)
+            _, _, _, translate, _ = decompose_matrix(trans_matrix)
+            dist = numpy.linalg.norm(location - translate)
+            if dist < min_distance:
+                min_node = n
+                min_distance = dist
+                   
+        return min_node
 
 class TimelineProxy:
 
