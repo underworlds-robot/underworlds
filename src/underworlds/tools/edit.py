@@ -234,8 +234,10 @@ def format_name(world, node):
         target_world = ctx.worlds[world]
         fmt_node = _get_node(target_world, node)
         
+        #Remove blender unique naming ids
+        name_split = fmt_node.name.split(".")
         #Remove numbering assuming that '-' has been used to number.
-        name_split = fmt_node.name.split("-")
+        name_split = name_split[0].split("-")
         #Remove '_' spacing
         name_split = name_split[0].split("_")
         
