@@ -593,7 +593,7 @@ def get_node_sr(ctx, worldName, nodeID, camera=None, gravity_bias=True, exclNode
         if camera == "default":
             vm = get_spatial_view_matrix()
         else:
-            vm = get_spatial_view_matrix(get_world_transform(scene, camera), gravity_bias)
+            vm = get_spatial_view_matrix(get_world_transform(world.scene, camera), gravity_bias)
         
         #vm = get_spatial_view_matrix(worldName, camera)
 
