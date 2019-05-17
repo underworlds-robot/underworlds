@@ -179,6 +179,21 @@ def isclose(bb1, bb2):
     dim2 = characteristic_dimension(bb2)
 
     return dist < 2 * dim2
+    
+def isnextto(bb1, bb2):
+    """ Returns True if the first object is close to the second.
+
+    More precisely, returns True if the first bounding box is within a radius R
+    (R = 2 X second bounding box dimension) of the second bounding box.
+
+    Note that in general, isclose(bb1, bb2) != isclose(bb2, bb1)
+    """
+
+
+    dist = distance(bb1,bb2)
+    dim2 = characteristic_dimension(bb2)
+
+    return dist < 1.5 * dim2
 
 def isnorth(bb1, bb2, north_vector=[0,1,0]):
     """ Returns True if bb1 is north of bb2
@@ -581,7 +596,7 @@ def get_spatial_view_matrix(trans_matrix=numpy.identity(4, dtype = numpy.float32
     
     return view_matrix
 
-def get_node_sr(ctx, worldName, nodeID, camera=None, gravity_bias=True, exclNodeID=None):
+def get_node_sr(ctx, worldName, nodeID, camera=None, gravity_bias=True, exclNodeID=None, simple=False):
 
     rel_list = []
         
@@ -614,41 +629,51 @@ def get_node_sr(ctx, worldName, nodeID, camera=None, gravity_bias=True, exclNode
         
         if isin(bb1, bb2):
             logger.info("%s in %s" % (node.name, node2.name))
-            rel_list.append([1, node.id, node2.id, "in"])
+            rel_list.append([1, node.id, node2.id, "in", node2.name])
             continue
                
         elif isontop(bb1, bb2):
             logger.info("%s onTop %s" % (node.name, node2.name))
-            rel_list.append([2, node.id, node2.id, "onTop"])
+            rel_list.append([2, node.id, node2.id, "onTop", node2.name])
             continue
                
         elif isabove(bb1, bb2):
             logger.info("%s above %s" % (node.name, node2.name))
-            rel_list.append([3, node.id, node2.id, "above"])
+            rel_list.append([3, node.id, node2.id, "above", node2.name])
             continue
          
         elif isbelow(bb1, bb2):
             logger.info("%s below %s" % (node.name, node2.name))
-            rel_list.append([4, node.id, node2.id, "below"])
+            rel_list.append([4, node.id, node2.id, "below", node2.name])
             continue
             
         elif isclose(bb1, bb2):
-            if vm is None:
-                if istonorth(bb1, bb2):
-                    logger.info("%s to north %s" % (node.name, node2.name))
-                    rel_list.append([5, node.id, node2.id, "toNorth"])
-                elif istoeast(bb1, bb2):
-                    logger.info("%s to east %s" % (node.name, node2.name))
-                    rel_list.append([6, node.id, node2.id, "toEast"])
-                elif istosouth(bb1, bb2):
-                    logger.info("%s to south %s" % (node.name, node2.name))
-                    rel_list.append([7, node.id, node2.id, "toSouth"])
-                elif istowest(bb1, bb2):
-                    logger.info("%s to west %s" % (node.name, node2.name))
-                    rel_list.append([8, node.id, node2.id, "toWest"])
+            if simple == True:
+                if isnextto(bb1, bb2):
+                    logger.info("%s next to %s" % (node.name, node2.name))
+                    rel_list.append([9, node.id, node2.id, "nextTo", node2.name])
                 else:
                     logger.info("%s close %s" % (node.name, node2.name))
-                    rel_list.append([9, node.id, node2.id, "close"])
+                    rel_list.append([10, node.id, node2.id, "close", node2.name])
+            elif vm is None:
+                if istonorth(bb1, bb2):
+                    logger.info("%s to north %s" % (node.name, node2.name))
+                    rel_list.append([5, node.id, node2.id, "toNorth", node2.name])
+                elif istoeast(bb1, bb2):
+                    logger.info("%s to east %s" % (node.name, node2.name))
+                    rel_list.append([6, node.id, node2.id, "toEast", node2.name])
+                elif istosouth(bb1, bb2):
+                    logger.info("%s to south %s" % (node.name, node2.name))
+                    rel_list.append([7, node.id, node2.id, "toSouth", node2.name])
+                elif istowest(bb1, bb2):
+                    logger.info("%s to west %s" % (node.name, node2.name))
+                    rel_list.append([8, node.id, node2.id, "toWest", node2.name])
+                elif isnextto(bb1, bb2):
+                    logger.info("%s next to %s" % (node.name, node2.name))
+                    rel_list.append([9, node.id, node2.id, "nextTo", node2.name])
+                else:
+                    logger.info("%s close %s" % (node.name, node2.name))
+                    rel_list.append([10, node.id, node2.id, "close", node2.name])
             else:
                 bb_min=[1e10, 1e10, 1e10] 
                 bb_max=[-1e10, -1e10, -1e10]
@@ -667,9 +692,12 @@ def get_node_sr(ctx, worldName, nodeID, camera=None, gravity_bias=True, exclNode
                 elif istowest(bb1_trans, bb2_trans):
                     logger.info("%s to left %s" % (node.name, node2.name))
                     rel_list.append([8, node.id, node2.id, "toLeft"])
+                elif isnextto(bb1, bb2):
+                    logger.info("%s next to %s" % (node.name, node2.name))
+                    rel_list.append([9, node.id, node2.id, "nextTo", node2.name])
                 else:
                     logger.info("%s close %s" % (node.name, node2.name))
-                    rel_list.append([9, node.id, node2.id, "close"])
+                    rel_list.append([10, node.id, node2.id, "close"])
 
             continue
                    
@@ -678,6 +706,10 @@ def get_node_sr(ctx, worldName, nodeID, camera=None, gravity_bias=True, exclNode
 def check_for_exclusions(ctx, worldname, rel_list, iteration, view_matrix=numpy.identity(4, dtype = numpy.float32)):
 
     i = 0
+    
+    if len(rel_list) <= iteration:
+        return rel_list
+    
     relation = rel_list[iteration][3]
     
     if iteration > 0:
@@ -732,6 +764,9 @@ def check_for_exclusions(ctx, worldname, rel_list, iteration, view_matrix=numpy.
                         rel_excl.append(j)
                     
                 elif relation == "close":
+                    pass
+                
+                elif relation == "nextTo":
                     pass
                     
                 elif relation == "toBack":
