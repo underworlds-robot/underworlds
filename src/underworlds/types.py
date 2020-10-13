@@ -170,8 +170,13 @@ class Node(object):
             if v is None:
                 raise UnderworldsError("Property %s is required but not set (and has no default value)" % k)
             
-            node.properties[k] = json.dumps(v)
-
+            if k == "facing":
+                l = []
+                for sv in v.flatten().tolist():
+                    l.append(sv)
+                node.properties[k]=json.dumps(l)
+            else:
+                node.properties[k] = json.dumps(v)
 
         return node
 
@@ -208,6 +213,8 @@ class Node(object):
 
         for k, v in data.properties.items():
             node.properties[k] = json.loads(v)
+            if k == "facing":
+                node.properties[k] = numpy.array(node.properties[k], dtype=numpy.float32).reshape(4,4)
 
         return node
 
@@ -228,6 +235,7 @@ class Mesh(Node):
         self.properties = {
                 "mesh_ids": None,
                 "physics": False # no physics applied by default
+                #"facing": None # transformation to the front face of the object.
             }
 
 class Camera(Node):

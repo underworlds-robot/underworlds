@@ -2,14 +2,23 @@
 #-*- coding: UTF-8 -*-
 
 import underworlds
+import underworlds.server
 from underworlds.helpers.geometry import get_bounding_box_for_node
+from underworlds.helpers.geometry import compute_transformed_bounding_box
+from underworlds.helpers.geometry import get_world_transform
+from underworlds.helpers.transformations import compose_matrix
+from underworlds.helpers.transformations import decompose_matrix
+from underworlds.helpers.transformations import quaternion_from_matrix
 from underworlds.types import MESH
 
 import math
+import numpy
+from numpy import linalg
 
 import logging; logger = logging.getLogger("underworlds.spatial_reasoning")
 
 EPSILON = 0.005 # 5mm
+ROTATION_180_X = numpy.array([[1,0,0,0],[0,-1,0,0],[0,0,-1,0],[0,0,0,1]], dtype=numpy.float32)
 
 def bb_center(bb):
 
@@ -135,6 +144,7 @@ def isbelow(bb1, bb2):
          - obj 1 is lower than obj 2
          - the bounding box footbrint of both objects must overlap
     """
+    
     if islower(bb1, bb2):
         return overlap(bb_footprint(bb1), bb_footprint(bb2))
 
@@ -274,6 +284,56 @@ def istonorth(bb1, bb2, north_vector=[0,1,0]):
         if overlap(bb_frontprint(bb1), bb_frontprint(bb2)):
             return isnorth(bb1, bb2, north_vector)
     return False
+    
+def istoback(ctx, scene, node1, node2, view_matrix):
+    """ Returns True if node1 is to the back of node2 based on a view matrix
+    
+    For node1 to be to the back of node2:
+        - the view transformed bounding box of node 1 is to north of the
+          the view transformed bounding box of node 2. 
+    """
+    
+    bb_min=[1e10, 1e10, 1e10] 
+    bb_max=[-1e10, -1e10, -1e10]
+    
+    trans_bb1 = compute_transformed_bounding_box(ctx, scene, node1, view_matrix, bb_min, bb_max)
+    
+    bb_min=[1e10, 1e10, 1e10] 
+    bb_max=[-1e10, -1e10, -1e10]
+    
+    trans_bb2 = compute_transformed_bounding_box(ctx, scene, node2, view_matrix, bb_min, bb_max)
+    
+    return istonorth(trans_bb1, trans_bb2)
+    
+def isfacing(ctx, scene, node1, node2):
+    """ Returns True if node2 is facing node1 based on a view matrix
+        calculated from the 'face' of node 2.
+    
+    For node2 to be facing node1:
+        - node2 to must be considered to have a front face.
+        - the view transformed bounding box of node 1 is to north of the
+          the view transformed bounding box of node 2. 
+    """
+    
+    bb_min=[1e10, 1e10, 1e10] 
+    bb_max=[-1e10, -1e10, -1e10]
+    
+    if "facing" not in node2.properties:
+        return False
+        
+    n2_pos = get_world_transform(scene, node2)
+    face_pos = numpy.dot(node2.properties["facing"], n2_pos)
+    
+    view_matrix = get_spatial_view_matrix(face_pos, False)
+    
+    trans_bb2 = compute_transformed_bounding_box(ctx, scene, node2, view_matrix, bb_min, bb_max)
+    
+    bb_min=[1e10, 1e10, 1e10] 
+    bb_max=[-1e10, -1e10, -1e10]
+    
+    trans_bb1 = compute_transformed_bounding_box(ctx, scene, node1, view_matrix, bb_min, bb_max)
+    
+    return istonorth(trans_bb1, trans_bb2)
 
 def istoeast(bb1, bb2, north_vector=[0,1,0]):
     """ Returns True if bb1 is to the east of bb2.
@@ -294,6 +354,57 @@ def istoeast(bb1, bb2, north_vector=[0,1,0]):
         if overlap(bb_sideprint(bb1), bb_sideprint(bb2)):
             return iseast(bb1, bb2, north_vector)
     return False
+    
+def istoright(ctx, scene, node1, node2, view_matrix):
+    """ Returns True if node1 is to the right of node2 based on a view matrix
+    
+    For node1 to be to the right of node2:
+        - the view transformed bounding box of node 1 is to east of the
+          the view transformed bounding box of node 2. 
+    """
+    
+    bb_min=[1e10, 1e10, 1e10] 
+    bb_max=[-1e10, -1e10, -1e10]
+    
+    trans_bb1 = compute_transformed_bounding_box(ctx, scene, node1, view_matrix, bb_min, bb_max)
+    
+    bb_min=[1e10, 1e10, 1e10] 
+    bb_max=[-1e10, -1e10, -1e10]
+    
+    trans_bb2 = compute_transformed_bounding_box(ctx, scene, node2, view_matrix, bb_min, bb_max)
+    
+    return istoeast(trans_bb1, trans_bb2)
+    
+def isstarboard(ctx, scene, node1, node2):
+    """ Returns True if node1 is on the right of node2 based on a view matrix
+        calculated from the 'face' of node 2.
+    
+    For node1 to be on the right of node2:
+        - node2 to must be considered to have a front face.
+        - the view transformed bounding box of node 1 is to east of the
+          the view transformed bounding box of node 2. 
+    """
+    
+    bb_min=[1e10, 1e10, 1e10] 
+    bb_max=[-1e10, -1e10, -1e10]
+    
+    if "facing" not in node2.properties:
+        return False
+        
+    n2_pos = get_world_transform(scene, node2)
+    face_pos = numpy.dot(node2.properties["facing"], n2_pos)
+    
+    view_matrix = get_spatial_view_matrix(face_pos, False)
+    
+    trans_bb2 = compute_transformed_bounding_box(ctx, scene, node2, view_matrix, bb_min, bb_max)
+    
+    bb_min=[1e10, 1e10, 1e10] 
+    bb_max=[-1e10, -1e10, -1e10]
+    
+    trans_bb1 = compute_transformed_bounding_box(ctx, scene, node1, view_matrix, bb_min, bb_max)
+    
+    return istoeast(trans_bb1, trans_bb2)
+    
 
 def istosouth(bb1, bb2, north_vector=[0,1,0]):
     """ Returns True if bb1 is to the south of bb2.
@@ -315,6 +426,56 @@ def istosouth(bb1, bb2, north_vector=[0,1,0]):
             return issouth(bb1, bb2, north_vector)
     return False
 
+def istofront(ctx, scene, node1, node2, view_matrix):
+    """ Returns True if node 1 is to the front of node 2 based on a view matrix
+    
+    For node1 to be to the front of node2:
+        - the view transformed bounding box of node 1 is to south of the
+          the view transformed bounding box of node 2. 
+    """
+    
+    bb_min=[1e10, 1e10, 1e10] 
+    bb_max=[-1e10, -1e10, -1e10]
+    
+    trans_bb1 = compute_transformed_bounding_box(ctx, scene, node1, view_matrix, bb_min, bb_max)
+    
+    bb_min=[1e10, 1e10, 1e10] 
+    bb_max=[-1e10, -1e10, -1e10]
+    
+    trans_bb2 = compute_transformed_bounding_box(ctx, scene, node2, view_matrix, bb_min, bb_max)
+    
+    return istosouth(trans_bb1, trans_bb2)
+    
+def isbehind(ctx, scene, node1, node2):
+    """ Returns True if node 1 is behind node 2 based on a view matrix
+        calculated from the 'face' of node 2.
+    
+    For node1 to be behind node2:
+        - node2 to must be considered to have a front face.
+        - the view transformed bounding box of node 1 is to north of the
+          the view transformed bounding box of node 2. 
+    """
+    
+    bb_min=[1e10, 1e10, 1e10] 
+    bb_max=[-1e10, -1e10, -1e10]
+    
+    if "facing" not in node2.properties:
+        return False
+        
+    n2_pos = get_world_transform(scene, node2)
+    face_pos = numpy.dot(node2.properties["facing"], n2_pos)
+    
+    view_matrix = get_spatial_view_matrix(face_pos, False)
+    
+    trans_bb2 = compute_transformed_bounding_box(ctx, scene, node2, view_matrix, bb_min, bb_max)
+    
+    bb_min=[1e10, 1e10, 1e10] 
+    bb_max=[-1e10, -1e10, -1e10]
+    
+    trans_bb1 = compute_transformed_bounding_box(ctx, scene, node1, view_matrix, bb_min, bb_max)
+    
+    return istosouth(trans_bb1, trans_bb2)
+
 def istowest(bb1, bb2, north_vector=[0,1,0]):
     """ Returns True if bb1 is to the west of bb2.
 
@@ -334,6 +495,56 @@ def istowest(bb1, bb2, north_vector=[0,1,0]):
         if overlap(bb_sideprint(bb1), bb_sideprint(bb2)):
             return iswest(bb1, bb2, north_vector)
     return False
+    
+def istoleft(ctx, scene, node1, node2, view_matrix):
+    """ Returns True if node 1 is to the left of node 2 based on a view matrix
+    
+    For node1 to be to the left of node2:
+        - the view transformed bounding box of node 1 is to west of the
+          the view transformed bounding box of node 2. 
+    """
+    
+    bb_min=[1e10, 1e10, 1e10] 
+    bb_max=[-1e10, -1e10, -1e10]
+    
+    trans_bb1 = compute_transformed_bounding_box(ctx, scene, node1, view_matrix, bb_min, bb_max)
+    
+    bb_min=[1e10, 1e10, 1e10] 
+    bb_max=[-1e10, -1e10, -1e10]
+    
+    trans_bb2 = compute_transformed_bounding_box(ctx, scene, node2, view_matrix, bb_min, bb_max)
+    
+    return istowest(trans_bb1, trans_bb2)
+    
+def isport(ctx, scene, node1, node2):
+    """ Returns True if node1 is on the left of node2 based on a view matrix
+        calculated from the 'face' of node 2.
+    
+    For node1 to be on the left of node2:
+        - node2 to must be considered to have a front face.
+        - the view transformed bounding box of node 1 is to west of the
+          the view transformed bounding box of node 2. 
+    """
+    
+    bb_min=[1e10, 1e10, 1e10] 
+    bb_max=[-1e10, -1e10, -1e10]
+    
+    if "facing" not in node2.properties:
+        return False
+        
+    n2_pos = get_world_transform(scene, node2)
+    face_pos = numpy.dot(node2.properties["facing"], n2_pos)
+    
+    view_matrix = get_spatial_view_matrix(face_pos, False)
+    
+    trans_bb2 = compute_transformed_bounding_box(ctx, scene, node2, view_matrix, bb_min, bb_max)
+    
+    bb_min=[1e10, 1e10, 1e10] 
+    bb_max=[-1e10, -1e10, -1e10]
+    
+    trans_bb1 = compute_transformed_bounding_box(ctx, scene, node1, view_matrix, bb_min, bb_max)
+    
+    return istowest(trans_bb1, trans_bb2)
 
 def isin(bb1, bb2):
     """ Returns True if bb1 is in bb2. 
@@ -343,42 +554,109 @@ def isin(bb1, bb2):
     """
     bb1_min, _ = bb1
     bb2_min, bb2_max = bb2
-
+    
     x1,y1,z1 = bb1_min
     x2,y2,z2 = bb2_max
     x3,y3,z3 = bb2_min
-
-    if z1 > z2 + EPSILON:
+    
+    if z1 >= z2:
         return False
 
     if z1 < z3 - EPSILON:
         return False
 
     return weakly_cont(bb_footprint(bb1),
-            bb_footprint(bb2))
+                   bb_footprint(bb2))
+                   
+def get_spatial_view_matrix(trans_matrix=numpy.identity(4, dtype = numpy.float32), gravity_bias=True):
+    
+    if gravity_bias == True:
+        #Remove pitch,roll and z translation. (This assumes that gravity is in the negative z direction)
+        #WARNING - Currently using euler angles which causes issues if the rotation angles go out of bounds. See note on angle ranges http://nghiaho.com/?page_id=846
+        scale, shear, angles, translate, perspective = decompose_matrix(trans_matrix)
+        trans_matrix = compose_matrix(scale, shear, (0,0,angles[2]), (translate[0],translate[1],0), perspective)
+        #trans_matrix = compose_matrix((1,1,1), (0,0,0), (0,0,angles[2]), (translate[0],translate[1],0), perspective)
+        
+    view_matrix = linalg.inv(trans_matrix)
+    
+    return view_matrix
 
-def compute_relations(scene):
+def get_node_sr(worldName, nodeID, exclNodeID=None, camera=None, gravity_bias=True):
 
-    boundingboxes = {n: get_bounding_box_for_node(scene, n) for n in scene.nodes if n.type == MESH}
-    allocentric_relations(boundingboxes)
+    rel_list = []
+    
+    with underworlds.Context("spatial_relations") as ctx:
+        world = ctx.worlds[worldName]
+        
+        vm = None
+        
+        if camera is not None:
+            vm = get_spatial_view_matrix(get_world_transform(scene, camera), gravity_bias)
+            
+            #vm = get_spatial_view_matrix(worldName, camera)
 
-def allocentric_relations(nodes):
+        node = world.scene.nodes[nodeID]
 
-    for n,bb in nodes.items():
-        for n2,bb2 in nodes.items():
-            if n == n2:
+        bb1 = get_bounding_box_for_node(world.scene, world.scene.nodes[nodeID])
+        
+        for node2 in world.scene.nodes:
+            
+            if node2.id == node.id or node2.id == exclNodeID or node2.id == world.scene.rootnode.id:
                 continue
+                
+            bb2 = get_bounding_box_for_node(world.scene, node2)
+            
+            if isin(bb1, bb2):
+                logger.info("%s in %s" % (node.name, node2.name))
+                rel_list.append([1, node.id, node2.id, "in"])
+                continue
+                
+            elif isontop(bb1, bb2):
+                logger.info("%s onTop %s" % (node.name, node2.name))
+                rel_list.append([2, node.id, node2.id, "onTop"])
+                continue
+                
+            elif isabove(bb1, bb2):
+                logger.info("%s above %s" % (node.name, node2.name))
+                rel_list.append([3, node.id, node2.id, "above"])
+                continue
+                
+            elif isbelow(bb1, bb2):
+                logger.info("%s below %s" % (node.name, node2.name))
+                rel_list.append([4, node.id, node2.id, "below"])
+                continue
+                
+            elif isclose(bb1, bb2):
+                logger.info("%s close %s" % (node.name, node2.name))
+                rel_list.append([9, node.id, node2.id, "close"])
+                if istonorth(bb1, bb2):
+                    logger.info("%s to north %s" % (node.name, node2.name))
+                    rel_list.append([5, node.id, node2.id, "toNorth"])
+                elif istoeast(bb1, bb2):
+                    logger.info("%s to east %s" % (node.name, node2.name))
+                    rel_list.append([6, node.id, node2.id, "toEast"])
+                elif istosouth(bb1, bb2):
+                    logger.info("%s to south %s" % (node.name, node2.name))
+                    rel_list.append([7, node.id, node2.id, "toSouth"])
+                elif istowest(bb1, bb2):
+                    logger.info("%s to west %s" % (node.name, node2.name))
+                    rel_list.append([8, node.id, node2.id, "toWest"])
+                continue
+                
+        return rel_list
 
-            if isabove(bb, bb2):
-                logger.info("%s is above %s" % (n, n2))
-                if isontop(bb, bb2):
-                    logger.info("%s is on top of %s" % (n, n2))
-
-            if isclose(bb, bb2):
-                logger.info("%s is close of %s" % (n, n2))
-
-            if isin(bb, bb2):
-                logger.info("%s is in %s" % (n, n2))
+def compute_all_relations(worldName, perspective=[0,1,0]):
+    
+    all_rel_list = []
+    
+    with underworlds.Context("spatial_relations") as ctx:
+        world = ctx.worlds[worldName]
+    
+        for node in world.scene.nodes:
+            cur_rel_list = get_node_sr(worldName, node.id)
+            all_rel_list.append({node.id, cur_rel_list})
+            
+        return all_rel_list
 
 if __name__ == "__main__":
 
@@ -390,17 +668,17 @@ if __name__ == "__main__":
     #parser.add_argument("-d", "--debug", help="run in interactive, debug mode", action="store_true")
     args = parser.parse_args()
 
-    with underworlds.Context("Geometry Reasonning") as ctx:
+    with underworlds.Context("Spatial Reasonning") as ctx:
 
         world = ctx.worlds[args.world]
 
-        compute_relations(world.scene)
+        compute_all_relations(args.world)
 
         try:
             while True:
                 world.scene.waitforchanges()
                 logger.info("Updating relations...")
-                compute_relations(world.scene)
+                compute_all_relations(args.world)
 
         except KeyboardInterrupt:
             print("Bye bye")

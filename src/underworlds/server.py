@@ -139,7 +139,7 @@ class Server(gRPC.BetaUnderworldsServicer):
 
         node.last_update = time.time()
 
-        if node.parent is None:
+        if node.parent is None and node.id != scene.rootnode.id:
             node.parent = scene.rootnode.id
 
         oldnode = scene.node(node.id)
