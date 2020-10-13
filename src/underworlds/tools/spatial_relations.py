@@ -179,6 +179,21 @@ def isclose(bb1, bb2):
     dim2 = characteristic_dimension(bb2)
 
     return dist < 2 * dim2
+    
+def isnextto(bb1, bb2):
+    """ Returns True if the first object is close to the second.
+
+    More precisely, returns True if the first bounding box is within a radius R
+    (R = 2 X second bounding box dimension) of the second bounding box.
+
+    Note that in general, isclose(bb1, bb2) != isclose(bb2, bb1)
+    """
+
+
+    dist = distance(bb1,bb2)
+    dim2 = characteristic_dimension(bb2)
+
+    return dist < 1.5 * dim2
 
 def isnorth(bb1, bb2, north_vector=[0,1,0]):
     """ Returns True if bb1 is north of bb2
@@ -581,69 +596,221 @@ def get_spatial_view_matrix(trans_matrix=numpy.identity(4, dtype = numpy.float32
     
     return view_matrix
 
-def get_node_sr(worldName, nodeID, exclNodeID=None, camera=None, gravity_bias=True):
+def get_node_sr(ctx, worldName, nodeID, camera=None, gravity_bias=True, exclNodeID=None, simple=False):
 
     rel_list = []
+        
+    world = ctx.worlds[worldName]
     
-    with underworlds.Context("spatial_relations") as ctx:
-        world = ctx.worlds[worldName]
+    vm = None
+    
+    if camera is not None:
+        if camera == "default":
+            vm = get_spatial_view_matrix()
+        else:
+            vm = get_spatial_view_matrix(get_world_transform(world.scene, camera), gravity_bias)
         
-        vm = None
-        
-        if camera is not None:
-            vm = get_spatial_view_matrix(get_world_transform(scene, camera), gravity_bias)
-            
-            #vm = get_spatial_view_matrix(worldName, camera)
+        #vm = get_spatial_view_matrix(worldName, camera)
 
-        node = world.scene.nodes[nodeID]
+    node = world.scene.nodes[nodeID]
 
-        bb1 = get_bounding_box_for_node(world.scene, world.scene.nodes[nodeID])
+    bb1 = get_bounding_box_for_node(world.scene, world.scene.nodes[nodeID])
+    
+    if vm is not None:
+        bb_min=[1e10, 1e10, 1e10] 
+        bb_max=[-1e10, -1e10, -1e10]
+        bb1_trans = compute_transformed_bounding_box(ctx, world.scene, node, vm, bb_min, bb_max)
+    
+    for node2 in world.scene.nodes:
+        if node2.id == node.id or node2.id == exclNodeID or node2.id == world.scene.rootnode.id or node2.name[0] == "_":
+            continue
+            
+        bb2 = get_bounding_box_for_node(world.scene, node2)
         
-        for node2 in world.scene.nodes:
+        if isin(bb1, bb2):
+            logger.info("%s in %s" % (node.name, node2.name))
+            rel_list.append([1, node.id, node2.id, "in", node2.name])
+            continue
+               
+        elif isontop(bb1, bb2):
+            logger.info("%s onTop %s" % (node.name, node2.name))
+            rel_list.append([2, node.id, node2.id, "onTop", node2.name])
+            continue
+               
+        elif isabove(bb1, bb2):
+            logger.info("%s above %s" % (node.name, node2.name))
+            rel_list.append([3, node.id, node2.id, "above", node2.name])
+            continue
+         
+        elif isbelow(bb1, bb2):
+            logger.info("%s below %s" % (node.name, node2.name))
+            rel_list.append([4, node.id, node2.id, "below", node2.name])
+            continue
             
-            if node2.id == node.id or node2.id == exclNodeID or node2.id == world.scene.rootnode.id:
-                continue
-                
-            bb2 = get_bounding_box_for_node(world.scene, node2)
-            
-            if isin(bb1, bb2):
-                logger.info("%s in %s" % (node.name, node2.name))
-                rel_list.append([1, node.id, node2.id, "in"])
-                continue
-                
-            elif isontop(bb1, bb2):
-                logger.info("%s onTop %s" % (node.name, node2.name))
-                rel_list.append([2, node.id, node2.id, "onTop"])
-                continue
-                
-            elif isabove(bb1, bb2):
-                logger.info("%s above %s" % (node.name, node2.name))
-                rel_list.append([3, node.id, node2.id, "above"])
-                continue
-                
-            elif isbelow(bb1, bb2):
-                logger.info("%s below %s" % (node.name, node2.name))
-                rel_list.append([4, node.id, node2.id, "below"])
-                continue
-                
-            elif isclose(bb1, bb2):
-                logger.info("%s close %s" % (node.name, node2.name))
-                rel_list.append([9, node.id, node2.id, "close"])
+        elif isclose(bb1, bb2):
+            if simple == True:
+                if isnextto(bb1, bb2):
+                    logger.info("%s next to %s" % (node.name, node2.name))
+                    rel_list.append([9, node.id, node2.id, "nextTo", node2.name])
+                else:
+                    logger.info("%s close %s" % (node.name, node2.name))
+                    rel_list.append([10, node.id, node2.id, "close", node2.name])
+            elif vm is None:
                 if istonorth(bb1, bb2):
                     logger.info("%s to north %s" % (node.name, node2.name))
-                    rel_list.append([5, node.id, node2.id, "toNorth"])
+                    rel_list.append([5, node.id, node2.id, "toNorth", node2.name])
                 elif istoeast(bb1, bb2):
                     logger.info("%s to east %s" % (node.name, node2.name))
-                    rel_list.append([6, node.id, node2.id, "toEast"])
+                    rel_list.append([6, node.id, node2.id, "toEast", node2.name])
                 elif istosouth(bb1, bb2):
                     logger.info("%s to south %s" % (node.name, node2.name))
-                    rel_list.append([7, node.id, node2.id, "toSouth"])
+                    rel_list.append([7, node.id, node2.id, "toSouth", node2.name])
                 elif istowest(bb1, bb2):
                     logger.info("%s to west %s" % (node.name, node2.name))
-                    rel_list.append([8, node.id, node2.id, "toWest"])
-                continue
+                    rel_list.append([8, node.id, node2.id, "toWest", node2.name])
+                elif isnextto(bb1, bb2):
+                    logger.info("%s next to %s" % (node.name, node2.name))
+                    rel_list.append([9, node.id, node2.id, "nextTo", node2.name])
+                else:
+                    logger.info("%s close %s" % (node.name, node2.name))
+                    rel_list.append([10, node.id, node2.id, "close", node2.name])
+            else:
+                bb_min=[1e10, 1e10, 1e10] 
+                bb_max=[-1e10, -1e10, -1e10]
+                bb2_trans = compute_transformed_bounding_box(ctx, world.scene, node2, vm, bb_min, bb_max)
+                #Do these calculations only once for efficiency, and use the same logic to then calculate from the view matrix
                 
+                if istonorth(bb1_trans, bb2_trans):
+                    logger.info("%s to back %s" % (node.name, node2.name))
+                    rel_list.append([5, node.id, node2.id, "toBack"])
+                elif istoeast(bb1_trans, bb2_trans):
+                    logger.info("%s to right %s" % (node.name, node2.name))
+                    rel_list.append([6, node.id, node2.id, "toRight"])
+                elif istosouth(bb1_trans, bb2_trans):
+                    logger.info("%s to front %s" % (node.name, node2.name))
+                    rel_list.append([7, node.id, node2.id, "toFront"])
+                elif istowest(bb1_trans, bb2_trans):
+                    logger.info("%s to left %s" % (node.name, node2.name))
+                    rel_list.append([8, node.id, node2.id, "toLeft"])
+                elif isnextto(bb1, bb2):
+                    logger.info("%s next to %s" % (node.name, node2.name))
+                    rel_list.append([9, node.id, node2.id, "nextTo", node2.name])
+                else:
+                    logger.info("%s close %s" % (node.name, node2.name))
+                    rel_list.append([10, node.id, node2.id, "close"])
+
+            continue
+                   
+    return rel_list
+        
+def check_for_exclusions(ctx, worldname, rel_list, iteration, view_matrix=numpy.identity(4, dtype = numpy.float32)):
+
+    i = 0
+    
+    if len(rel_list) <= iteration:
         return rel_list
+    
+    relation = rel_list[iteration][3]
+    
+    if iteration > 0:
+        if relation == rel_list[iteration - 1][3]:
+            #These relations should have already been checked in a previous iteration.
+            return rel_list
+    
+    rel_poss_excl = []
+    
+    #Get a list of all the nodes that have the same relation to our current node
+    while  (iteration + i) < len(rel_list) and rel_list[iteration + i][3] == relation:
+        rel_poss_excl.append([rel_list[iteration + i][2], i])
+        i += 1
+    
+    length = len(rel_poss_excl)
+        
+    if length > 1:
+        i = 0
+        rel_excl = []
+            
+        world = ctx.worlds[worldname]
+        
+        while(i < length):
+        
+            j = 0
+            
+            node1 = world.scene.nodes[rel_poss_excl[i][0]]
+            bb1 = get_bounding_box_for_node(world.scene, node1)
+            
+            while (j < length):
+                
+                if i == j or j in rel_excl:
+                    j += 1
+                    continue
+                    
+                node2 = world.scene.nodes[rel_poss_excl[j][0]]
+                bb2 = get_bounding_box_for_node(world.scene, node2)
+                
+                if relation == "in":
+                    if isin(bb1, bb2):
+                        rel_excl.append(j) #Append to list to be deleted afterward
+                        
+                elif relation == "onTop":
+                    pass
+                    
+                elif relation == "above":
+                    if isin(bb2, bb1) or isabove(bb2, bb1):
+                        rel_excl.append(j)
+                    
+                elif relation == "below":
+                    if isin(bb2, bb1) or isbelow(bb2, bb1) or isontop(bb2, bb1):
+                        rel_excl.append(j)
+                    
+                elif relation == "close":
+                    pass
+                
+                elif relation == "nextTo":
+                    pass
+                    
+                elif relation == "toBack":
+                    if isin(bb2, bb1) or istoback(ctx, world.scene, node2, node1, view_matrix):
+                        rel_excl.append(j)
+                
+                elif relation == "toRight":
+                    if isin(bb2, bb1) or istoright(ctx, world.scene, node2, node1, view_matrix):
+                        rel_excl.append(j)
+                        
+                elif relation == "toFront":
+                    if isin(bb2, bb1) or istofront(ctx, world.scene, node2, node1, view_matrix):
+                        rel_excl.append(j)
+                        
+                elif relation == "toLeft":
+                    if isin(bb2, bb1) or istoleft(ctx, world.scene, node2, node1, view_matrix):
+                        rel_excl.append(j)
+                    
+                elif relation == "toNorth":
+                    if isin(bb2, bb1) or istonorth(bb2, bb1):
+                        rel_excl.append(j)
+                    
+                elif relation == "toEast":
+                    if isin(bb2, bb1) or istoeast(bb2, bb1):
+                        rel_excl.append(j)
+                    
+                elif relation == "toSouth":
+                    if isin(bb2, bb1) or istoeast(bb2, bb1):
+                        rel_excl.append(j)
+                    
+                elif relation == "toWest":
+                    if isin(bb2, bb1) or istowest(bb2, bb1):
+                        rel_excl.append(j)
+                        
+                else:
+                    raise NotImplementedError
+                    
+                j += 1
+            i += 1
+            
+        for j in reversed(sorted(rel_excl)):
+            del rel_list[iteration + j]
+            
+    return rel_list
 
 def compute_all_relations(worldName, perspective=[0,1,0]):
     
@@ -653,7 +820,7 @@ def compute_all_relations(worldName, perspective=[0,1,0]):
         world = ctx.worlds[worldName]
     
         for node in world.scene.nodes:
-            cur_rel_list = get_node_sr(worldName, node.id)
+            cur_rel_list = get_node_sr(ctx, worldName, node.id)
             all_rel_list.append({node.id, cur_rel_list})
             
         return all_rel_list

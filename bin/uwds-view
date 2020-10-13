@@ -258,6 +258,7 @@ class Underworlds3DViewer:
 
         self.w = w
         self.h = h
+        self.show_labels = True
 
         pygame.init()
         self.base_name = self.base_name + " <%s>" % world
@@ -858,10 +859,17 @@ class Underworlds3DViewer:
         ###
         if mode == HELPERS:
             #if node.type == ENTITY:
-            self.render_axis(m,
-                             bb=node.properties.get("aabb", None),
-                             label=node.name if node != self.scene.rootnode else None,
-                             selected=node.selected if hasattr(node, "selected") else False)
+            
+            if self.show_labels == True:
+                self.render_axis(m,
+                                 bb=node.properties.get("aabb", None),
+                                 label=node.name if node != self.scene.rootnode else None,
+                                 selected=node.selected if hasattr(node, "selected") else False)
+            else:
+                self.render_axis(m,
+                                 bb=node.properties.get("aabb", None),
+                                 label=None,
+                                 selected=node.selected if hasattr(node, "selected") else False)
 
             if node.type == CAMERA:
                 self.render_camera(node, m)
@@ -1076,6 +1084,12 @@ class Underworlds3DViewer:
 
         if key == pygame.K_TAB:
             self.cycle_cameras()
+            
+        if key == pygame.K_h:
+            if self.show_labels == True:
+                self.show_labels = False
+            else:
+                self.show_labels = True
 
         if key in [pygame.K_ESCAPE, pygame.K_q]:
             return False
