@@ -82,7 +82,7 @@ class ModelLoader:
                 mesh = MeshData(vertices,
                                 m.faces.tolist(), 
                                 m.normals.tolist(),
-                                m.material.properties["diffuse"] if ('diffuse', 0L) in m.material.properties else (0,0,0,1))
+                                m.material.properties["diffuse"] if ('diffuse', 0) in m.material.properties else (0,0,0,1))
 
                 id = mesh.id
                 logger.debug("\tLoading mesh %s" % id)
