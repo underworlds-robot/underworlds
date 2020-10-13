@@ -74,7 +74,7 @@ First tests with underworlds
 	
 2. Load some model::
 
-    uwds-load testing/res/monkey_mat.blend test
+    uwds-load test testing/res/monkey_mat.blend
 
    This loads 3 monkey heads in the ``test`` world.
 
